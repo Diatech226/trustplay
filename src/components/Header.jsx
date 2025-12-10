@@ -113,7 +113,22 @@ export default function Header() {
       </div>
       <Navbar.Collapse>
         <Navbar.Link active={path === '/'} as={'div'}>
-          <Link to='/'>Trust Media</Link>
+          <Link to='/'>Accueil</Link>
+        </Navbar.Link>
+        <Navbar.Link active={path === '/news'} as={'div'}>
+          <Link to='/news'>News</Link>
+        </Navbar.Link>
+        <Navbar.Link active={path === '/politique'} as={'div'}>
+          <Link to='/politique'>Politique</Link>
+        </Navbar.Link>
+        <Navbar.Link active={path === '/science'} as={'div'}>
+          <Link to='/science'>Science &amp; Tech</Link>
+        </Navbar.Link>
+        <Navbar.Link active={path === '/sport'} as={'div'}>
+          <Link to='/sport'>Sport</Link>
+        </Navbar.Link>
+        <Navbar.Link active={path === '/cinema'} as={'div'}>
+          <Link to='/cinema'>Cinéma</Link>
         </Navbar.Link>
         <Navbar.Link active={path === '/event'} as={'div'}>
           <Link to='/event'>Trust Events</Link>
@@ -122,9 +137,8 @@ export default function Header() {
           <Link to='/production'>Trust Prod</Link>
         </Navbar.Link>
         <Navbar.Link active={path === '/about'} as={'div'}>
-          <Link to='/about'>About</Link>
+          <Link to='/about'>À propos</Link>
         </Navbar.Link>
-
       </Navbar.Collapse>
     </Navbar>
   );

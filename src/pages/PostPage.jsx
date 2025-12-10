@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 import CallToAction from '../components/CallToAction';
 import CommentSection from '../components/CommentSection';
 import PostCard from '../components/PostCard';
+import Breadcrumbs from '../components/Breadcrumbs';
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function PostPage() {
@@ -61,19 +62,34 @@ export default function PostPage() {
         <Spinner size='xl' />
       </div>
     );
+  const subCategoryPaths = {
+    news: { label: 'News', href: '/news' },
+    politique: { label: 'Politique', href: '/politique' },
+    science: { label: 'Science & Tech', href: '/science' },
+    sport: { label: 'Sport', href: '/sport' },
+    cinema: { label: 'Cinéma', href: '/cinema' },
+  };
+  const breadcrumbItems = [
+    { label: 'Accueil', href: '/' },
+    post?.subCategory && subCategoryPaths[post.subCategory]
+      ? subCategoryPaths[post.subCategory]
+      : { label: post?.category || 'Article' },
+    { label: post?.title || 'Article' },
+  ].filter(Boolean);
+
   return (
     <main className='p-3 flex flex-col max-w-6xl mx-auto min-h-screen'>
-      <h1 className='text-3xl mt-10 p-3 text-center font-serif max-w-2xl mx-auto lg:text-4xl'>
+      <Breadcrumbs items={breadcrumbItems} />
+      <h1 className='text-3xl mt-4 p-3 text-center font-serif max-w-2xl mx-auto lg:text-4xl'>
         {post && post.title}
       </h1>
-      <Link
-        to={`/search?category=${post && post.category}`}
-        className='self-center mt-5'
-      >
-        <Button color='gray' pill size='xs'>
-          {post && post.category}
-        </Button>
-      </Link>
+      {post?.subCategory && subCategoryPaths[post.subCategory] && (
+        <Link to={subCategoryPaths[post.subCategory].href} className='self-center mt-2'>
+          <Button color='gray' pill size='xs'>
+            {subCategoryPaths[post.subCategory].label}
+          </Button>
+        </Link>
+      )}
       <img
         src={post && post.image}
         alt={post && post.title}

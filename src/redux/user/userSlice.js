@@ -28,7 +28,8 @@ const userSlice = createSlice({
       state.currentUser = action.payload;
       state.loading = false;
       state.error = null;
-      localStorage.setItem('currentUser', JSON.stringify(action.payload)); // Sauvegarde localement
+      localStorage.setItem('user', JSON.stringify(action.payload));
+      localStorage.setItem('token', action.payload.token);
     },
     
     updateFailure: (state, action) => {
@@ -53,7 +54,7 @@ const userSlice = createSlice({
       state.error = null;
       state.loading = false;
       localStorage.removeItem('user');
-      localStorage.setItem('token', action.payload.token);
+      localStorage.removeItem('token');
     },
     
     signInSuccess: (state, action) => {
@@ -61,14 +62,15 @@ const userSlice = createSlice({
       state.loading = false;
       state.error = null;
       localStorage.setItem('user', JSON.stringify(action.payload));
-      localStorage.setItem('token', action.payload.token);},
+      localStorage.setItem('token', action.payload.token);
+    },
     
     setUser: (state, action) => {
       state.currentUser = action.payload;
       state.loading = false;
       state.error = null;
       localStorage.setItem('user', JSON.stringify(action.payload));
-  localStorage.setItem('token', action.payload.token);
+      localStorage.setItem('token', action.payload.token);
     },
     
   },

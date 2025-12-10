@@ -19,38 +19,46 @@ import TrustProd from './pages/TrustProd';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsConditions from './pages/TermsConditions';
 import { HelmetProvider } from "react-helmet-async";
+import PoliticsPage from './pages/PoliticsPage';
+import SciencePage from './pages/SciencePage';
+import SportPage from './pages/SportPage';
+import CinemaPage from './pages/CinemaPage';
+import NewsPage from './pages/NewsPage';
 
 export default function App() {
   return (
- 
     <BrowserRouter>
-       <HelmetProvider>
-      <ScrollToTop />
-      <Header />
-      <Routes>
-        <Route path='/' element={<Home />} />
-        <Route path='/about' element={<About />} />
-        <Route path='/sign-in' element={<SignIn />} />
-        <Route path='/sign-up' element={<SignUp />} />
-        <Route path='/search' element={<Search />} />
-        <Route path='/event' element={<TrustEvent />} />
-        <Route path='/production' element={<TrustProd />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-        <Route path="/Terms" element={<TermsConditions />} />
-        <Route element={<PrivateRoute />}>
-          <Route path='/dashboard' element={<Dashboard />} />
-        </Route>
-        <Route element={<OnlyAdminPrivateRoute />}>
-          <Route path='/create-post' element={<CreatePost />} />
-          <Route path='/update-post/:postId' element={<UpdatePost />} />
-        </Route>
+      <HelmetProvider>
+        <ScrollToTop />
+        <Header />
+        <Routes>
+          <Route path='/' element={<Home />} />
+          <Route path='/about' element={<About />} />
+          <Route path='/sign-in' element={<SignIn />} />
+          <Route path='/sign-up' element={<SignUp />} />
+          <Route path='/search' element={<Search />} />
+          <Route path='/event' element={<TrustEvent />} />
+          <Route path='/production' element={<TrustProd />} />
+          <Route path='/news' element={<NewsPage />} />
+          <Route path='/politique' element={<PoliticsPage />} />
+          <Route path='/science' element={<SciencePage />} />
+          <Route path='/sport' element={<SportPage />} />
+          <Route path='/cinema' element={<CinemaPage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/Terms" element={<TermsConditions />} />
+          <Route element={<PrivateRoute />}>
+            <Route path='/dashboard' element={<Dashboard />} />
+          </Route>
+          <Route element={<OnlyAdminPrivateRoute />}>
+            <Route path='/create-post' element={<CreatePost />} />
+            <Route path='/update-post/:postId' element={<UpdatePost />} />
+          </Route>
 
-        <Route path='/projects' element={<Projects />} />
-        <Route path='/post/:postSlug' element={<PostPage />} />
-      </Routes>
-      <Footer />
+          <Route path='/projects' element={<Projects />} />
+          <Route path='/post/:postSlug' element={<PostPage />} />
+        </Routes>
+        <Footer />
       </HelmetProvider>
     </BrowserRouter>
-    
   );
 }

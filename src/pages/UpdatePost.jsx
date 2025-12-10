@@ -1,230 +1,44 @@
-/*import { Alert, Button, FileInput, Select, TextInput } from 'flowbite-react';
+import { Alert, Button, FileInput, Select, TextInput } from 'flowbite-react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import {
-  getDownloadURL,
-  getStorage,
-  ref,
-  uploadBytesResumable,
-} from 'firebase/storage';
-import { app } from '../firebase';
 import { useEffect, useState } from 'react';
-import { CircularProgressbar } from 'react-circular-progressbar';
-import 'react-circular-progressbar/dist/styles.css';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { setUser } from '../redux/user/userSlice';
-
-export default function UpdatePost() {
-  const [file, setFile] = useState(null);
-  const [imageUploadProgress, setImageUploadProgress] = useState(null);
-  const [imageUploadError, setImageUploadError] = useState(null);
-  const [formData, setFormData] = useState({});
-  const [publishError, setPublishError] = useState(null);
-  const { postId } = useParams();
-  const API_URL = import.meta.env.VITE_API_URL;
-  const navigate = useNavigate();
-    const { currentUser } = useSelector((state) => state.user);
-
-  useEffect(() => {
-    try {
-      const fetchPost = async () => {
-        const res = await fetch(`${API_URL}/api/post/getposts?postId=${postId}` ,{
-          headers: { "Content-Type": "application/json" }
-        }
-          
-        );
-        const data = await res.json();
-        if (!res.ok) {
-          console.log(data.message);
-          setPublishError(data.message);
-          return;
-        }
-        if (res.ok) {
-          setPublishError(null);
-          setFormData(data.posts[0]);
-        }
-      };
-
-      fetchPost();
-    } catch (error) {
-      console.log(error.message);
-    }
-  }, [postId]);
-
-  const handleUpdloadImage = async () => {
-    try {
-      if (!file) {
-        setImageUploadError('Please select an image');
-        return;
-      }
-      setImageUploadError(null);
-      const storage = getStorage(app);
-      const fileName = new Date().getTime() + '-' + file.name;
-      const storageRef = ref(storage, fileName);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-      uploadTask.on(
-        'state_changed',
-        (snapshot) => {
-          const progress =
-            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setImageUploadProgress(progress.toFixed(0));
-        },
-        (error) => {
-          setImageUploadError('Image upload failed');
-          setImageUploadProgress(null);
-        },
-        () => {
-          getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-            setImageUploadProgress(null);
-            setImageUploadError(null);
-            setFormData({ ...formData, image: downloadURL });
-          });
-        }
-      );
-    } catch (error) {
-      setImageUploadError('Image upload failed');
-      setImageUploadProgress(null);
-      console.log(error);
-    }
-  };
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await fetch(`${API_URL}/api/post/updatepost/${formData._id}/${currentUser._id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setPublishError(data.message);
-        return;
-      }
-
-      if (res.ok) {
-        setPublishError(null);
-        dispatch(setUser(data.user));
-        navigate(`/post/${data.slug}`);
-      }
-    } catch (error) {
-      setPublishError('Something went wrong');
-    }
-  };
-  return (
-    <div className='p-3 max-w-3xl mx-auto min-h-screen'>
-      <h1 className='text-center text-3xl my-7 font-semibold'>Update post</h1>
-      <form className='flex flex-col gap-4' onSubmit={handleSubmit}>
-        <div className='flex flex-col gap-4 sm:flex-row justify-between'>
-          <TextInput
-            type='text'
-            placeholder='Title'
-            required
-            id='title'
-            className='flex-1'
-            onChange={(e) =>
-              setFormData({ ...formData, title: e.target.value })
-            }
-            value={formData.title}
-          />
-          <Select
-            onChange={(e) =>
-              setFormData({ ...formData, category: e.target.value })
-            }
-            value={formData.category}
-          >
-            <option value='uncategorized'>Select a category</option>
-            <option value='Event'>Event</option>
-            <option value='Media'>Media</option>
-
-          </Select>
-        </div>
-        <div className='flex gap-4 items-center justify-between border-4 border-teal-500 border-dotted p-3'>
-          <FileInput
-            type='file'
-            accept='image/*'
-            onChange={(e) => setFile(e.target.files[0])}
-          />
-          <Button
-            type='button'
-            gradientDuoTone='purpleToBlue'
-            size='sm'
-            outline
-            onClick={handleUpdloadImage}
-            disabled={imageUploadProgress}
-          >
-            {imageUploadProgress ? (
-              <div className='w-16 h-16'>
-                <CircularProgressbar
-                  value={imageUploadProgress}
-                  text={`${imageUploadProgress || 0}%`}
-                />
-              </div>
-            ) : (
-              'Upload Image'
-            )}
-          </Button>
-        </div>
-        {imageUploadError && <Alert color='failure'>{imageUploadError}</Alert>}
-        {formData.image && (
-          <img
-            src={formData.image}
-            alt='upload'
-            className='w-full h-72 object-cover'
-          />
-        )}
-        <ReactQuill
-          theme='snow'
-          value={formData.content}
-          placeholder='Write something...'
-          className='h-72 mb-12'
-          required
-          onChange={(value) => {
-            setFormData({ ...formData, content: value });
-          }}
-        />
-        <Button type='submit' gradientDuoTone='purpleToPink'>
-          Update post
-        </Button>
-        {publishError && (
-          <Alert className='mt-5' color='failure'>
-            {publishError}
-          </Alert>
-        )}
-      </form>
-    </div>
-  );
-}
-*/ import { Alert, Button, FileInput, Select, TextInput } from 'flowbite-react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
-import {
-  getDownloadURL,
-  getStorage,
-  ref,
-  uploadBytesResumable,
-} from 'firebase/storage';
-import { app } from '../firebase';
-import { useEffect, useState } from 'react';
-import { CircularProgressbar } from 'react-circular-progressbar';
-import 'react-circular-progressbar/dist/styles.css';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { setUser } from '../redux/user/userSlice';
+import { uploadImageFile } from '../utils/uploadImage';
+
+const MEDIA_SUBCATEGORIES = [
+  { value: 'news', label: 'News' },
+  { value: 'politique', label: 'Politique' },
+  { value: 'science', label: 'Science/Tech' },
+  { value: 'sport', label: 'Sport' },
+  { value: 'cinema', label: 'Cinéma' },
+];
+
+const CATEGORY_OPTIONS = [
+  { value: 'TrustMedia', label: 'Média' },
+  { value: 'TrustEvent', label: 'Événement' },
+  { value: 'TrustProduction', label: 'Production' },
+];
 
 export default function UpdatePost() {
-  const [file, setFile] = useState(null);
-  const [imageUploadProgress, setImageUploadProgress] = useState(null);
-  const [imageUploadError, setImageUploadError] = useState(null);
-  const [formData, setFormData] = useState({ title: '', category: '', content: '', image: '' });
-  const [publishError, setPublishError] = useState(null);
   const { postId } = useParams();
   const API_URL = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { currentUser } = useSelector((state) => state.user);
+
+  const [file, setFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const [publishError, setPublishError] = useState('');
+  const [formData, setFormData] = useState({
+    title: '',
+    category: CATEGORY_OPTIONS[0].value,
+    subCategory: MEDIA_SUBCATEGORIES[0].value,
+    content: '',
+    image: '',
+  });
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -232,81 +46,90 @@ export default function UpdatePost() {
         const res = await fetch(`${API_URL}/api/post/getposts?postId=${postId}`);
         const data = await res.json();
         if (!res.ok) {
-          setPublishError(data.message);
+          setPublishError(data.message || 'Impossible de récupérer le post.');
           return;
         }
-        setFormData(data.posts[0] || {});
+        if (data.posts && data.posts[0]) {
+          const fetchedPost = data.posts[0];
+          const normalizedCategory =
+            fetchedPost.category === 'Media'
+              ? 'TrustMedia'
+              : fetchedPost.category === 'Event'
+              ? 'TrustEvent'
+              : fetchedPost.category;
+          setFormData((prev) => ({ ...prev, ...fetchedPost, category: normalizedCategory }));
+        }
       } catch (error) {
-        console.log(error.message);
-        setPublishError('Failed to fetch post');
+        setPublishError('Impossible de récupérer le post.');
       }
     };
+
     fetchPost();
   }, [postId, API_URL]);
 
   const handleUploadImage = async () => {
     if (!file) {
-      setImageUploadError('Please select an image');
+      setUploadError('Merci de sélectionner une image.');
       return;
     }
-    setImageUploadError(null);
     try {
-      const storage = getStorage(app);
-      const fileName = `${Date.now()}-${file.name}`;
-      const storageRef = ref(storage, fileName);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-      uploadTask.on(
-        'state_changed',
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setImageUploadProgress(progress.toFixed(0));
-        },
-        (error) => {
-          setImageUploadError('Image upload failed');
-          setImageUploadProgress(null);
-        },
-        async () => {
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          setImageUploadProgress(null);
-          setImageUploadError(null);
-          setFormData((prev) => ({ ...prev, image: downloadURL }));
-        }
-      );
+      setUploadError('');
+      setUploading(true);
+      const imageUrl = await uploadImageFile(file, API_URL);
+      setFormData((prev) => ({ ...prev, image: imageUrl }));
     } catch (error) {
-      setImageUploadError('Image upload failed');
-      console.error(error);
+      setUploadError(error.message);
+    } finally {
+      setUploading(false);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setPublishError('');
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+      setPublishError('Authentification requise pour mettre à jour.');
+      return;
+    }
+
     try {
-      const res = await fetch(`${API_URL}/api/post/updatepost/${formData._id}/${currentUser._id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
+      const res = await fetch(
+        `${API_URL}/api/post/updatepost/${formData._id}/${currentUser?._id}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(formData),
+        }
+      );
+
       const data = await res.json();
       if (!res.ok) {
-        setPublishError(data.message);
+        setPublishError(data.message || 'La mise à jour a échoué.');
         return;
       }
-      dispatch(setUser(data.user));
+
+      if (data.user) {
+        dispatch(setUser(data.user));
+      }
       navigate(`/post/${data.slug}`);
     } catch (error) {
-      setPublishError('Something went wrong');
-      console.error(error);
+      setPublishError('Une erreur est survenue, veuillez réessayer.');
     }
   };
 
   return (
     <div className='p-3 max-w-3xl mx-auto min-h-screen'>
-      <h1 className='text-center text-3xl my-7 font-semibold'>Update Post</h1>
+      <h1 className='text-center text-3xl my-7 font-semibold'>Modifier l’article</h1>
       <form className='flex flex-col gap-4' onSubmit={handleSubmit}>
         <div className='flex flex-col gap-4 sm:flex-row justify-between'>
           <TextInput
             type='text'
-            placeholder='Title'
+            placeholder='Titre'
             required
             id='title'
             className='flex-1'
@@ -314,14 +137,58 @@ export default function UpdatePost() {
             value={formData.title}
           />
           <Select
-            onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
-            value={formData.category || 'uncategorized'}
+            value={formData.category}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                category: e.target.value,
+                subCategory: e.target.value === 'TrustMedia' ? prev.subCategory || MEDIA_SUBCATEGORIES[0].value : '',
+              }))
+            }
           >
-            <option value='uncategorized'>Select a category</option>
-            <option value='Event'>Event</option>
-            <option value='Media'>Media</option>
+            <option value=''>Choisir une catégorie</option>
+            {CATEGORY_OPTIONS.map((category) => (
+              <option key={category.value} value={category.value}>
+                {category.label}
+              </option>
+            ))}
           </Select>
         </div>
+
+        {formData.category === 'TrustMedia' && (
+          <Select
+            required
+            value={formData.subCategory || ''}
+            onChange={(e) => setFormData((prev) => ({ ...prev, subCategory: e.target.value }))}
+          >
+            <option value=''>Choisir une rubrique</option>
+            {MEDIA_SUBCATEGORIES.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+        )}
+
+        {formData.category === 'TrustEvent' && (
+          <div className='flex flex-col gap-4 sm:flex-row justify-between'>
+            <TextInput
+              type='date'
+              required
+              value={formData.eventDate || ''}
+              onChange={(e) => setFormData((prev) => ({ ...prev, eventDate: e.target.value }))}
+              placeholder='Date de l’événement'
+            />
+            <TextInput
+              type='text'
+              required
+              value={formData.location || ''}
+              onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
+              placeholder="Lieu de l’événement"
+            />
+          </div>
+        )}
+
         <div className='flex gap-4 items-center justify-between border-4 border-teal-500 border-dotted p-3'>
           <FileInput type='file' accept='image/*' onChange={(e) => setFile(e.target.files[0])} />
           <Button
@@ -330,29 +197,27 @@ export default function UpdatePost() {
             size='sm'
             outline
             onClick={handleUploadImage}
-            disabled={!!imageUploadProgress}
+            disabled={uploading}
           >
-            {imageUploadProgress ? (
-              <div className='w-16 h-16'>
-                <CircularProgressbar value={imageUploadProgress} text={`${imageUploadProgress || 0}%`} />
-              </div>
-            ) : (
-              'Upload Image'
-            )}
+            {uploading ? 'Téléversement...' : 'Uploader une image'}
           </Button>
         </div>
-        {imageUploadError && <Alert color='failure'>{imageUploadError}</Alert>}
+        {uploadError && <Alert color='failure'>{uploadError}</Alert>}
         {formData.image && <img src={formData.image} alt='upload' className='w-full h-72 object-cover' />}
         <ReactQuill
           theme='snow'
           value={formData.content}
-          placeholder='Write something...'
+          placeholder='Rédigez votre contenu...'
           className='h-72 mb-12'
           required
           onChange={(value) => setFormData((prev) => ({ ...prev, content: value }))}
         />
-        <Button type='submit' gradientDuoTone='purpleToPink'>Update Post</Button>
-        {publishError && <Alert className='mt-5' color='failure'>{publishError}</Alert>}
+        <Button type='submit' gradientDuoTone='purpleToPink'>
+          Mettre à jour
+        </Button>
+        {publishError && <Alert className='mt-5' color='failure'>
+          {publishError}
+        </Alert>}
       </form>
     </div>
   );
