@@ -4,6 +4,13 @@
 
 body {
   height: 100vh;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 40%, #f8fafc 100%);
+  color: #0f172a;
+}
+
+.dark body {
+  background: #0b1120;
+  color: #e2e8f0;
 }
 
 .ql-editor {
@@ -11,20 +18,21 @@ body {
 }
 
 .post-content p {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.8;
 }
 
 .post-content h1 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  font-family: sans-serif;
-  margin: 1.5rem 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  margin: 1.5rem 0 0.75rem;
 }
 
 .post-content h2 {
-  font-size: 1.4rem;
-  font-family: sans-serif;
-  margin: 1.5rem 0;
+  font-size: 1.5rem;
+  font-family: 'Inter', sans-serif;
+  margin: 1.25rem 0 0.5rem;
 }
 
 .post-content a {
