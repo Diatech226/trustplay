@@ -16,6 +16,17 @@ export default function Header() {
   const { theme } = useSelector((state) => state.theme);
   const [searchTerm, setSearchTerm] = useState('');
   const API_URL = import.meta.env.VITE_API_URL;
+  const navItems = [
+    { path: '/', label: 'Accueil' },
+    { path: '/news', label: 'News' },
+    { path: '/politique', label: 'Politique' },
+    { path: '/science', label: 'Science & Tech' },
+    { path: '/sport', label: 'Sport' },
+    { path: '/cinema', label: 'Cinéma' },
+    { path: '/event', label: 'Trust Events' },
+    { path: '/production', label: 'Trust Prod' },
+    { path: '/about', label: 'À propos' },
+  ];
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
@@ -50,30 +61,38 @@ export default function Header() {
   };
 
   return (
-    <Navbar className='border-b-2'>
+    <Navbar
+      fluid
+      className='sticky top-0 z-50 border-b bg-white/90 backdrop-blur dark:bg-slate-900/90'
+    >
       <Link
         to='/'
-        className='self-center whitespace-nowrap text-sm sm:text-xl font-semibold dark:text-white'
+        className='self-center whitespace-nowrap text-lg sm:text-xl font-semibold dark:text-white flex items-center gap-2'
       >
-        <span className='px-2 py-1 bg-gradient-to-r from-green-500 via-black-500 to-green-500 rounded-lg text-white'>
+        <span className='px-3 py-1 bg-gradient-to-r from-ocean via-primary to-secondary rounded-xl text-white shadow-subtle'>
           Trust
         </span>
-        
+        <span className='hidden sm:inline text-slate-600 dark:text-slate-200 tracking-tight'>Média</span>
       </Link>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className='hidden lg:flex items-center w-full max-w-lg mx-8'>
         <TextInput
           type='text'
-          placeholder='Search...'
+          placeholder='Rechercher un article, une rubrique…'
           rightIcon={AiOutlineSearch}
-          className='hidden lg:inline'
+          className='w-full'
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </form>
-      <Button className='w-12 h-10 lg:hidden' color='gray' pill>
-        <AiOutlineSearch />
-      </Button>
-      <div className='flex gap-2 md:order-2'>
+      <div className='flex gap-2 md:order-2 items-center'>
+        <Button
+          className='w-11 h-10 lg:hidden border border-slate-200 dark:border-slate-700'
+          color='gray'
+          pill
+          onClick={() => navigate('/search')}
+        >
+          <AiOutlineSearch />
+        </Button>
         <Button
           className='w-12 h-10 hidden sm:inline'
           color='gray'
@@ -112,33 +131,26 @@ export default function Header() {
         <Navbar.Toggle />
       </div>
       <Navbar.Collapse>
-        <Navbar.Link active={path === '/'} as={'div'}>
-          <Link to='/'>Accueil</Link>
-        </Navbar.Link>
-        <Navbar.Link active={path === '/news'} as={'div'}>
-          <Link to='/news'>News</Link>
-        </Navbar.Link>
-        <Navbar.Link active={path === '/politique'} as={'div'}>
-          <Link to='/politique'>Politique</Link>
-        </Navbar.Link>
-        <Navbar.Link active={path === '/science'} as={'div'}>
-          <Link to='/science'>Science &amp; Tech</Link>
-        </Navbar.Link>
-        <Navbar.Link active={path === '/sport'} as={'div'}>
-          <Link to='/sport'>Sport</Link>
-        </Navbar.Link>
-        <Navbar.Link active={path === '/cinema'} as={'div'}>
-          <Link to='/cinema'>Cinéma</Link>
-        </Navbar.Link>
-        <Navbar.Link active={path === '/event'} as={'div'}>
-          <Link to='/event'>Trust Events</Link>
-        </Navbar.Link>
-        <Navbar.Link active={path === '/production'} as={'div'}>
-          <Link to='/production'>Trust Prod</Link>
-        </Navbar.Link>
-        <Navbar.Link active={path === '/about'} as={'div'}>
-          <Link to='/about'>À propos</Link>
-        </Navbar.Link>
+        {navItems.map((item) => {
+          const isActive = path === item.path;
+          return (
+            <Navbar.Link key={item.path} active={isActive} as={'div'}>
+              <Link
+                to={item.path}
+                className={`relative pb-1 transition-colors ${
+                  isActive
+                    ? 'text-primary dark:text-white'
+                    : 'text-slate-600 hover:text-primary'
+                }`}
+              >
+                {item.label}
+                {isActive && (
+                  <span className='absolute left-0 -bottom-1 h-0.5 w-full bg-accent'></span>
+                )}
+              </Link>
+            </Navbar.Link>
+          );
+        })}
       </Navbar.Collapse>
     </Navbar>
   );
