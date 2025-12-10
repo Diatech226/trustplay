@@ -8,14 +8,14 @@ Site web de média en ligne construit avec React et Vite. L'application propose 
 - Page de détail d'article avec image, métadonnées, contenu HTML et suggestions d'articles récents.
 - Recherche et filtrage des posts avec critères (terme, ordre chronologique, catégorie) et pagination par chargement incrémental.
 - Authentification par email/mot de passe et Google OAuth, token stocké côté navigateur ; redirections protégées (dashboard, création/mise à jour d'article).
-- Création et modification d'articles avec éditeur riche (ReactQuill), upload d'image sur Firebase Storage et gestion des catégories/sous-catégories (TrustMedia, TrustEvent, TrustProduction + News/Politique/…).
+- Création et modification d'articles avec éditeur riche (ReactQuill), upload d'image envoyé au backend (`/api/uploads`) et gestion des catégories/sous-catégories (TrustMedia, TrustEvent, TrustProduction + News/Politique/…).
 - Gestion des commentaires avec création authentifiée et affichage de la liste des commentaires d’un article.
 - Thème clair/sombre mémorisé via Redux Persist.
 
 ## Architecture technique
 - **Frontend** : React 18 + Vite 5, routage `react-router-dom`, composants UI `flowbite-react`, icônes `react-icons`, éditeur riche `react-quill`.
 - **État global** : Redux Toolkit (`@reduxjs/toolkit`) avec persistance (`redux-persist`) pour l'utilisateur et le thème.
-- **Auth & médias** : Firebase (auth Google et stockage d’images).
+- **Auth & médias** : Firebase (auth Google) ; les images sont envoyées au backend.
 - **Appel API** : toutes les données métiers (posts, commentaires, utilisateurs) proviennent d’un backend REST configuré via `VITE_API_URL` (non inclus dans ce dépôt).
 - **Styles** : Tailwind CSS + plugins (`@tailwindcss/line-clamp`, `tailwind-scrollbar`).
 

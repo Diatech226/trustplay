@@ -1,13 +1,6 @@
 import { Alert, Button, Modal, ModalBody, TextInput } from 'flowbite-react';
 import { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
-import {
-  getDownloadURL,
-  getStorage,
-  ref,
-  uploadBytesResumable,
-} from 'firebase/storage';
-import { app } from '../firebase';
 import { CircularProgressbar } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
 import {
@@ -22,6 +15,7 @@ import {
 import { useDispatch } from 'react-redux';
 import { HiOutlineExclamationCircle } from 'react-icons/hi';
 import { Link } from 'react-router-dom';
+import { uploadImageFile } from '../utils/uploadImage';
 
 export default function DashProfile() {
   const { currentUser, error, loading } = useSelector((state) => state.user);
@@ -52,47 +46,22 @@ export default function DashProfile() {
   }, [imageFile]);
 
   const uploadImage = async () => {
-    // service firebase.storage {
-    //   match /b/{bucket}/o {
-    //     match /{allPaths=**} {
-    //       allow read;
-    //       allow write: if
-    //       request.resource.size < 2 * 1024 * 1024 &&
-    //       request.resource.contentType.matches('image/.*')
-    //     }
-    //   }
-    // }
     setImageFileUploading(true);
     setImageFileUploadError(null);
-    const storage = getStorage(app);
-    const fileName = new Date().getTime() + imageFile.name;
-    const storageRef = ref(storage, fileName);
-    const uploadTask = uploadBytesResumable(storageRef, imageFile);
-    uploadTask.on(
-      'state_changed',
-      (snapshot) => {
-        const progress =
-          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-
-        setImageFileUploadProgress(progress.toFixed(0));
-      },
-      (error) => {
-        setImageFileUploadError(
-          'Could not upload image (File must be less than 2MB)'
-        );
-        setImageFileUploadProgress(null);
-        setImageFile(null);
-        setImageFileUrl(null);
-        setImageFileUploading(false);
-      },
-      () => {
-        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-          setImageFileUrl(downloadURL);
-          setFormData({ ...formData, profilePicture: downloadURL });
-          setImageFileUploading(false);
-        });
-      }
-    );
+    setImageFileUploadProgress(0);
+    try {
+      const uploadedUrl = await uploadImageFile(imageFile, API_URL);
+      setImageFileUploadProgress(100);
+      setImageFileUrl(uploadedUrl);
+      setFormData({ ...formData, profilePicture: uploadedUrl });
+    } catch (error) {
+      setImageFileUploadError(error.message);
+      setImageFile(null);
+      setImageFileUrl(null);
+    } finally {
+      setImageFileUploadProgress(null);
+      setImageFileUploading(false);
+    }
   };
 
   const handleChange = (e) => {

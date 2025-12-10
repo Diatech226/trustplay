@@ -7,10 +7,9 @@ export default function Search() {
   const [sidebarData, setSidebarData] = useState({
     searchTerm: '',
     sort: 'desc',
-    category: 'uncategorized',
+    subCategory: 'all',
   });
   const API_URL = import.meta.env.VITE_API_URL;
-  console.log(sidebarData);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showMore, setShowMore] = useState(false);
@@ -21,21 +20,37 @@ export default function Search() {
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
-    const searchTermFromUrl = urlParams.get('searchTerm');
-    const sortFromUrl = urlParams.get('sort');
-    const categoryFromUrl = urlParams.get('category');
-    if (searchTermFromUrl || sortFromUrl || categoryFromUrl) {
-      setSidebarData({
-        ...sidebarData,
-        searchTerm: searchTermFromUrl,
-        sort: sortFromUrl,
-        category: categoryFromUrl,
-      });
-    }
+    const searchTermFromUrl = urlParams.get('searchTerm') || '';
+    const sortFromUrl = urlParams.get('sort') || 'desc';
+    const subCategoryFromUrl = urlParams.get('subCategory') || 'all';
+    const nextFilters = {
+      searchTerm: searchTermFromUrl,
+      sort: sortFromUrl,
+      subCategory: subCategoryFromUrl,
+    };
+
+    setSidebarData(nextFilters);
 
     const fetchPosts = async () => {
       setLoading(true);
-      const searchQuery = urlParams.toString();
+      const queryParams = new URLSearchParams(location.search);
+      if (nextFilters.subCategory === 'all') {
+        queryParams.delete('subCategory');
+      }
+      if (!nextFilters.searchTerm) {
+        queryParams.delete('searchTerm');
+      }
+      queryParams.set('sort', nextFilters.sort || 'desc');
+      if (!nextFilters.sort) {
+        queryParams.delete('sort');
+      }
+      if (nextFilters.searchTerm) {
+        queryParams.set('searchTerm', nextFilters.searchTerm);
+      }
+      if (nextFilters.subCategory !== 'all') {
+        queryParams.set('subCategory', nextFilters.subCategory);
+      }
+      const searchQuery = queryParams.toString();
       const res = await fetch(`${API_URL}/api/post/getposts?${searchQuery}`);
       if (!res.ok) {
         setLoading(false);
@@ -53,7 +68,7 @@ export default function Search() {
       }
     };
     fetchPosts();
-  }, [location.search]);
+  }, [location.search, API_URL]);
 
   const handleChange = (e) => {
     if (e.target.id === 'searchTerm') {
@@ -63,9 +78,9 @@ export default function Search() {
       const order = e.target.value || 'desc';
       setSidebarData({ ...sidebarData, sort: order });
     }
-    if (e.target.id === 'category') {
-      const category = e.target.value || 'uncategorized';
-      setSidebarData({ ...sidebarData, category });
+    if (e.target.id === 'subCategory') {
+      const subCategory = e.target.value || 'all';
+      setSidebarData({ ...sidebarData, subCategory });
     }
   };
 
@@ -74,7 +89,11 @@ export default function Search() {
     const urlParams = new URLSearchParams(location.search);
     urlParams.set('searchTerm', sidebarData.searchTerm);
     urlParams.set('sort', sidebarData.sort);
-    urlParams.set('category', sidebarData.category);
+    if (sidebarData.subCategory === 'all') {
+      urlParams.delete('subCategory');
+    } else {
+      urlParams.set('subCategory', sidebarData.subCategory);
+    }
     const searchQuery = urlParams.toString();
     navigate(`/search?${searchQuery}`);
   };
@@ -124,16 +143,14 @@ export default function Search() {
             </Select>
           </div>
           <div className='flex items-center gap-2'>
-            <label className='font-semibold'>Category:</label>
-            <Select
-              onChange={handleChange}
-              value={sidebarData.category}
-              id='category'
-            >
-              <option value='uncategorized'>Uncategorized</option>
-              <option value='Media'>Media</option>
-              <option value='Event'>Event</option>
-        
+            <label className='font-semibold'>Rubrique:</label>
+            <Select onChange={handleChange} value={sidebarData.subCategory} id='subCategory'>
+              <option value='all'>Toutes</option>
+              <option value='news'>News</option>
+              <option value='politique'>Politique</option>
+              <option value='science'>Science/Tech</option>
+              <option value='sport'>Sport</option>
+              <option value='cinema'>Cinéma</option>
             </Select>
           </div>
           <Button type='submit' outline gradientDuoTone='purpleToPink'>
@@ -149,7 +166,7 @@ export default function Search() {
           {!loading && posts.length === 0 && (
             <p className='text-xl text-gray-500'>Posts non trouvés</p>
           )}
-          {loading && <p className='text-xl text-gray-500'>En téléchatgement...</p>}
+          {loading && <p className='text-xl text-gray-500'>En téléchargement...</p>}
           {!loading &&
             posts &&
             posts.map((post) => <PostCard key={post._id} post={post} />)}

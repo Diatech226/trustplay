@@ -75,23 +75,20 @@ export default function Home() {
   const categories = [
     { name: 'Tous', key: 'all' },
     { name: 'News', key: 'news' },
-    { name: 'politique', key: 'politique' },
-    { name: 'Economie', key: 'economie' },
-    { name: 'Culture', key: 'culture' },
-    { name: 'Technologie', key: 'technologie' },
+    { name: 'Politique', key: 'politique' },
+    { name: 'Science/Tech', key: 'science' },
     { name: 'Sport', key: 'sport' },
-    { name: 'Portraits', key: 'portraits' },
+    { name: 'Cinéma', key: 'cinema' },
   ];
 
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/post/getPosts`)
+        const res = await fetch(`${API_URL}/api/post/getposts`);
         if (!res.ok) {
           throw new Error('Erreur lors du chargement des posts');
         }
         const data = await res.json();
-        console.log("Posts récupérés :", data.posts); // 🔍 Vérifier la structure ici
         setPosts(data.posts || []);
       } catch (error) {
         console.error(error.message);
@@ -100,7 +97,7 @@ export default function Home() {
       }
     };
     fetchPosts();
-  }, []);
+  }, [API_URL]);
   
 
   // Optimisation : Utilisation de `useMemo` pour éviter le recalcul inutile
