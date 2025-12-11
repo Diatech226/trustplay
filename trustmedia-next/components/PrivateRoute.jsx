@@ -1,0 +1,12 @@
+"use client";
+
+// migrated from Vite React route to Next.js app router
+
+
+import { useSelector } from 'react-redux';
+import { Outlet, Navigate } from 'react-router-dom';
+
+export default function PrivateRoute() {
+  const { currentUser } = useSelector((state) => state.user);
+  return currentUser ? <Outlet /> : <Navigate to='/sign-in' />;
+}
