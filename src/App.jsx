@@ -24,6 +24,9 @@ import SciencePage from './pages/SciencePage';
 import SportPage from './pages/SportPage';
 import CinemaPage from './pages/CinemaPage';
 import NewsPage from './pages/NewsPage';
+import Favorites from './pages/Favorites';
+import History from './pages/History';
+import NotificationsPreferences from './pages/NotificationsPreferences';
 
 export default function App() {
   return (
@@ -39,6 +42,9 @@ export default function App() {
           <Route path='/search' element={<Search />} />
           <Route path='/event' element={<TrustEvent />} />
           <Route path='/production' element={<TrustProd />} />
+          <Route path='/favorites' element={<Favorites />} />
+          <Route path='/history' element={<History />} />
+          <Route path='/notifications-preferences' element={<NotificationsPreferences />} />
           <Route path='/news' element={<NewsPage />} />
           <Route path='/politique' element={<PoliticsPage />} />
           <Route path='/science' element={<SciencePage />} />

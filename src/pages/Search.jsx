@@ -6,8 +6,10 @@ import PostCard from '../components/PostCard';
 export default function Search() {
   const [sidebarData, setSidebarData] = useState({
     searchTerm: '',
-    sort: 'desc',
+    sort: 'recent',
     subCategory: 'all',
+    dateRange: 'any',
+    tags: '',
   });
   const API_URL = import.meta.env.VITE_API_URL;
   const [posts, setPosts] = useState([]);
@@ -18,15 +20,20 @@ export default function Search() {
 
   const navigate = useNavigate();
 
+
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const searchTermFromUrl = urlParams.get('searchTerm') || '';
-    const sortFromUrl = urlParams.get('sort') || 'desc';
+    const sortFromUrl = urlParams.get('sort') || 'recent';
     const subCategoryFromUrl = urlParams.get('subCategory') || 'all';
+    const dateRangeFromUrl = urlParams.get('dateRange') || 'any';
+    const tagsFromUrl = urlParams.get('tags') || '';
     const nextFilters = {
       searchTerm: searchTermFromUrl,
       sort: sortFromUrl,
       subCategory: subCategoryFromUrl,
+      dateRange: dateRangeFromUrl,
+      tags: tagsFromUrl,
     };
 
     setSidebarData(nextFilters);
@@ -34,22 +41,6 @@ export default function Search() {
     const fetchPosts = async () => {
       setLoading(true);
       const queryParams = new URLSearchParams(location.search);
-      if (nextFilters.subCategory === 'all') {
-        queryParams.delete('subCategory');
-      }
-      if (!nextFilters.searchTerm) {
-        queryParams.delete('searchTerm');
-      }
-      queryParams.set('sort', nextFilters.sort || 'desc');
-      if (!nextFilters.sort) {
-        queryParams.delete('sort');
-      }
-      if (nextFilters.searchTerm) {
-        queryParams.set('searchTerm', nextFilters.searchTerm);
-      }
-      if (nextFilters.subCategory !== 'all') {
-        queryParams.set('subCategory', nextFilters.subCategory);
-      }
       const searchQuery = queryParams.toString();
       const res = await fetch(`${API_URL}/api/post/getposts?${searchQuery}`);
       if (!res.ok) {
@@ -58,7 +49,8 @@ export default function Search() {
       }
       if (res.ok) {
         const data = await res.json();
-        setPosts(data.posts);
+        const filtered = applyAdvancedFilters(data.posts, nextFilters);
+        setPosts(filtered);
         setLoading(false);
         if (data.posts.length === 9) {
           setShowMore(true);
@@ -71,17 +63,8 @@ export default function Search() {
   }, [location.search, API_URL]);
 
   const handleChange = (e) => {
-    if (e.target.id === 'searchTerm') {
-      setSidebarData({ ...sidebarData, searchTerm: e.target.value });
-    }
-    if (e.target.id === 'sort') {
-      const order = e.target.value || 'desc';
-      setSidebarData({ ...sidebarData, sort: order });
-    }
-    if (e.target.id === 'subCategory') {
-      const subCategory = e.target.value || 'all';
-      setSidebarData({ ...sidebarData, subCategory });
-    }
+    const { id, value } = e.target;
+    setSidebarData({ ...sidebarData, [id]: value });
   };
 
   const handleSubmit = (e) => {
@@ -89,6 +72,8 @@ export default function Search() {
     const urlParams = new URLSearchParams(location.search);
     urlParams.set('searchTerm', sidebarData.searchTerm);
     urlParams.set('sort', sidebarData.sort);
+    urlParams.set('dateRange', sidebarData.dateRange);
+    urlParams.set('tags', sidebarData.tags);
     if (sidebarData.subCategory === 'all') {
       urlParams.delete('subCategory');
     } else {
@@ -110,13 +95,52 @@ export default function Search() {
     }
     if (res.ok) {
       const data = await res.json();
-      setPosts([...posts, ...data.posts]);
+      const filtered = applyAdvancedFilters([...posts, ...data.posts], sidebarData);
+      setPosts(filtered);
       if (data.posts.length === 9) {
         setShowMore(true);
       } else {
         setShowMore(false);
       }
     }
+  };
+
+  const applyAdvancedFilters = (list, filters) => {
+    // advanced search
+    let results = [...list];
+    if (filters.subCategory !== 'all') {
+      results = results.filter((item) => item.subCategory === filters.subCategory);
+    }
+    if (filters.searchTerm) {
+      const term = filters.searchTerm.toLowerCase();
+      results = results.filter((item) =>
+        item.title.toLowerCase().includes(term) || item.content?.toLowerCase().includes(term)
+      );
+    }
+    if (filters.tags) {
+      const tagsArray = filters.tags.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
+      results = results.filter((item) =>
+        tagsArray.every((tag) => item.content?.toLowerCase().includes(tag) || item.title.toLowerCase().includes(tag))
+      );
+    }
+    if (filters.dateRange && filters.dateRange !== 'any') {
+      const now = new Date();
+      const ranges = { '24h': 1, '7d': 7, '30d': 30, '1y': 365 };
+      const days = ranges[filters.dateRange];
+      results = results.filter((item) => {
+        const created = new Date(item.createdAt);
+        const diffDays = (now - created) / (1000 * 60 * 60 * 24);
+        return diffDays <= days;
+      });
+    }
+    if (filters.sort === 'popular') {
+      results.sort((a, b) => (b.views || b.likes || 0) - (a.views || a.likes || 0));
+    } else if (filters.sort === 'relevance') {
+      results.sort((a, b) => (b?.title?.length || 0) - (a?.title?.length || 0));
+    } else {
+      results.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
+    return results;
   };
 
   return (
@@ -147,8 +171,9 @@ export default function Search() {
               <div className='space-y-2'>
                 <label className='text-sm font-semibold text-slate-700 dark:text-slate-200'>Trier</label>
                 <Select onChange={handleChange} value={sidebarData.sort} id='sort'>
-                  <option value='desc'>Les plus récents</option>
-                  <option value='asc'>Les plus anciens</option>
+                  <option value='recent'>Les plus récents</option>
+                  <option value='popular'>Les plus populaires</option>
+                  <option value='relevance'>Pertinence</option>
                 </Select>
               </div>
               <div className='space-y-2'>
@@ -161,6 +186,26 @@ export default function Search() {
                   <option value='sport'>Sport</option>
                   <option value='cinema'>Cinéma</option>
                 </Select>
+              </div>
+              <div className='space-y-2'>
+                <label className='text-sm font-semibold text-slate-700 dark:text-slate-200'>Période</label>
+                <Select onChange={handleChange} value={sidebarData.dateRange} id='dateRange'>
+                  <option value='any'>Toutes dates</option>
+                  <option value='24h'>Dernières 24h</option>
+                  <option value='7d'>7 jours</option>
+                  <option value='30d'>30 jours</option>
+                  <option value='1y'>Dernière année</option>
+                </Select>
+              </div>
+              <div className='space-y-2'>
+                <label className='text-sm font-semibold text-slate-700 dark:text-slate-200'>Tags</label>
+                <TextInput
+                  id='tags'
+                  placeholder='ex: climat, IA'
+                  value={sidebarData.tags}
+                  onChange={handleChange}
+                  helperText='Séparez les tags par une virgule'
+                />
               </div>
               <Button type='submit' gradientDuoTone='purpleToPink' className='w-full'>
                 Appliquer les filtres

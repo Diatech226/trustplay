@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import FavoriteButton from './FavoriteButton';
 
 export default function PostCard({ post }) {
   const subCategoryLabel = {
@@ -24,6 +25,9 @@ export default function PostCard({ post }) {
             {subCategoryLabel}
           </span>
         )}
+        <div className='absolute right-4 top-4'>
+          <FavoriteButton post={post} />
+        </div>
       </Link>
       <div className='flex flex-1 flex-col gap-3 px-5 py-4'>
         <div className='flex items-center justify-between text-xs text-slate-500'>
