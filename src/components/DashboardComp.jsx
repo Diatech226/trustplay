@@ -127,7 +127,7 @@ export default function DashboardComp() {
           <div className='flex justify-between  p-3 text-sm font-semibold'>
             <h1 className='text-center p-2'>Utilisateurs récents</h1>
             <Button outline gradientDuoTone='purpleToPink'>
-              <Link to={'/dashboard?tab=users'}>Voir tout</Link>
+              <Link to={'/dashboard/users'}>Voir tout</Link>
             </Button>
           </div>
           <Table hoverable>
@@ -156,7 +156,7 @@ export default function DashboardComp() {
           <div className='flex justify-between  p-3 text-sm font-semibold'>
             <h1 className='text-center p-2'>Commentaires récents</h1>
             <Button outline gradientDuoTone='purpleToPink'>
-              <Link to={'/dashboard?tab=comments'}>See all</Link>
+              <Link to={'/dashboard/comments'}>See all</Link>
             </Button>
           </div>
           <Table hoverable>
@@ -181,7 +181,7 @@ export default function DashboardComp() {
           <div className='flex justify-between  p-3 text-sm font-semibold'>
             <h1 className='text-center p-2'>Recent posts</h1>
             <Button outline gradientDuoTone='purpleToPink'>
-              <Link to={'/dashboard?tab=posts'}>See all</Link>
+              <Link to={'/dashboard/posts'}>See all</Link>
             </Button>
           </div>
           <Table hoverable>
