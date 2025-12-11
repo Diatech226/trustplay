@@ -4,8 +4,7 @@ import { requireAdmin } from '@/lib/roles';
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const id = Number(params.id);
-    if (Number.isNaN(id)) return NextResponse.json({ success: false, error: 'Identifiant invalide' }, { status: 400 });
+    const { id } = params;
     const post = await prisma.post.findUnique({ where: { id } });
     if (!post) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
     return NextResponse.json({ success: true, data: post });
@@ -17,8 +16,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     await requireAdmin(request);
-    const id = Number(params.id);
-    if (Number.isNaN(id)) return NextResponse.json({ success: false, error: 'Identifiant invalide' }, { status: 400 });
+    const { id } = params;
     const data = await request.json();
     const post = await prisma.post.update({ where: { id }, data });
     return NextResponse.json({ success: true, data: post });
@@ -31,8 +29,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     await requireAdmin(request);
-    const id = Number(params.id);
-    if (Number.isNaN(id)) return NextResponse.json({ success: false, error: 'Identifiant invalide' }, { status: 400 });
+    const { id } = params;
     await prisma.post.delete({ where: { id } });
     return NextResponse.json({ success: true, data: { id } });
   } catch (error) {

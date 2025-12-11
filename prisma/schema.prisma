@@ -3,29 +3,24 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id           Int      @id @default(autoincrement())
-  email        String   @unique
-  passwordHash String
-  name         String?
-  role         Role     @default(USER)
-  posts        Post[]
+  id            String              @id @default(auto()) @map("_id") @db.ObjectId
+  email         String              @unique
+  passwordHash  String
+  name          String?
+  role          String              @default("USER")
+  posts         Post[]
   registrations EventRegistration[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-}
-
-enum Role {
-  USER
-  ADMIN
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
 }
 
 model Post {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
   title       String
   slug        String   @unique
   category    String   @default("TrustMedia")
@@ -37,29 +32,29 @@ model Post {
   updatedAt   DateTime @updatedAt
   views       Int      @default(0)
   author      User?    @relation(fields: [authorId], references: [id])
-  authorId    Int?
+  authorId    String?  @db.ObjectId
 }
 
 model Event {
-  id          Int      @id @default(autoincrement())
-  title       String
-  slug        String   @unique
-  description String
-  eventDate   DateTime
-  location    String
-  isPaid      Boolean  @default(false)
-  price       Float?
-  imageUrl    String?
-  capacity    Int?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String              @id @default(auto()) @map("_id") @db.ObjectId
+  title         String
+  slug          String   @unique
+  description   String
+  eventDate     DateTime
+  location      String
+  isPaid        Boolean             @default(false)
+  price         Float?
+  imageUrl      String?
+  capacity      Int?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
   registrations EventRegistration[]
 }
 
 model EventRegistration {
-  id        Int      @id @default(autoincrement())
-  eventId   Int
-  userId    Int?
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  eventId   String   @db.ObjectId
+  userId    String?  @db.ObjectId
   email     String?
   name      String?
   createdAt DateTime @default(now())
