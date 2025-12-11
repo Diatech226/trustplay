@@ -98,6 +98,10 @@ export default function PostPage() {
   const subCategoryPaths = {
     news: { label: 'News', href: '/news' },
     politique: { label: 'Politique', href: '/politique' },
+    economie: { label: 'Économie', href: '/search?subCategory=economie' },
+    culture: { label: 'Culture', href: '/search?subCategory=culture' },
+    technologie: { label: 'Technologie', href: '/search?subCategory=technologie' },
+    portraits: { label: 'Portraits', href: '/search?subCategory=portraits' },
     science: { label: 'Science & Tech', href: '/science' },
     sport: { label: 'Sport', href: '/sport' },
     cinema: { label: 'Cinéma', href: '/cinema' },
