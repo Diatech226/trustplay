@@ -1,59 +1,65 @@
-import React from "react";
 import { Link } from "react-router-dom";
+import PageContainer from '../components/layout/PageContainer';
+import PageHeader from '../components/layout/PageHeader';
+import Seo from '../components/Seo';
 
 const About = () => {
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold text-center mb-6">À Propos de Trust</h1>
+    <main className="bg-mist/60 py-10 dark:bg-slate-950">
+      <Seo
+        title="À propos | Trust Media"
+        description="Découvrez Trust, complexe média, événementiel et production audiovisuelle basé à Pissy."
+      />
+      <PageContainer className="space-y-8">
+        <PageHeader
+          kicker="Institutionnel"
+          title="À propos de Trust"
+          description="Trust est un complexe regroupant médias, événementiel et production audiovisuelle, avec un studio basé à Pissy."
+        />
 
-      <p className="text-lg text-gray-700 text-center mb-8">
-        **Trust** est un complexe regroupant **médias, événementiel et production audiovisuelle**, avec un studio situé à **Pissy**.  
-        Nous produisons du contenu innovant et organisons des événements professionnels et culturels.
-      </p>
+        <div className="space-y-8 rounded-2xl bg-white p-8 shadow-subtle ring-1 ring-subtle dark:bg-slate-900 dark:ring-slate-800">
+          <section className="space-y-3">
+            <h2 className="text-2xl font-semibold text-primary">Trust : un complexe de communication</h2>
+            <p className="text-gray-700 dark:text-slate-200">
+              Trust est structuré autour de trois pôles complémentaires :
+            </p>
+            <ul className="list-inside list-disc space-y-2 text-gray-700 dark:text-slate-200">
+              <li><strong>Trust Media :</strong> articles, podcasts et émissions audiovisuelles sur l’actualité, la culture et l’innovation.</li>
+              <li><strong>Trust Event :</strong> agence spécialisée dans la communication événementielle.</li>
+              <li><strong>Trust Prod :</strong> production audiovisuelle (films, documentaires, publicités, clips).</li>
+            </ul>
+          </section>
 
-      {/* Section: Trust - Un Complexe de Communication */}
-      <div className="mb-10">
-        <h2 className="text-2xl font-semibold mb-4">🎬 Trust : Un Complexe de Communication</h2>
-        <p className="text-gray-700">
-          Trust est structuré autour de trois pôles :
-        </p>
-        <ul className="list-disc list-inside mt-3 space-y-2">
-          <li><strong>📢 Trust Media :</strong> Un média digital qui produit des **articles, podcasts et émissions audiovisuelles** sur l’actualité, la culture et l’innovation.</li>
-          <li><strong>🎉 Trust Event :</strong> Une agence spécialisée dans la **communication événementielle**, couvrant la conception, l’organisation et la gestion d’événements professionnels et culturels.</li>
-          <li><strong>🎥 Trust Prod :</strong> Une société de **production audiovisuelle** qui réalise des films, documentaires, vidéos publicitaires et clips musicaux.</li>
-        </ul>
-      </div>
+          <section className="space-y-3">
+            <h2 className="text-2xl font-semibold text-primary">Un studio moderne à Pissy</h2>
+            <p className="text-gray-700 dark:text-slate-200">
+              Notre studio est équipé de matériel professionnel pour la production vidéo et sonore.
+            </p>
+            <ul className="list-inside list-disc space-y-2 text-gray-700 dark:text-slate-200">
+              <li>Enregistrement et mixage audio</li>
+              <li>Tournage de vidéos et émissions</li>
+              <li>Montage et post-production</li>
+            </ul>
+          </section>
 
-      {/* Section: Un Studio de Production Moderne */}
-      <div className="mb-10">
-        <h2 className="text-2xl font-semibold mb-4">🏢 Un Studio de Production à Pissy</h2>
-        <p className="text-gray-700">
-          Situé à **Pissy**, notre studio est équipé de **matériel professionnel** pour répondre aux besoins de production vidéo et sonore.  
-          Nous proposons :
-        </p>
-        <ul className="list-disc list-inside mt-3 space-y-2">
-          <li>🎙 **Enregistrement et mixage audio**</li>
-          <li>🎥 **Tournage de vidéos et émissions**</li>
-          <li>💻 **Montage et post-production**</li>
-        </ul>
-      </div>
+          <section className="space-y-3">
+            <h2 className="text-2xl font-semibold text-primary">Notre vision</h2>
+            <p className="text-gray-700 dark:text-slate-200">
+              Révolutionner la communication et la production audiovisuelle en mettant créativité et expertise au service des entreprises, artistes et institutions.
+            </p>
+          </section>
 
-      {/* Section: Notre Vision */}
-      <div className="mb-10">
-        <h2 className="text-2xl font-semibold mb-4">🚀 Notre Vision</h2>
-        <p className="text-gray-700">
-          Nous avons pour ambition de **révolutionner la communication et la production audiovisuelle**,  
-          en mettant la créativité et l’expertise au service des entreprises, des artistes et des institutions.
-        </p>
-      </div>
-
-      {/* Call to Action */}
-      <div className="text-center">
-        <Link to="/contact" className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
-          Contactez-nous
-        </Link>
-      </div>
-    </div>
+          <div className="text-center">
+            <Link
+              to="/contact"
+              className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-white shadow-card transition hover:-translate-y-0.5 hover:shadow-lg"
+            >
+              Contactez-nous
+            </Link>
+          </div>
+        </div>
+      </PageContainer>
+    </main>
   );
 };
 

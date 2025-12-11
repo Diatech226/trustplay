@@ -4,13 +4,13 @@ import { FaThumbsUp } from 'react-icons/fa';
 import { useSelector } from 'react-redux';
 import { Button, Textarea } from 'flowbite-react';
 
+const API_URL = import.meta.env.VITE_API_URL;
 
 export default function Comment({ comment, onLike, onEdit, onDelete }) {
   const [user, setUser] = useState({});
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(comment.content);
   const { currentUser } = useSelector((state) => state.user);
-  const API_URL = import.meta.env.VITE_API_URL;
   // Récupérer les informations utilisateur lorsque le composant est monté
   useEffect(() => {
     const fetchUser = async () => {
@@ -26,12 +26,7 @@ export default function Comment({ comment, onLike, onEdit, onDelete }) {
     };
 
     fetchUser();
-  }, [comment.id]);
-
-  const handleEdit = () => {
-    setIsEditing(true);
-    setEditedContent(comment.content);
-  };
+  }, [API_URL, comment.id]);
 
   const handleSave = async () => {
     if (!currentUser) {
@@ -120,8 +115,19 @@ export default function Comment({ comment, onLike, onEdit, onDelete }) {
                 {comment.numberOfLikes > 0 &&
                   `${comment.numberOfLikes} ${comment.numberOfLikes === 1 ? 'like' : 'likes'}`}
               </p>
-              {currentUser && currentUser.comments.userId === comment.userId && (
+              {currentUser && currentUser.id === comment.userId && (
                 <>
+                  <button
+                    type='button'
+                    onClick={() => {
+                      setIsEditing(true);
+                      setEditedContent(comment.content);
+                      onEdit?.(comment.id);
+                    }}
+                    className='text-gray-400 hover:text-blue-500'
+                  >
+                    Modifier
+                  </button>
                   <button
                     type='button'
                     onClick={() => onDelete(comment.id)}

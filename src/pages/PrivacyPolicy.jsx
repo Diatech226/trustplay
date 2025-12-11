@@ -1,26 +1,51 @@
-import React from "react";
+import PageContainer from '../components/layout/PageContainer';
+import PageHeader from '../components/layout/PageHeader';
+import Seo from '../components/Seo';
 
 export default function PrivacyPolicy() {
   return (
-    <div className="max-w-3xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-4">Politique de Confidentialité</h1>
-      <p className="text-gray-600">Date d'effet : 31/03/2025</p>
+    <main className='bg-mist/60 py-10 dark:bg-slate-950'>
+      <Seo
+        title='Politique de confidentialité | Trust Media'
+        description='Consultez la politique de confidentialité de Trust Media : collecte, utilisation et protection des données.'
+      />
+      <PageContainer className='space-y-6'>
+        <PageHeader
+          kicker='Légal'
+          title='Politique de confidentialité'
+          description="Date d'effet : 31/03/2025"
+        />
 
-      <h2 className="text-2xl font-semibold mt-6">1. Collecte des Informations</h2>
-      <p>Nous collectons des informations personnelles telles que votre nom, email et numéro de téléphone, ainsi que des données d'utilisation (adresse IP, cookies).</p>
+        <div className='space-y-6 rounded-2xl bg-white p-6 shadow-subtle ring-1 ring-subtle dark:bg-slate-900 dark:ring-slate-800'>
+          <section className='space-y-2'>
+            <h2 className='text-2xl font-semibold text-primary'>1. Collecte des Informations</h2>
+            <p>Nous collectons des informations personnelles (nom, email, téléphone) ainsi que des données d'utilisation (adresse IP, cookies).</p>
+          </section>
 
-      <h2 className="text-2xl font-semibold mt-6">2. Utilisation des Données</h2>
-      <p>Vos informations sont utilisées pour améliorer nos services, envoyer des mises à jour et renforcer la sécurité de notre plateforme.</p>
+          <section className='space-y-2'>
+            <h2 className='text-2xl font-semibold text-primary'>2. Utilisation des Données</h2>
+            <p>Vos informations servent à améliorer nos services, envoyer des mises à jour et renforcer la sécurité de notre plateforme.</p>
+          </section>
 
-      <h2 className="text-2xl font-semibold mt-6">3. Protection des Données</h2>
-      <p>Nous mettons en place des mesures de sécurité pour protéger vos informations et nous ne les partageons pas avec des tiers sans votre consentement, sauf si la loi l'exige.</p>
+          <section className='space-y-2'>
+            <h2 className='text-2xl font-semibold text-primary'>3. Protection des Données</h2>
+            <p>Nous appliquons des mesures de sécurité adaptées et ne partageons vos données avec des tiers qu'en cas d'obligation légale.</p>
+          </section>
 
-      <h2 className="text-2xl font-semibold mt-6">4. Cookies</h2>
-      <p>Nous utilisons des cookies pour améliorer l'expérience utilisateur. Vous pouvez les désactiver dans les paramètres de votre navigateur.</p>
+          <section className='space-y-2'>
+            <h2 className='text-2xl font-semibold text-primary'>4. Cookies</h2>
+            <p>Les cookies améliorent votre expérience. Vous pouvez les désactiver dans les paramètres de votre navigateur.</p>
+          </section>
 
-      <h2 className="text-2xl font-semibold mt-6">5. Contact</h2>
-      <p>Pour toute question, contactez-nous à <a href="trustgroupmusic@gmail.com ou le +226 70 57 19 70" className="text-blue-500">Trust-group@gmail.com</a>.</p>
-     
-    </div>
+          <section className='space-y-2'>
+            <h2 className='text-2xl font-semibold text-primary'>5. Contact</h2>
+            <p>
+              Pour toute question, contactez-nous à
+              <a href='mailto:trust-group@gmail.com' className='pl-1 font-semibold text-primary underline'>trust-group@gmail.com</a>.
+            </p>
+          </section>
+        </div>
+      </PageContainer>
+    </main>
   );
 }

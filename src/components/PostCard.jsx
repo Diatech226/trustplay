@@ -17,7 +17,11 @@ export default function PostCard({ post }) {
       <Link to={`/post/${post.slug}`} className='relative h-56 w-full overflow-hidden sm:h-64'>
         <img
           src={post.image}
-          alt='post cover'
+          alt={post.title}
+          loading='lazy'
+          decoding='async'
+          width='640'
+          height='384'
           className='h-full w-full object-cover transition duration-500 group-hover:scale-105'
         />
         {subCategoryLabel && (

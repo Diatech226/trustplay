@@ -1,7 +1,12 @@
 import { Button, Select, TextInput } from 'flowbite-react';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import PageContainer from '../components/layout/PageContainer';
+import PageHeader from '../components/layout/PageHeader';
 import PostCard from '../components/PostCard';
+import PostCardSkeleton from '../components/skeletons/PostCardSkeleton';
+import Seo from '../components/Seo';
+import { fetchJson } from '../utils/apiClient';
 
 export default function Search() {
   const [sidebarData, setSidebarData] = useState({
@@ -15,6 +20,7 @@ export default function Search() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showMore, setShowMore] = useState(false);
+  const [error, setError] = useState('');
 
   const location = useLocation();
 
@@ -40,23 +46,22 @@ export default function Search() {
 
     const fetchPosts = async () => {
       setLoading(true);
+      setError('');
       const queryParams = new URLSearchParams(location.search);
       const searchQuery = queryParams.toString();
-      const res = await fetch(`${API_URL}/api/post/getposts?${searchQuery}`);
-      if (!res.ok) {
-        setLoading(false);
-        return;
-      }
-      if (res.ok) {
-        const data = await res.json();
+      try {
+        const data = await fetchJson(`${API_URL}/api/post/getposts?${searchQuery}`);
         const filtered = applyAdvancedFilters(data.posts, nextFilters);
         setPosts(filtered);
-        setLoading(false);
         if (data.posts.length === 9) {
           setShowMore(true);
         } else {
           setShowMore(false);
         }
+      } catch (err) {
+        setError('Impossible de récupérer les résultats.');
+      } finally {
+        setLoading(false);
       }
     };
     fetchPosts();
@@ -89,12 +94,8 @@ export default function Search() {
     const urlParams = new URLSearchParams(location.search);
     urlParams.set('startIndex', startIndex);
     const searchQuery = urlParams.toString();
-    const res = await fetch(`${API_URL}/api/post/getposts?${searchQuery}`);
-    if (!res.ok) {
-      return;
-    }
-    if (res.ok) {
-      const data = await res.json();
+    try {
+      const data = await fetchJson(`${API_URL}/api/post/getposts?${searchQuery}`);
       const filtered = applyAdvancedFilters([...posts, ...data.posts], sidebarData);
       setPosts(filtered);
       if (data.posts.length === 9) {
@@ -102,6 +103,8 @@ export default function Search() {
       } else {
         setShowMore(false);
       }
+    } catch (err) {
+      setError('Impossible de charger plus de résultats.');
     }
   };
 
@@ -144,15 +147,17 @@ export default function Search() {
   };
 
   return (
-    <div className='min-h-screen bg-mist/60 py-8 dark:bg-slate-950'>
-      <div className='mx-auto flex max-w-6xl flex-col gap-6 px-4'>
-        <header className='flex flex-col gap-2 rounded-2xl bg-white/80 p-6 shadow-subtle ring-1 ring-subtle backdrop-blur dark:bg-slate-900/80 dark:ring-slate-800'>
-          <p className='text-xs font-semibold uppercase tracking-[0.25em] text-primary'>Recherche éditoriale</p>
-          <h1 className='text-3xl font-extrabold text-primary'>Explorez les archives Trust Media</h1>
-          <p className='text-slate-600 dark:text-slate-300'>
-            Filtrez par rubrique, pertinence et date pour accéder rapidement aux articles qui comptent.
-          </p>
-        </header>
+    <main className='min-h-screen bg-mist/60 py-8 dark:bg-slate-950'>
+      <Seo
+        title='Recherche | Trust Media'
+        description="Explorez les archives Trust Media grâce aux filtres avancés : rubrique, période, popularité et tags."
+      />
+      <PageContainer className='flex flex-col gap-6'>
+        <PageHeader
+          kicker='Recherche éditoriale'
+          title='Explorez les archives Trust Media'
+          description='Filtrez par rubrique, pertinence et date pour accéder rapidement aux articles qui comptent.'
+        />
 
         <div className='grid gap-6 lg:grid-cols-[320px,1fr]'>
           <div className='rounded-2xl bg-white p-5 shadow-card ring-1 ring-subtle dark:bg-slate-900 dark:ring-slate-800'>
@@ -218,13 +223,21 @@ export default function Search() {
               <h2 className='text-2xl font-bold text-primary'>Résultats</h2>
               <span className='text-sm text-slate-500 dark:text-slate-300'>{posts.length} articles</span>
             </div>
+            {error && (
+              <p className='mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-900/30 dark:text-red-100 dark:ring-red-800'>
+                {error}
+              </p>
+            )}
             <div className='mt-5 grid gap-5 md:grid-cols-2'>
+              {loading &&
+                Array.from({ length: 4 }).map((_, index) => (
+                  <PostCardSkeleton key={`search-${index}`} />
+                ))}
               {!loading && posts.length === 0 && (
                 <div className='col-span-full rounded-xl border border-dashed border-subtle bg-subtle/30 p-6 text-center text-slate-500 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-200'>
                   Aucun résultat trouvé. Essayez d'autres mots-clés ou changez de rubrique.
                 </div>
               )}
-              {loading && <p className='text-slate-500'>En téléchargement...</p>}
               {!loading && posts && posts.map((post) => <PostCard key={post._id} post={post} />)}
             </div>
             {showMore && (
@@ -237,7 +250,7 @@ export default function Search() {
             )}
           </div>
         </div>
-      </div>
-    </div>
+      </PageContainer>
+    </main>
   );
 }
