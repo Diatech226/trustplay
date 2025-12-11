@@ -10,8 +10,13 @@ import { uploadImageFile } from '../utils/uploadImage';
 const MEDIA_SUBCATEGORIES = [
   { value: 'news', label: 'News' },
   { value: 'politique', label: 'Politique' },
-  { value: 'science', label: 'Science/Tech' },
+  { value: 'economie', label: 'Économie' },
+  { value: 'culture', label: 'Culture' },
+  { value: 'technologie', label: 'Technologie' },
   { value: 'sport', label: 'Sport' },
+  { value: 'portraits', label: 'Portraits' },
+  // Legacy sub categories kept for backward compatibility
+  { value: 'science', label: 'Science/Tech' },
   { value: 'cinema', label: 'Cinéma' },
 ];
 
@@ -38,6 +43,10 @@ export default function UpdatePost() {
     subCategory: MEDIA_SUBCATEGORIES[0].value,
     content: '',
     image: '',
+    eventDate: '',
+    location: '',
+    isPaid: false,
+    price: 0,
   });
 
   useEffect(() => {
@@ -57,7 +66,16 @@ export default function UpdatePost() {
               : fetchedPost.category === 'Event'
               ? 'TrustEvent'
               : fetchedPost.category;
-          setFormData((prev) => ({ ...prev, ...fetchedPost, category: normalizedCategory }));
+          setFormData((prev) => ({
+            ...prev,
+            ...fetchedPost,
+            category: normalizedCategory,
+            // CMS: events (TrustEvent)
+            eventDate: fetchedPost.eventDate || '',
+            location: fetchedPost.location || '',
+            isPaid: Boolean(fetchedPost.isPaid),
+            price: fetchedPost.price || 0,
+          }));
         }
       } catch (error) {
         setPublishError('Impossible de récupérer le post.');
@@ -92,6 +110,18 @@ export default function UpdatePost() {
     if (!token) {
       setPublishError('Authentification requise pour mettre à jour.');
       return;
+    }
+
+    if (formData.category === 'TrustEvent') {
+      if (!formData.eventDate || !formData.location) {
+        setPublishError("Merci d'indiquer la date et le lieu de l'événement.");
+        return;
+      }
+
+      if (formData.isPaid && (!formData.price || Number(formData.price) <= 0)) {
+        setPublishError('Merci de renseigner un tarif valide.');
+        return;
+      }
     }
 
     try {
@@ -171,21 +201,55 @@ export default function UpdatePost() {
         )}
 
         {formData.category === 'TrustEvent' && (
-          <div className='flex flex-col gap-4 sm:flex-row justify-between'>
-            <TextInput
-              type='date'
-              required
-              value={formData.eventDate || ''}
-              onChange={(e) => setFormData((prev) => ({ ...prev, eventDate: e.target.value }))}
-              placeholder='Date de l’événement'
-            />
-            <TextInput
-              type='text'
-              required
-              value={formData.location || ''}
-              onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
-              placeholder="Lieu de l’événement"
-            />
+          <div className='space-y-4 rounded-xl border border-dashed border-slate-200 p-4 dark:border-slate-700'>
+            <p className='text-sm font-semibold text-slate-700 dark:text-slate-200'>
+              {/* CMS: events (TrustEvent) */}
+              Informations événement
+            </p>
+            <div className='flex flex-col gap-4 sm:flex-row justify-between'>
+              <TextInput
+                type='date'
+                required
+                value={formData.eventDate || ''}
+                onChange={(e) => setFormData((prev) => ({ ...prev, eventDate: e.target.value }))}
+                placeholder='Date de l’événement'
+              />
+              <TextInput
+                type='text'
+                required
+                value={formData.location || ''}
+                onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
+                placeholder="Lieu de l’événement"
+              />
+            </div>
+            <div className='flex flex-col gap-4 sm:flex-row justify-between'>
+              <Select
+                value={formData.isPaid ? 'paid' : 'free'}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    isPaid: e.target.value === 'paid',
+                    price: e.target.value === 'paid' ? prev.price || 0 : 0,
+                  }))
+                }
+              >
+                <option value='free'>Gratuit</option>
+                <option value='paid'>Payant</option>
+              </Select>
+              {formData.isPaid && (
+                <TextInput
+                  type='number'
+                  min={0}
+                  step='0.01'
+                  required
+                  value={formData.price}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, price: Number(e.target.value) }))
+                  }
+                  placeholder='Tarif en €'
+                />
+              )}
+            </div>
           </div>
         )}
 
