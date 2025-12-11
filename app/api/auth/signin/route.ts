@@ -7,14 +7,14 @@ export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();
     if (!email || !password) {
-      return NextResponse.json({ error: 'Identifiants manquants' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Identifiants manquants' }, { status: 400 });
     }
 
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 });
+    if (!user) return NextResponse.json({ success: false, error: 'Utilisateur introuvable' }, { status: 404 });
 
     const valid = await verifyPassword(password, user.passwordHash);
-    if (!valid) return NextResponse.json({ error: 'Mot de passe invalide' }, { status: 401 });
+    if (!valid) return NextResponse.json({ success: false, error: 'Mot de passe invalide' }, { status: 401 });
 
     // assure admin role for configured emails
     if (user.role !== 'ADMIN' && resolveRoleForEmail(email) === 'ADMIN') {
@@ -23,8 +23,8 @@ export async function POST(request: NextRequest) {
 
     const token = createAuthToken({ id: user.id, email: user.email, role: user.role });
     setAuthCookie(token);
-    return NextResponse.json({ user: { id: user.id, email: user.email, role: user.role, name: user.name } });
+    return NextResponse.json({ success: true, data: { id: user.id, email: user.email, role: user.role, name: user.name } });
   } catch (error) {
-    return NextResponse.json({ error: 'Impossible de valider la connexion' }, { status: 500 });
+    return NextResponse.json({ success: false, error: (error as Error).message || 'Impossible de valider la connexion' }, { status: 500 });
   }
 }

@@ -4,33 +4,39 @@ import { requireAdmin } from '@/lib/roles';
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const event = await prisma.event.findUnique({ where: { id: params.id } });
-    if (!event) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    return NextResponse.json(event);
+    const id = Number(params.id);
+    if (Number.isNaN(id)) return NextResponse.json({ success: false, error: 'Identifiant invalide' }, { status: 400 });
+    const event = await prisma.event.findUnique({ where: { id } });
+    if (!event) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
+    return NextResponse.json({ success: true, data: event });
   } catch (error) {
-    return NextResponse.json({ error: 'Impossible de récupérer l\'événement' }, { status: 500 });
+    return NextResponse.json({ success: false, error: (error as Error).message || "Impossible de récupérer l'événement" }, { status: 500 });
   }
 }
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     await requireAdmin(request);
+    const id = Number(params.id);
+    if (Number.isNaN(id)) return NextResponse.json({ success: false, error: 'Identifiant invalide' }, { status: 400 });
     const data = await request.json();
-    const event = await prisma.event.update({ where: { id: params.id }, data });
-    return NextResponse.json(event);
+    const event = await prisma.event.update({ where: { id }, data });
+    return NextResponse.json({ success: true, data: event });
   } catch (error) {
     if (error instanceof NextResponse) return error;
-    return NextResponse.json({ error: 'Impossible de mettre à jour l\'événement' }, { status: 500 });
+    return NextResponse.json({ success: false, error: (error as Error).message || "Impossible de mettre à jour l'événement" }, { status: 500 });
   }
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     await requireAdmin(request);
-    await prisma.event.delete({ where: { id: params.id } });
-    return NextResponse.json({ ok: true });
+    const id = Number(params.id);
+    if (Number.isNaN(id)) return NextResponse.json({ success: false, error: 'Identifiant invalide' }, { status: 400 });
+    await prisma.event.delete({ where: { id } });
+    return NextResponse.json({ success: true, data: { id } });
   } catch (error) {
     if (error instanceof NextResponse) return error;
-    return NextResponse.json({ error: 'Impossible de supprimer l\'événement' }, { status: 500 });
+    return NextResponse.json({ success: false, error: (error as Error).message || "Impossible de supprimer l'événement" }, { status: 500 });
   }
 }

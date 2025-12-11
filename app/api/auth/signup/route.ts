@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
-      return NextResponse.json({ error: 'Utilisateur déjà existant' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Utilisateur déjà existant' }, { status: 400 });
     }
 
     const passwordHash = await hashPassword(password);
@@ -22,8 +22,11 @@ export async function POST(request: NextRequest) {
     const token = createAuthToken({ id: user.id, email: user.email, role: user.role });
     setAuthCookie(token);
 
-    return NextResponse.json({ user: { id: user.id, email: user.email, role: user.role, name: user.name } }, { status: 201 });
+    return NextResponse.json(
+      { success: true, data: { id: user.id, email: user.email, role: user.role, name: user.name } },
+      { status: 201 }
+    );
   } catch (error) {
-    return NextResponse.json({ error: "Impossible de créer l'utilisateur" }, { status: 500 });
+    return NextResponse.json({ success: false, error: (error as Error).message || "Impossible de créer l'utilisateur" }, { status: 500 });
   }
 }
