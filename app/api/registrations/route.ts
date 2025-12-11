@@ -21,10 +21,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'eventId requis' }, { status: 400 });
     }
 
-    const eventId = Number(body.eventId);
-    if (Number.isNaN(eventId)) {
-      return NextResponse.json({ success: false, error: 'eventId invalide' }, { status: 400 });
-    }
+    const eventId = String(body.eventId);
 
     const user = await getUserFromRequest(request);
     const payload = {

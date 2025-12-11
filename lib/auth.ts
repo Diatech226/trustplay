@@ -6,6 +6,7 @@ import { prisma } from './prisma';
 import { resolveRoleForEmail } from './roles';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
+type AuthTokenPayload = { id: string; email: string; role: string };
 
 export function hashPassword(password: string) {
   return bcrypt.hash(password, 10);
@@ -15,7 +16,7 @@ export function verifyPassword(password: string, hash: string) {
   return bcrypt.compare(password, hash);
 }
 
-export function createAuthToken(payload: { id: number; email: string; role: string }) {
+export function createAuthToken(payload: AuthTokenPayload) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 }
 
@@ -23,7 +24,7 @@ export async function getUserFromRequest(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value;
     if (!token) return null;
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: number; email: string };
+    const decoded = jwt.verify(token, JWT_SECRET) as AuthTokenPayload;
     const user = await prisma.user.findUnique({ where: { id: decoded.id } });
     return user;
   } catch (error) {
@@ -35,7 +36,7 @@ export async function getUserFromCookies() {
   try {
     const token = cookies().get('token')?.value;
     if (!token) return null;
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: number; email: string };
+    const decoded = jwt.verify(token, JWT_SECRET) as AuthTokenPayload;
     return prisma.user.findUnique({ where: { id: decoded.id } });
   } catch (error) {
     return null;
