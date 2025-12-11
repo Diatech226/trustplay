@@ -11,7 +11,14 @@ import { HelmetProvider } from "react-helmet-async";
 const Home = lazy(() => import('./pages/Home'));
 const About = lazy(() => import('./pages/About'));
 const SignIn = lazy(() => import('./pages/SignIn'));
-const Dashboard = lazy(() => import('./pages/Dashboard'));
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const AdminPosts = lazy(() => import('./pages/admin/AdminPosts'));
+const AdminMedia = lazy(() => import('./pages/admin/AdminMedia'));
+const AdminComments = lazy(() => import('./pages/admin/AdminComments'));
+const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
+const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
+const DashProfile = lazy(() => import('./components/DashProfile'));
 const Projects = lazy(() => import('./pages/Projects'));
 const SignUp = lazy(() => import('./pages/SignUp'));
 const CreatePost = lazy(() => import('./pages/CreatePost'));
@@ -57,7 +64,19 @@ export default function App() {
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/Terms" element={<TermsConditions />} />
             <Route element={<PrivateRoute />}>
-              <Route path='/dashboard' element={<Dashboard />} />
+              <Route path='/dashboard' element={<AdminLayout />}>
+                <Route element={<OnlyAdminPrivateRoute />}>
+                  <Route index element={<AdminDashboard />} />
+                  <Route path='posts' element={<AdminPosts />} />
+                  <Route path='posts/create' element={<CreatePost />} />
+                  <Route path='posts/:postId/edit' element={<UpdatePost />} />
+                  <Route path='comments' element={<AdminComments />} />
+                  <Route path='media' element={<AdminMedia />} />
+                  <Route path='users' element={<AdminUsers />} />
+                  <Route path='settings' element={<AdminSettings />} />
+                </Route>
+                <Route path='profile' element={<DashProfile />} />
+              </Route>
             </Route>
             <Route element={<OnlyAdminPrivateRoute />}>
               <Route path='/create-post' element={<CreatePost />} />

@@ -90,7 +90,7 @@ export default function CommentSection({ postId }) {
         <div className="flex items-center gap-1 my-5 text-gray-500 text-sm">
           <p>Connecté en tant que</p>
           <img className="h-5 w-5 object-cover rounded-full" src={currentUser.profilePicture} alt="" />
-          <Link to="/dashboard?tab=profile" className="text-xs text-cyan-600 hover:underline">
+          <Link to="/dashboard/profile" className="text-xs text-cyan-600 hover:underline">
             @{currentUser.username}
           </Link>
         </div>
