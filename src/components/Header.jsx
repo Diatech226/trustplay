@@ -6,6 +6,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { toggleTheme } from '../redux/theme/themeSlice';
 import { signoutSuccess } from '../redux/user/userSlice';
 import { useEffect, useState } from 'react';
+import { apiRequest } from '../utils/apiClient';
 
 export default function Header() {
   const path = useLocation().pathname;
@@ -16,7 +17,6 @@ export default function Header() {
   const { theme } = useSelector((state) => state.theme);
   const { unread } = useSelector((state) => state.notifications);
   const [searchTerm, setSearchTerm] = useState('');
-  const API_URL = import.meta.env.VITE_API_URL;
   const navItems = [
     { path: '/', label: 'Accueil' },
     { path: '/news', label: 'News' },
@@ -42,17 +42,11 @@ export default function Header() {
 
   const handleSignout = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/user/signout`, {
-        method: 'POST',
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        console.log(data.message);
-      } else {
-        dispatch(signoutSuccess());
-      }
+      await apiRequest('/api/auth/signout', { method: 'POST', auth: true });
     } catch (error) {
       console.log(error.message);
+    } finally {
+      dispatch(signoutSuccess());
     }
   };
 

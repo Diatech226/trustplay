@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { HiCollection, HiDocumentText, HiOutlineCog, HiOutlinePhotograph, HiOutlineUserGroup, HiSparkles, HiUserCircle } from 'react-icons/hi';
 import { useDispatch, useSelector } from 'react-redux';
 import { signoutSuccess } from '../../redux/user/userSlice';
+import { apiRequest } from '../../utils/apiClient';
 
 // CMS: admin layout
 export default function AdminLayout() {
@@ -10,7 +11,6 @@ export default function AdminLayout() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     if (!currentUser) return;
@@ -21,18 +21,12 @@ export default function AdminLayout() {
 
   const handleSignout = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/user/signout`, {
-        method: 'POST',
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        console.log(data.message);
-      } else {
-        dispatch(signoutSuccess());
-        navigate('/sign-in');
-      }
+      await apiRequest('/api/auth/signout', { method: 'POST', auth: true });
     } catch (error) {
       console.log(error.message);
+    } finally {
+      dispatch(signoutSuccess());
+      navigate('/sign-in');
     }
   };
 

@@ -2,13 +2,13 @@ import { Alert, Button, Label, Spinner, TextInput } from 'flowbite-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import OAuth from '../components/OAuth';
+import { apiRequest } from '../utils/apiClient';
 
 export default function SignUp() {
-  const [formData, setFormData] = useState({});
+  const [formData, setFormData] = useState({ username: '', email: '', password: '' });
   const [errorMessage, setErrorMessage] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const API_URL = import.meta.env.VITE_API_URL;
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value.trim() });
   };
@@ -22,27 +22,16 @@ export default function SignUp() {
       setLoading(true);
       setErrorMessage(null);
   
-      const res = await fetch(`${API_URL}/api/auth/signup`, {
+      const data = await apiRequest('/api/auth/signup', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+        body: formData,
       });
-  
-      const data = await res.json();
-  
-      if (!res.ok) {
-        return setErrorMessage(data.message || 'Sign-up failed');
-      }
-  
-      setLoading(false);
-      
-      // ✅ Stocker le token directement si l'API renvoie un token
+
       if (data.token) {
         localStorage.setItem('token', data.token);
       }
-  
+
+      setLoading(false);
       navigate('/sign-in');
     } catch (error) {
       setErrorMessage(error.message);

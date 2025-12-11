@@ -12,13 +12,13 @@ import { Link, useLocation } from 'react-router-dom';
 import { signoutSuccess } from '../redux/user/userSlice';
 import { useDispatch } from 'react-redux';
 import { useSelector } from 'react-redux';
+import { apiRequest } from '../utils/apiClient';
 
 export default function DashSidebar() {
   const location = useLocation();
   const dispatch = useDispatch();
   const { currentUser } = useSelector((state) => state.user);
   const [tab, setTab] = useState('');
-  const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
@@ -29,17 +29,11 @@ export default function DashSidebar() {
   }, [location.search]);
   const handleSignout = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/user/signout`, {
-        method: 'POST',
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        console.log(data.message);
-      } else {
-        dispatch(signoutSuccess());
-      }
+      await apiRequest('/api/auth/signout', { method: 'POST', auth: true });
     } catch (error) {
       console.log(error.message);
+    } finally {
+      dispatch(signoutSuccess());
     }
   };
   return (
