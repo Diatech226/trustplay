@@ -14,6 +14,7 @@ export default function Header() {
   const dispatch = useDispatch();
   const { currentUser } = useSelector((state) => state.user);
   const { theme } = useSelector((state) => state.theme);
+  const { unread } = useSelector((state) => state.notifications);
   const [searchTerm, setSearchTerm] = useState('');
   const API_URL = import.meta.env.VITE_API_URL;
   const navItems = [
@@ -25,6 +26,9 @@ export default function Header() {
     { path: '/cinema', label: 'Cinéma' },
     { path: '/event', label: 'Trust Events' },
     { path: '/production', label: 'Trust Prod' },
+    { path: '/favorites', label: 'Favoris' },
+    { path: '/history', label: 'Historique' },
+    { path: '/notifications-preferences', label: 'Notifications' },
     { path: '/about', label: 'À propos' },
   ];
 
@@ -144,6 +148,9 @@ export default function Header() {
                 }`}
               >
                 {item.label}
+                {item.path === '/notifications-preferences' && unread > 0 && (
+                  <span className='absolute -right-3 -top-1 h-2.5 w-2.5 rounded-full bg-red-500'></span>
+                )}
                 {isActive && (
                   <span className='absolute left-0 -bottom-1 h-0.5 w-full bg-accent'></span>
                 )}

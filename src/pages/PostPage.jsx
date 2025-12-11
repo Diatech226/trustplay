@@ -1,12 +1,15 @@
 import { Spinner } from 'flowbite-react';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from 'react-redux';
 
 import CallToAction from '../components/CallToAction';
 import CommentSection from '../components/CommentSection';
 import PostCard from '../components/PostCard';
 import Breadcrumbs from '../components/Breadcrumbs';
+import FavoriteButton from '../components/FavoriteButton';
+import ShareButtons from '../components/ShareButtons';
+import { logReading } from '../redux/history/historySlice';
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function PostPage() {
@@ -16,6 +19,7 @@ export default function PostPage() {
   const [post, setPost] = useState(null);
   const [recentPosts, setRecentPosts] = useState(null);
   const { currentUser } = useSelector((state) => state.user);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -60,6 +64,21 @@ export default function PostPage() {
     };
     fetchRecentPosts();
   }, [post]);
+
+  useEffect(() => {
+    if (post) {
+      // reading history
+      dispatch(
+        logReading({
+          _id: post._id,
+          slug: post.slug,
+          title: post.title,
+          image: post.image,
+          subCategory: post.subCategory,
+        })
+      );
+    }
+  }, [dispatch, post]);
 
   if (loading)
     return (
@@ -120,10 +139,11 @@ export default function PostPage() {
               <p className='text-base leading-relaxed text-slate-700 dark:text-slate-200'>
                 {post?.content?.replace(/<[^>]+>/g, '').slice(0, 180)}...
               </p>
-              <div className='flex gap-4 text-sm font-semibold text-primary'>
+              <div className='flex flex-wrap gap-3 text-sm font-semibold text-primary'>
                 {currentUser && <span>Signé · {currentUser?.username}</span>}
-                <span className='text-ocean'>Partager</span>
+                <FavoriteButton post={post} />
               </div>
+              <ShareButtons title={post?.title} />
             </div>
           </div>
         </section>
