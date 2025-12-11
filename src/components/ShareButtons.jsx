@@ -4,7 +4,7 @@ const shareOptions = [
   { label: 'Facebook', icon: FaFacebookF, url: (link, title) => `https://www.facebook.com/sharer/sharer.php?u=${link}&t=${title}` },
   { label: 'WhatsApp', icon: FaWhatsapp, url: (link, title) => `https://api.whatsapp.com/send?text=${title}%20${link}` },
   { label: 'X/Twitter', icon: FaXTwitter, url: (link, title) => `https://twitter.com/intent/tweet?text=${title}&url=${link}` },
-  { label: 'LinkedIn', icon: FaLinkedinIn, url: (link, title) => `https://www.linkedin.com/sharing/share-offsite/?url=${link}` },
+  { label: 'LinkedIn', icon: FaLinkedinIn, url: (link) => `https://www.linkedin.com/sharing/share-offsite/?url=${link}` },
 ];
 
 export default function ShareButtons({ title, url }) {

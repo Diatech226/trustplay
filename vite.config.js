@@ -13,4 +13,9 @@ export default defineConfig({
   },
 
   plugins: [react()],
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './vitest.setup.js',
+  },
 });

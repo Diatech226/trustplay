@@ -34,7 +34,15 @@ export default function History() {
             {history.map((item) => (
               <div key={item._id} className='flex flex-col gap-2 rounded-2xl bg-white/80 p-4 shadow-subtle ring-1 ring-subtle backdrop-blur dark:bg-slate-900/80 dark:ring-slate-800 sm:flex-row sm:items-center sm:justify-between'>
                 <div className='flex items-center gap-4'>
-                  <img src={item.image} alt={item.title} className='h-16 w-16 rounded-xl object-cover' />
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    loading='lazy'
+                    decoding='async'
+                    width='64'
+                    height='64'
+                    className='h-16 w-16 rounded-xl object-cover'
+                  />
                   <div className='space-y-1'>
                     <Link to={`/post/${item.slug}`} className='text-lg font-semibold text-primary hover:underline'>
                       {item.title}

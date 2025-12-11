@@ -3,15 +3,15 @@ import AboutSection from "../components/AboutSection";
 import ProjectsGallery from "../components/ProjectsGallery";
 import ServicesSection from "../components/ServicesSection";
 import ContactSection from "../components/ContactSection";
-import Footer from "../components/Footer";
-import { Helmet } from "react-helmet-async";
+import Seo from '../components/Seo';
 
 const TrustProdPage = () => {
   return (
     <>
-      <Helmet>
-        <title>TrustProd - Production Audiovisuelle</title>
-      </Helmet>
+      <Seo
+        title='TrustProd - Production Audiovisuelle'
+        description='Découvrez les services TrustProd : production audiovisuelle, tournage, montage et accompagnement créatif.'
+      />
       <HeroSection />
       <AboutSection />
       <ProjectsGallery />

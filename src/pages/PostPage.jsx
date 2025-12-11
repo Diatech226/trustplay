@@ -1,5 +1,4 @@
-import { Spinner } from 'flowbite-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -9,7 +8,13 @@ import PostCard from '../components/PostCard';
 import Breadcrumbs from '../components/Breadcrumbs';
 import FavoriteButton from '../components/FavoriteButton';
 import ShareButtons from '../components/ShareButtons';
+import PageContainer from '../components/layout/PageContainer';
+import Seo from '../components/Seo';
+import ArticleHeroSkeleton from '../components/skeletons/ArticleHeroSkeleton';
+import PostCardSkeleton from '../components/skeletons/PostCardSkeleton';
 import { logReading } from '../redux/history/historySlice';
+import { fetchJson } from '../utils/apiClient';
+
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function PostPage() {
@@ -17,7 +22,7 @@ export default function PostPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [post, setPost] = useState(null);
-  const [recentPosts, setRecentPosts] = useState(null);
+  const [recentPosts, setRecentPosts] = useState([]);
   const { currentUser } = useSelector((state) => state.user);
   const dispatch = useDispatch();
 
@@ -25,41 +30,32 @@ export default function PostPage() {
     const fetchPost = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${API_URL}/api/post/getposts?slug=${postSlug}`);
-        const data = await res.json();
-        if (!res.ok) {
+        setError(false);
+        const data = await fetchJson(`${API_URL}/api/post/getposts?slug=${postSlug}`);
+        const foundPost = data.posts?.[0];
+        setPost(foundPost);
+        if (!foundPost) {
           setError(true);
-          setLoading(false);
-          return;
-        }
-        if (res.ok) {
-          setPost(data.posts[0]);
-          setLoading(false);
-          setError(false);
         }
       } catch (error) {
         setError(true);
-        setLoading(false);
       }
+      setLoading(false);
     };
     fetchPost();
   }, [postSlug]);
 
   useEffect(() => {
     if (!post?.subCategory) return;
-    // UI improvement: similar articles from same rubrique
     const fetchRecentPosts = async () => {
       try {
-        const res = await fetch(
+        const data = await fetchJson(
           `${API_URL}/api/post/getposts?subCategory=${post.subCategory}&limit=4`
         );
-        const data = await res.json();
-        if (res.ok) {
-          const filtered = data.posts.filter((p) => p.slug !== post.slug);
-          setRecentPosts(filtered);
-        }
+        const filtered = (data.posts || []).filter((p) => p.slug !== post.slug);
+        setRecentPosts(filtered);
       } catch (error) {
-        console.log(error.message);
+        console.warn('[Articles similaires] Impossible de charger les articles.', error);
       }
     };
     fetchRecentPosts();
@@ -67,7 +63,6 @@ export default function PostPage() {
 
   useEffect(() => {
     if (post) {
-      // reading history
       dispatch(
         logReading({
           _id: post._id,
@@ -80,12 +75,26 @@ export default function PostPage() {
     }
   }, [dispatch, post]);
 
-  if (loading)
-    return (
-      <div className='flex justify-center items-center min-h-screen'>
-        <Spinner size='xl' />
-      </div>
-    );
+  const metaDescription = useMemo(
+    () => post?.content?.replace(/<[^>]+>/g, '').slice(0, 180) || 'Article Trust Media',
+    [post]
+  );
+  const articleUrl = useMemo(
+    () => (post ? `${window?.location?.origin || ''}/post/${post.slug}` : undefined),
+    [post]
+  );
+  const structuredData = post
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        headline: post.title,
+        image: [post.image],
+        datePublished: post.createdAt,
+        author: post.author || 'Rédaction Trust',
+        url: articleUrl,
+      }
+    : null;
+
   const subCategoryPaths = {
     news: { label: 'News', href: '/news' },
     politique: { label: 'Politique', href: '/politique' },
@@ -102,16 +111,55 @@ export default function PostPage() {
     { label: post?.title || 'Article' },
   ].filter(Boolean);
 
+  if (loading)
+    return (
+      <main className='min-h-screen bg-white/60 pb-16 dark:bg-slate-950'>
+        <PageContainer className='flex flex-col gap-8 py-8'>
+          <ArticleHeroSkeleton />
+          <article className='animate-pulse rounded-3xl bg-white p-6 shadow-subtle ring-1 ring-subtle dark:bg-slate-900 dark:ring-slate-800'>
+            <div className='space-y-3'>
+              <div className='h-6 w-3/4 rounded-full bg-subtle dark:bg-slate-800' />
+              <div className='h-4 w-full rounded-full bg-subtle dark:bg-slate-800' />
+              <div className='h-4 w-5/6 rounded-full bg-subtle dark:bg-slate-800' />
+            </div>
+          </article>
+          <div className='grid gap-4 md:grid-cols-3'>
+            {Array.from({ length: 3 }).map((_, index) => (
+              <PostCardSkeleton key={`skeleton-${index}`} />
+            ))}
+          </div>
+        </PageContainer>
+      </main>
+    );
+
   return (
     <main className='min-h-screen bg-white/60 pb-16 dark:bg-slate-950'>
-      <div className='mx-auto flex max-w-6xl flex-col gap-8 px-4 pt-6'>
+      <Seo
+        title={`${post?.title || 'Article'} | Trust Media`}
+        description={metaDescription}
+        image={post?.image}
+        url={articleUrl}
+        type='article'
+      >
+        {structuredData && <script type='application/ld+json'>{JSON.stringify(structuredData)}</script>}
+      </Seo>
+      <PageContainer className='flex flex-col gap-8 py-6'>
         <Breadcrumbs items={breadcrumbItems} />
+        {error && (
+          <div className='rounded-xl bg-red-50 p-4 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-900/30 dark:text-red-100 dark:ring-red-800'>
+            Impossible de charger cet article pour le moment. Merci de réessayer plus tard.
+          </div>
+        )}
         <section className='overflow-hidden rounded-3xl border border-subtle bg-white shadow-card dark:border-slate-800 dark:bg-slate-900'>
           <div className='grid gap-0 lg:grid-cols-5'>
             <div className='relative lg:col-span-3'>
               <img
                 src={post && post.image}
                 alt={post && post.title}
+                loading='lazy'
+                decoding='async'
+                width='960'
+                height='540'
                 className='h-full w-full object-cover'
               />
               {post?.subCategory && subCategoryPaths[post.subCategory] && (
@@ -137,7 +185,7 @@ export default function PostPage() {
                 </span>
               </div>
               <p className='text-base leading-relaxed text-slate-700 dark:text-slate-200'>
-                {post?.content?.replace(/<[^>]+>/g, '').slice(0, 180)}...
+                {metaDescription}
               </p>
               <div className='flex flex-wrap gap-3 text-sm font-semibold text-primary'>
                 {currentUser && <span>Signé · {currentUser?.username}</span>}
@@ -159,6 +207,8 @@ export default function PostPage() {
           <CallToAction />
         </div>
 
+        <CommentSection postId={post?._id} />
+
         <section className='mt-4 rounded-3xl bg-gradient-to-r from-primary/5 via-secondary/5 to-ocean/5 p-6 dark:from-slate-800 dark:via-slate-800 dark:to-slate-800'>
           <div className='flex items-center justify-between gap-4 pb-4'>
             <h2 className='text-2xl font-extrabold text-primary dark:text-white'>Articles similaires</h2>
@@ -168,11 +218,15 @@ export default function PostPage() {
             {recentPosts && recentPosts.length > 0 ? (
               recentPosts.map((post) => <PostCard key={post._id} post={post} />)
             ) : (
-              <p className='text-slate-600 dark:text-slate-300'>Pas encore d'autres articles dans cette rubrique.</p>
+              <div className='col-span-full grid gap-4 md:grid-cols-3'>
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <PostCardSkeleton key={`recent-${index}`} />
+                ))}
+              </div>
             )}
           </div>
         </section>
-      </div>
+      </PageContainer>
     </main>
   );
 }

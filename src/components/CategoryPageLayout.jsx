@@ -2,6 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { Select } from 'flowbite-react';
 import PostCard from './PostCard';
 import Breadcrumbs from './Breadcrumbs';
+import PageContainer from './layout/PageContainer';
+import PageHeader from './layout/PageHeader';
+import Seo from './Seo';
+import PostCardSkeleton from './skeletons/PostCardSkeleton';
 
 const DEFAULT_LIMIT = 12;
 
@@ -83,37 +87,49 @@ export default function CategoryPageLayout({ title, subCategory, description = '
   }, [API_URL, sort, subCategory]);
 
   return (
-    <div className='max-w-6xl mx-auto p-4 min-h-screen'>
-      <Breadcrumbs items={breadcrumbs} />
-      <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4'>
-        <div>
-          <h1 className='text-3xl font-bold text-teal-600'>{title}</h1>
-          {description && <p className='text-gray-600 dark:text-gray-300 mt-1'>{description}</p>}
-        </div>
-        <div className='flex items-center gap-2'>
-          <label className='font-semibold text-sm'>Trier par</label>
-          <Select value={sort} onChange={(e) => setSort(e.target.value)}>
-            {sortOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </Select>
-        </div>
-      </div>
+    <main className='min-h-screen bg-mist/60 py-8 dark:bg-slate-950'>
+      <Seo title={`${title} | Trust Media`} description={description || `Retrouvez les derniers articles ${title}.`} />
+      <PageContainer className='space-y-6'>
+        <Breadcrumbs items={breadcrumbs} />
+        <PageHeader
+          kicker='Rubrique'
+          title={title}
+          description={description}
+          action={(
+            <div className='flex items-center gap-2'>
+              <label className='font-semibold text-sm'>Trier par</label>
+              <Select value={sort} onChange={(e) => setSort(e.target.value)}>
+                {sortOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
+        />
 
-      {error && <p className='text-red-500 mb-4'>{error}</p>}
-      {loading ? (
-        <p className='text-center text-gray-500'>Chargement des articles...</p>
-      ) : posts.length ? (
-        <div className='flex flex-wrap gap-4 justify-center'>
-          {posts.map((post) => (
-            <PostCard key={post._id} post={post} />
-          ))}
-        </div>
-      ) : (
-        <p className='text-center text-gray-500'>Aucun article dans cette rubrique pour le moment.</p>
-      )}
-    </div>
+        {error && (
+          <p className='rounded-xl bg-red-50 p-3 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-900/30 dark:text-red-100 dark:ring-red-800'>
+            {error}
+          </p>
+        )}
+        {loading ? (
+          <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+            {Array.from({ length: 6 }).map((_, index) => (
+              <PostCardSkeleton key={`category-${index}`} />
+            ))}
+          </div>
+        ) : posts.length ? (
+          <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+            {posts.map((post) => (
+              <PostCard key={post._id} post={post} />
+            ))}
+          </div>
+        ) : (
+          <p className='text-center text-gray-500 dark:text-slate-300'>Aucun article dans cette rubrique pour le moment.</p>
+        )}
+      </PageContainer>
+    </main>
   );
 }

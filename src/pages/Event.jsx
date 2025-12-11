@@ -1,83 +1,78 @@
-/*import React from "react";
-
-const TrustEvent = () => {
-  return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-6">
-        <h1 className="text-4xl font-bold text-primary mb-6">Trust Event</h1>
-        
-        <p className="text-lg text-gray-700 mb-4">
-          Bienvenue chez Trust Event, votre agence spécialisée dans l'organisation d'événements professionnels, culturels et privés.
-        </p>
-        
-        <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-secondary mb-4">Nos Services</h2>
-          <ul className="list-disc pl-6 text-gray-700">
-            <li>Organisation de conférences et séminaires</li>
-            <li>Événements d'entreprise et team-building</li>
-            <li>Festivals et concerts</li>
-            <li>Lancements de produits</li>
-            <li>Gestion de logistique et scénographie</li>
-          </ul>
-        </section>
-        
-        <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-secondary mb-4">Galerie</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="h-32 bg-gray-300 rounded-lg"></div>
-            <div className="h-32 bg-gray-300 rounded-lg"></div>
-            <div className="h-32 bg-gray-300 rounded-lg"></div>
-          </div>
-        </section>
-        
-        <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-secondary mb-4">Contactez-nous</h2>
-          <form className="space-y-4">
-            <input type="text" placeholder="Votre nom" className="w-full p-2 border border-gray-300 rounded" />
-            <input type="email" placeholder="Votre email" className="w-full p-2 border border-gray-300 rounded" />
-            <textarea placeholder="Votre message" className="w-full p-2 border border-gray-300 rounded h-32"></textarea>
-            <button className="bg-primary text-white py-2 px-4 rounded">Envoyer</button>
-          </form>
-        </section>
-      </div>
-    </div>
-  );
-};
-
-export default TrustEvent;
-*/
 import { useEffect, useState } from "react";
-import axios from "axios";
+import PageContainer from '../components/layout/PageContainer';
+import PageHeader from '../components/layout/PageHeader';
+import Seo from '../components/Seo';
+import { fetchJson } from '../utils/apiClient';
 
 export default function TrustEvent() {
   const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const res = await axios.get(`${API_URL}/api/post/getPosts`, { params: { category: "TrustEvent", limit: 10 } });
-        setEvents(res.data.posts);
-      } catch (error) {
-        console.error("Error fetching events:", error);
+        setLoading(true);
+        const data = await fetchJson(`${API_URL}/api/post/getPosts?category=TrustEvent&limit=6`);
+        setEvents(data.posts || []);
+      } catch (err) {
+        setError("Erreur lors du chargement des événements.");
+      } finally {
+        setLoading(false);
       }
     };
     fetchEvents();
-  }, []);
+  }, [API_URL]);
 
   return (
-    <main className="p-5 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold text-center">Evénement à venir</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-5">
-        {events.map((event) => (
-          <div key={event._id} className="border p-4 rounded shadow-md">
-            <img src={event.image} alt={event.title} className="w-full h-40 object-cover rounded" />
-            <h2 className="text-xl font-semibold mt-2">{event.title}</h2>
-            <p className="text-sm text-gray-500">{new Date(event.eventDate).toDateString()}</p>
-            <p className="text-sm text-gray-700">{event.location}</p>
-            <a href={`/post/${event.slug}`} className="text-blue-500 hover:underline">Lire plus</a>
-          </div>
-        ))}
-      </div>
+    <main className="bg-mist/60 py-10 dark:bg-slate-950">
+      <Seo
+        title="Trust Event | Agenda"
+        description="Découvrez les prochains événements organisés par Trust Event : conférences, festivals et lancements."
+      />
+      <PageContainer className="space-y-8">
+        <PageHeader
+          kicker="Agenda"
+          title="Trust Event"
+          description="Votre agence spécialisée dans l'organisation d'événements professionnels, culturels et privés."
+        />
+
+        {error && (
+          <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-900/30 dark:text-red-100 dark:ring-red-800">{error}</p>
+        )}
+
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {loading &&
+            Array.from({ length: 6 }).map((_, index) => (
+              <div key={`event-skel-${index}`} className="h-64 animate-pulse rounded-2xl bg-white shadow-subtle ring-1 ring-subtle dark:bg-slate-900 dark:ring-slate-800" />
+            ))}
+          {!loading && events.map((event) => (
+            <div key={event._id} className="flex h-full flex-col rounded-2xl bg-white shadow-card ring-1 ring-subtle transition hover:-translate-y-1 hover:shadow-lg dark:bg-slate-900 dark:ring-slate-800">
+              <img
+                src={event.image}
+                alt={event.title}
+                loading="lazy"
+                decoding="async"
+                width="640"
+                height="256"
+                className="h-48 w-full rounded-t-2xl object-cover"
+              />
+              <div className="flex flex-1 flex-col gap-2 p-4">
+                <h2 className="text-xl font-semibold text-primary">{event.title}</h2>
+                <p className="text-sm text-slate-500">{new Date(event.eventDate).toLocaleDateString()}</p>
+                <p className="text-sm text-slate-700 line-clamp-3 dark:text-slate-200">{event.description || event.location}</p>
+                <a href={`/post/${event.slug}`} className="mt-auto text-sm font-semibold text-ocean hover:underline">Lire plus</a>
+              </div>
+            </div>
+          ))}
+          {!loading && events.length === 0 && (
+            <p className="col-span-full rounded-xl border border-dashed border-subtle bg-subtle/30 p-6 text-center text-slate-500 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-200">
+              Aucun événement disponible pour le moment.
+            </p>
+          )}
+        </div>
+      </PageContainer>
     </main>
   );
 }

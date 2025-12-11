@@ -3,11 +3,14 @@ import { Link } from "react-router-dom";
 const EventCard = ({ event }) => {
   return (
     <div className="bg-white shadow-md rounded-lg overflow-hidden">
-      <img 
-        src={event.image || "/default-event.jpg"} 
-        alt={event.title} 
+      <img
+        src={event.image || "/default-event.jpg"}
+        alt={event.title}
         className="w-full h-48 object-cover"
         loading="lazy"
+        decoding="async"
+        width="600"
+        height="320"
       />
       <div className="p-4">
         <h2 className="text-xl font-semibold">{event.title}</h2>
