@@ -1,15 +1,13 @@
-
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
-    './index.html',
-    './src/**/*.{js,ts,jsx,tsx}',
-    'node_modules/flowbite-react/**/*.{js,jsx,ts,tsx}',
+    './app/**/*.{js,ts,jsx,tsx}',
+    './components/**/*.{js,ts,jsx,tsx}',
+    './lib/**/*.{js,ts,jsx,tsx}',
   ],
   theme: {
     extend: {
       colors: {
-        // Design tokens
         primary: '#0F172A',
         secondary: '#14532D',
         accent: '#EAB308',
@@ -34,8 +32,5 @@ export default {
       },
     },
   },
-  plugins: [
-    require('flowbite/plugin'),
-    require('tailwind-scrollbar'),
-  ],
+  plugins: [require('tailwind-scrollbar'), require('@tailwindcss/line-clamp')],
 };
