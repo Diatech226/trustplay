@@ -2,8 +2,10 @@
 module.exports = {
   content: [
     './app/**/*.{js,ts,jsx,tsx}',
+    './pages/**/*.{js,ts,jsx,tsx}',
     './components/**/*.{js,ts,jsx,tsx}',
     './lib/**/*.{js,ts,jsx,tsx}',
+    './src/**/*.{js,ts,jsx,tsx}',
   ],
   theme: {
     extend: {
@@ -32,5 +34,15 @@ module.exports = {
       },
     },
   },
-  plugins: [require('tailwind-scrollbar'), require('@tailwindcss/line-clamp')],
+  plugins: (() => {
+    const plugins = [require('@tailwindcss/line-clamp')];
+
+    try {
+      plugins.push(require('tailwind-scrollbar'));
+    } catch (error) {
+      // fix: guard optional plugin so Tailwind config loads even if dependency is missing
+    }
+
+    return plugins;
+  })(),
 };
