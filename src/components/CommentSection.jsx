@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import Comment from './Comment';
 import { HiOutlineExclamationCircle } from 'react-icons/hi';
+import { apiRequest } from '../utils/apiClient';
 
 export default function CommentSection({ postId }) {
   const { currentUser } = useSelector((state) => state.user);
@@ -14,17 +15,12 @@ export default function CommentSection({ postId }) {
   const [submitting, setSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState(null);
-  const API_URL = import.meta.env.VITE_API_URL;
   useEffect(() => {
     const fetchComments = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${API_URL}/api/comment/getPostComments/${postId}`);
-        if (!res.ok) throw new Error("Échec du chargement des commentaires");
-    
-        const data = await res.json();
-        
-        setComments(data); // ✅ Les noms des utilisateurs sont déjà peuplés grâce au backend
+        const data = await apiRequest(`/api/comment/getPostComments/${postId}`);
+        setComments(data.comments || data);
       } catch (error) {
         console.error(error.message);
         setCommentError("Impossible de charger les commentaires.");
@@ -37,7 +33,7 @@ export default function CommentSection({ postId }) {
   }, [postId]);
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!currentUser || !currentUser?.id) {
+    if (!currentUser || !(currentUser?.id || currentUser?._id)) {
       setCommentError("Vous devez être connecté pour commenter.");
       return;
     }
@@ -46,30 +42,22 @@ export default function CommentSection({ postId }) {
       setCommentError("Le commentaire ne peut pas être vide.");
       return;
     }
-    console.log(localStorage.getItem("accessToken"));
-
     setSubmitting(true);
     try {
-      const res = await fetch(`${API_URL}/api/comment/create`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-        },
-        body: JSON.stringify({
+      const responseData = await apiRequest('/api/comment/create', {
+        method: 'POST',
+        auth: true,
+        body: {
           content: comment,
           postId,
-          userId: currentUser?.id,  // Vérifie bien que userId est défini
-        }),
+        },
       });
-  
-      const responseData = await res.json();
-      if (!res.ok) throw new Error(responseData.message || "Erreur lors de l'ajout du commentaire");
-  
+
+      const createdComment = responseData.comment || responseData;
       setComments((prev) => [
         ...prev,
         {
-          ...responseData,
+          ...createdComment,
           userName: currentUser.username,
           profilePicture: currentUser.profilePicture,
         },
@@ -129,11 +117,11 @@ export default function CommentSection({ postId }) {
       ) : (
         comments.map((comment) => (
           <Comment
-            key={comment._id}
+            key={comment._id || comment.id}
             comment={comment}
-            onDelete={() => {
+            onDelete={(id) => {
               setShowModal(true);
-              setCommentToDelete(comment.id);
+              setCommentToDelete(id);
             }}
           />
         ))
@@ -147,10 +135,22 @@ export default function CommentSection({ postId }) {
             <HiOutlineExclamationCircle className="h-14 w-14 text-gray-400 mb-4 mx-auto" />
             <h3 className="mb-5 text-lg">Êtes-vous sûr de vouloir supprimer ce commentaire ?</h3>
             <div className="flex justify-center gap-4">
-              <Button color="failure" onClick={() => {
-                setComments(comments.filter(c => c._id !== commentToDelete));
-                setShowModal(false);
-              }}>
+              <Button
+                color="failure"
+                onClick={async () => {
+                  try {
+                    await apiRequest(`/api/comment/deleteComment/${commentToDelete}`, {
+                      method: 'DELETE',
+                      auth: true,
+                    });
+                    setComments((prev) => prev.filter((c) => (c._id || c.id) !== commentToDelete));
+                  } catch (error) {
+                    setCommentError(error.message);
+                  } finally {
+                    setShowModal(false);
+                  }
+                }}
+              >
                 Oui
               </Button>
               <Button color="gray" onClick={() => setShowModal(false)}>Non</Button>

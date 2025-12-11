@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import PrivateRoute from './components/PrivateRoute';
@@ -7,6 +7,9 @@ import OnlyAdminPrivateRoute from './components/OnlyAdminPrivateRoute';
 import ScrollToTop from './components/ScrollToTop';
 import LoadingScreen from './components/LoadingScreen';
 import { HelmetProvider } from "react-helmet-async";
+import { useDispatch, useSelector } from 'react-redux';
+import { setUser, signoutSuccess } from './redux/user/userSlice';
+import { apiRequest, getAuthToken } from './utils/apiClient';
 
 const Home = lazy(() => import('./pages/Home'));
 const About = lazy(() => import('./pages/About'));
@@ -39,6 +42,31 @@ const History = lazy(() => import('./pages/History'));
 const NotificationsPreferences = lazy(() => import('./pages/NotificationsPreferences'));
 
 export default function App() {
+  const dispatch = useDispatch();
+  const { currentUser } = useSelector((state) => state.user);
+
+  useEffect(() => {
+    const token = getAuthToken();
+    const shouldRefresh = !currentUser || typeof currentUser.isAdmin === 'undefined';
+    if (!token || !shouldRefresh) return;
+
+    const fetchProfile = async () => {
+      try {
+        const me = await apiRequest('/api/user/me', { auth: true });
+        const profile = me.user || me.data?.user || me;
+        if (profile) {
+          // fix: admin detection based on ADMIN_EMAILS env var
+          dispatch(setUser({ ...profile, token }));
+        }
+      } catch (error) {
+        console.error('Unable to refresh session', error.message);
+        dispatch(signoutSuccess());
+      }
+    };
+
+    fetchProfile();
+  }, [currentUser, dispatch]);
+
   return (
     <BrowserRouter>
       <HelmetProvider>

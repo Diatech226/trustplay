@@ -16,6 +16,7 @@ import { useDispatch } from 'react-redux';
 import { HiOutlineExclamationCircle } from 'react-icons/hi';
 import { Link } from 'react-router-dom';
 import { uploadImageFile } from '../utils/uploadImage';
+import { apiRequest, getAuthToken } from '../utils/apiClient';
 
 export default function DashProfile() {
   const { currentUser, error, loading } = useSelector((state) => state.user);
@@ -82,21 +83,15 @@ export default function DashProfile() {
     }
     try {
       dispatch(updateStart());
-      const res = await fetch(`${API_URL}/api/user/update/${currentUser._id}`, {
+      const data = await apiRequest(`/api/user/update/${currentUser._id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+        body: formData,
+        auth: true,
       });
-      const data = await res.json();
-      if (!res.ok) {
-        dispatch(updateFailure(data.message));
-        setUpdateUserError(data.message);
-      } else {
-        dispatch(updateSuccess(data));
-        setUpdateUserSuccess("User's profile updated successfully");
-      }
+
+      const updatedUser = data.user || data;
+      dispatch(updateSuccess({ ...updatedUser, token: getAuthToken() }));
+      setUpdateUserSuccess("User's profile updated successfully");
     } catch (error) {
       dispatch(updateFailure(error.message));
       setUpdateUserError(error.message);
@@ -106,15 +101,11 @@ export default function DashProfile() {
     setShowModal(false);
     try {
       dispatch(deleteUserStart());
-      const res = await fetch(`${API_URL}/api/user/delete/${currentUser._id}`, {
+      await apiRequest(`/api/user/delete/${currentUser._id}`, {
         method: 'DELETE',
+        auth: true,
       });
-      const data = await res.json();
-      if (!res.ok) {
-        dispatch(deleteUserFailure(data.message));
-      } else {
-        dispatch(deleteUserSuccess(data));
-      }
+      dispatch(deleteUserSuccess());
     } catch (error) {
       dispatch(deleteUserFailure(error.message));
     }
@@ -122,17 +113,11 @@ export default function DashProfile() {
 
   const handleSignout = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/user/signout`, {
-        method: 'POST',
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        console.log(data.message);
-      } else {
-        dispatch(signoutSuccess());
-      }
+      await apiRequest('/api/auth/signout', { method: 'POST', auth: true });
     } catch (error) {
       console.log(error.message);
+    } finally {
+      dispatch(signoutSuccess());
     }
   };
   return (

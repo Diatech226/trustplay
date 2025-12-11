@@ -8,6 +8,7 @@ import {
 } from 'react-icons/hi';
 import { Button, Table } from 'flowbite-react';
 import { Link } from 'react-router-dom';
+import { apiRequest } from '../utils/apiClient';
 
 export default function DashboardComp() {
   const [users, setUsers] = useState([]);
@@ -20,44 +21,34 @@ export default function DashboardComp() {
   const [lastMonthPosts, setLastMonthPosts] = useState(0);
   const [lastMonthComments, setLastMonthComments] = useState(0);
   const { currentUser } = useSelector((state) => state.user);
-  const API_URL = import.meta.env.VITE_API_URL;
   
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await  fetch(`${API_URL}/api/user/getusers?limit=5`);
-        const data = await res.json();
-        if (res.ok) {
-          setUsers(data.users);
-          setTotalUsers(data.totalUsers);
-          setLastMonthUsers(data.lastMonthUsers);
-        }
+        const data = await apiRequest('/api/user/getusers?limit=5', { auth: true });
+        setUsers(data.users);
+        setTotalUsers(data.totalUsers);
+        setLastMonthUsers(data.lastMonthUsers);
       } catch (error) {
         console.log(error.message);
       }
     };
     const fetchPosts = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/user/getposts?limit=5`);
-        const data = await res.json();
-        if (res.ok) {
-          setPosts(data.posts);
-          setTotalPosts(data.totalPosts);
-          setLastMonthPosts(data.lastMonthPosts);
-        }
+        const data = await apiRequest('/api/post/getposts?limit=5', { auth: true });
+        setPosts(data.posts);
+        setTotalPosts(data.totalPosts);
+        setLastMonthPosts(data.lastMonthPosts);
       } catch (error) {
         console.log(error.message);
       }
     };
     const fetchComments = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/user/getcomments?limit=5`);
-        const data = await res.json();
-        if (res.ok) {
-          setComments(data.comments);
-          setTotalComments(data.totalComments);
-          setLastMonthComments(data.lastMonthComments);
-        }
+        const data = await apiRequest('/api/comment/getcomments?limit=5', { auth: true });
+        setComments(data.comments);
+        setTotalComments(data.totalComments);
+        setLastMonthComments(data.lastMonthComments);
       } catch (error) {
         console.log(error.message);
       }
