@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get('file');
     if (!file || !(file instanceof File)) {
-      return NextResponse.json({ error: 'Aucun fichier fourni' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Aucun fichier fourni' }, { status: 400 });
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -19,8 +19,8 @@ export async function POST(request: NextRequest) {
     await writeFile(path.join(uploadDir, fileName), buffer);
 
     const url = `/uploads/${fileName}`;
-    return NextResponse.json({ url });
+    return NextResponse.json({ success: true, data: { url } });
   } catch (error) {
-    return NextResponse.json({ error: 'Impossible de traiter le fichier' }, { status: 500 });
+    return NextResponse.json({ success: false, error: (error as Error).message || 'Impossible de traiter le fichier' }, { status: 500 });
   }
 }

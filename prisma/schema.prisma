@@ -8,7 +8,7 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
+  id           Int      @id @default(autoincrement())
   email        String   @unique
   passwordHash String
   name         String?
@@ -25,7 +25,7 @@ enum Role {
 }
 
 model Post {
-  id          String   @id @default(cuid())
+  id          Int      @id @default(autoincrement())
   title       String
   slug        String   @unique
   category    String   @default("TrustMedia")
@@ -37,11 +37,11 @@ model Post {
   updatedAt   DateTime @updatedAt
   views       Int      @default(0)
   author      User?    @relation(fields: [authorId], references: [id])
-  authorId    String?
+  authorId    Int?
 }
 
 model Event {
-  id          String   @id @default(cuid())
+  id          Int      @id @default(autoincrement())
   title       String
   slug        String   @unique
   description String
@@ -57,9 +57,9 @@ model Event {
 }
 
 model EventRegistration {
-  id        String   @id @default(cuid())
-  eventId   String
-  userId    String?
+  id        Int      @id @default(autoincrement())
+  eventId   Int
+  userId    Int?
   email     String?
   name      String?
   createdAt DateTime @default(now())
