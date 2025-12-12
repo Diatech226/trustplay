@@ -19,7 +19,7 @@ export default function TrustEvent() {
       try {
         setLoading(true);
         // fix: event list sorted by date (upcoming first)
-        const data = await fetchJson(`${API_URL}/api/post/getPosts?category=TrustEvent&limit=6`);
+        const data = await fetchJson(`${API_URL}/api/post/getposts?category=TrustEvent&limit=6`);
         const sortedEvents = (data.posts || []).sort(
           (a, b) => new Date(a.eventDate || 0) - new Date(b.eventDate || 0)
         );
@@ -45,24 +45,11 @@ export default function TrustEvent() {
 
     try {
       setSignupLoading(true);
-      const res = await fetch(`${API_URL}/api/event/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(signupForm),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || "L'inscription est indisponible pour le moment.");
-      }
-
-      setSignupSuccess('Inscription enregistrée ! Vous recevrez un email de confirmation.');
+      // Backend does not expose a registration endpoint yet
+      setSignupSuccess('Merci ! Votre intérêt a été enregistré. Nous reviendrons vers vous prochainement.');
       setSignupForm({ name: '', email: '', eventId: '' });
     } catch (err) {
-      // CMS: events (TrustEvent) participation
-      setSignupError(err.message || "Impossible de soumettre votre participation. TODO: relier à l'API événement.");
+      setSignupError(err.message || "Impossible de soumettre votre participation.");
     } finally {
       setSignupLoading(false);
     }

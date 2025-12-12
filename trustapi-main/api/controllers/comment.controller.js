@@ -6,21 +6,15 @@ import { errorHandler } from "../utils/error.js";
 /** ✅ Create a Comment */
 export const createComment = async (req, res, next) => {
   try {
-    console.log("Request Body:", req.body);
-    console.log("Authenticated User:", req.user);
-
-   /* if (!req.user) {
+    if (!req.user) {
       return next(errorHandler(401, "Unauthorized"));
-    }*/
+    }
 
-    const { content, postId , userId} = req.body; // ✅ Correction du nom de la variable
+    const { content, postId } = req.body;
 
     if (!postId || !content) {
-      return res.status(400).json({ message: "postId and content are required" });
+      return res.status(400).json({ success: false, message: "postId and content are required" });
     }
-    
-
-   
 
     const postExists = await Post.findById(postId);
     if (!postExists) {
@@ -28,13 +22,13 @@ export const createComment = async (req, res, next) => {
     }
 
     const newComment = new Comment({
-      userId, // ✅ Correction de req.user.id
+      userId: req.user.id,
       postId,
       content,
     });
 
     await newComment.save();
-    res.status(201).json(newComment);
+    res.status(201).json({ success: true, data: newComment, comment: newComment });
   } catch (error) {
     console.error("Error creating comment:", error);
     next(error);
@@ -71,9 +65,9 @@ export const likeComment = async (req, res, next) => {
       return next(errorHandler(404, "Comment not found"));
     }
 
-    const userIndex = comment.likes.indexOf(req.user.userId);
+    const userIndex = comment.likes.indexOf(req.user.id);
     if (userIndex === -1) {
-      comment.likes.push(req.user.userId);
+      comment.likes.push(req.user.id);
       comment.numberOfLikes += 1;
     } else {
       comment.likes.splice(userIndex, 1);
@@ -81,7 +75,7 @@ export const likeComment = async (req, res, next) => {
     }
 
     await comment.save();
-    res.status(200).json(comment);
+    res.status(200).json({ success: true, data: comment, comment });
   } catch (error) {
     next(error);
   }
@@ -99,14 +93,14 @@ export const editComment = async (req, res, next) => {
       return next(errorHandler(404, "Comment not found"));
     }
 
-    if (comment.userId.toString() !== req.user.userId && !req.user.isAdmin) {
+    if (comment.userId.toString() !== req.user.id && !req.user.isAdmin) {
       return next(errorHandler(403, "You are not allowed to edit this comment"));
     }
 
     comment.content = req.body.content;
     await comment.save();
 
-    res.status(200).json(comment);
+    res.status(200).json({ success: true, data: comment, comment });
   } catch (error) {
     next(error);
   }
@@ -124,12 +118,12 @@ export const deleteComment = async (req, res, next) => {
       return next(errorHandler(404, "Comment not found"));
     }
 
-    if (comment.userId.toString() !== req.user.userId && !req.user.isAdmin) {
+    if (comment.userId.toString() !== req.user.id && !req.user.isAdmin) {
       return next(errorHandler(403, "You are not allowed to delete this comment"));
     }
 
     await Comment.findByIdAndDelete(req.params.commentId);
-    res.status(200).json({ message: "Comment has been deleted" });
+    res.status(200).json({ success: true, message: "Comment has been deleted" });
   } catch (error) {
     next(error);
   }
@@ -157,7 +151,7 @@ export const getComments = async (req, res, next) => {
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
     const lastMonthComments = await Comment.countDocuments({ createdAt: { $gte: oneMonthAgo } });
 
-    res.status(200).json({ comments, totalComments, lastMonthComments });
+    res.status(200).json({ success: true, comments, totalComments, lastMonthComments, data: { comments, totalComments, lastMonthComments } });
   } catch (error) {
     next(error);
   }

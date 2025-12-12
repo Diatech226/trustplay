@@ -27,13 +27,14 @@ export const uploadImageFile = async (file, apiUrl) => {
     throw new Error(data.message || "L'upload de l'image a échoué.");
   }
 
+  const payload = data.data || data;
   const imageUrl =
-    data.url ||
-    data.imageUrl ||
-    data.image ||
-    data.location ||
-    data.secure_url ||
-    data.id;
+    payload.url ||
+    payload.imageUrl ||
+    payload.image ||
+    payload.location ||
+    payload.secure_url ||
+    payload.id;
 
   if (!imageUrl) {
     throw new Error("Impossible de récupérer l'URL de l'image renvoyée par l'API.");

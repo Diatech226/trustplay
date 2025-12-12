@@ -6,6 +6,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { setUser } from '../redux/user/userSlice';
 import { uploadImageFile } from '../utils/uploadImage';
+import { apiRequest } from '../utils/apiClient';
 
 const MEDIA_SUBCATEGORIES = [
   { value: 'news', label: 'News' },
@@ -52,12 +53,7 @@ export default function UpdatePost() {
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/post/getposts?postId=${postId}`);
-        const data = await res.json();
-        if (!res.ok) {
-          setPublishError(data.message || 'Impossible de récupérer le post.');
-          return;
-        }
+        const data = await apiRequest(`/api/post/getposts?postId=${postId}`);
         if (data.posts && data.posts[0]) {
           const fetchedPost = data.posts[0];
           const normalizedCategory =
@@ -125,28 +121,23 @@ export default function UpdatePost() {
     }
 
     try {
-      const res = await fetch(
-        `${API_URL}/api/post/updatepost/${formData._id}/${currentUser?._id}`,
+      const data = await apiRequest(
+        `/api/post/updatepost/${formData._id}/${currentUser?._id}`,
         {
           method: 'PUT',
+          auth: true,
           headers: {
-            'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(formData),
+          body: formData,
         }
       );
-
-      const data = await res.json();
-      if (!res.ok) {
-        setPublishError(data.message || 'La mise à jour a échoué.');
-        return;
-      }
 
       if (data.user) {
         dispatch(setUser(data.user));
       }
-      navigate(`/post/${data.slug}`);
+      const slug = data.slug || data.post?.slug || formData.slug;
+      navigate(slug ? `/post/${slug}` : '/');
     } catch (error) {
       setPublishError('Une erreur est survenue, veuillez réessayer.');
     }
