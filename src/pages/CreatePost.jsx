@@ -4,6 +4,7 @@ import 'react-quill/dist/quill.snow.css';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { uploadImageFile } from '../utils/uploadImage';
+import { apiRequest } from '../utils/apiClient';
 
 const MEDIA_SUBCATEGORIES = [
   { value: 'news', label: 'News' },
@@ -90,22 +91,17 @@ export default function CreatePost() {
 
     try {
       setSubmitting(true);
-      const res = await fetch(`${API_URL}/api/post/create`, {
+      const data = await apiRequest('/api/post/create', {
         method: 'POST',
+        auth: true,
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: formData,
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        setPublishError(data.message || 'La publication a échoué.');
-        return;
-      }
-
-      navigate(`/post/${data.slug}`);
+      const slug = data.slug || data.post?.slug || data.data?.post?.slug;
+      navigate(slug ? `/post/${slug}` : '/');
     } catch (error) {
       setPublishError('Une erreur est survenue, veuillez réessayer.');
     } finally {

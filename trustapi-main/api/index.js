@@ -5,6 +5,7 @@ import userRoutes from './routes/user.route.js';
 import authRoutes from './routes/auth.route.js';
 import postRoutes from './routes/post.route.js';
 import commentRoutes from './routes/comment.route.js';
+import uploadRoutes from './routes/upload.route.js';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import cors from 'cors';
@@ -26,11 +27,15 @@ const app = express();
 // Middlewares
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({
-  origin: "https://www.trust-group.agency",
-  methods: "GET,POST,PUT,DELETE",
-  credentials: true
-}));
+
+const allowedOrigins = (process.env.CORS_ORIGIN || '').split(',').filter(Boolean);
+app.use(
+  cors({
+    origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+    methods: 'GET,POST,PUT,DELETE',
+    credentials: true,
+  })
+);
 
 app.use((req, res, next) => {
   res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
@@ -42,6 +47,11 @@ app.use('/api/user', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/post', postRoutes);
 app.use('/api/comment', commentRoutes);
+app.use('/api/uploads', uploadRoutes);
+
+// Serve uploaded assets
+const uploadsDir = process.env.UPLOAD_DIR || 'uploads';
+app.use('/uploads', express.static(path.join(__dirname, uploadsDir)));
 
 // Servir le frontend
 app.use(express.static(path.join(__dirname, 'client', 'dist')));

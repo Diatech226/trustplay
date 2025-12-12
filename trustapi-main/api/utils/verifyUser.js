@@ -26,9 +26,10 @@ import { errorHandler } from "./error.js";
 
 export const verifyToken = (req, res, next) => {
   try {
-    console.log("Cookies reçus:", req.cookies); // ✅ Debug cookies
+    const bearerToken = req.headers.authorization?.replace('Bearer ', '');
+    const cookieToken = req.cookies?.access_token;
+    const token = bearerToken || cookieToken;
 
-    const token = req.cookies?.access_token;
     if (!token) {
       return next(errorHandler(401, "Unauthorized: No token provided"));
     }

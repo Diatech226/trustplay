@@ -33,12 +33,9 @@ import jwt from 'jsonwebtoken';
   }
 };*/
 export const signup = async (req, res, next) => {
-  console.log("Signup request received:", req.body);
-  
   const { username, email, password } = req.body;
 
   if (!username || !email || !password) {
-    console.log("Missing fields in signup request");
     return next(errorHandler(400, "All fields are required"));
   }
 
@@ -51,12 +48,14 @@ export const signup = async (req, res, next) => {
       password: hashedPassword,
     });
 
-    console.log("Saving new user:", newUser);
     await newUser.save();
 
-    res.json("Signup successful");
+    res.status(201).json({
+      success: true,
+      message: "Signup successful",
+      data: { userId: newUser._id },
+    });
   } catch (error) {
-    console.error("Error in signup:", error);
     next(error);
   }
 };
@@ -90,7 +89,13 @@ export const signin = async (req, res, next) => {
       .cookie('access_token', token, {
         httpOnly: true,
       })
-      .json(rest);
+      .json({
+        success: true,
+        message: 'Signin successful',
+        data: { user: rest, token },
+        user: rest,
+        token,
+      });
   } catch (error) {
     next(error);
   }
@@ -111,7 +116,7 @@ export const google = async (req, res, next) => {
         .cookie('access_token', token, {
           httpOnly: true,
         })
-        .json(rest);
+        .json({ success: true, message: 'Signin successful', data: { user: rest, token }, user: rest, token });
     } else {
       const generatedPassword =
         Math.random().toString(36).slice(-8) +
@@ -136,7 +141,7 @@ export const google = async (req, res, next) => {
         .cookie('access_token', token, {
           httpOnly: true,
         })
-        .json(rest);
+        .json({ success: true, message: 'Signin successful', data: { user: rest, token }, user: rest, token });
     }
   } catch (error) {
     next(error);
