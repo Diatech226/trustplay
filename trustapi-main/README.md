@@ -91,7 +91,7 @@ Résumé (voir le détail complet dans `API_CONTRACT.md`). Les routes sont préf
 - `DELETE /api/comment/deleteComment/:commentId` (auth proprio/admin)
 
 ### Upload
-- `POST /api/uploads` — `multipart/form-data` avec champ `image` **ou** `file`
+- `POST /api/uploads` — `multipart/form-data` avec champ `file` (recommandé) ou `image` (compat)
 - `GET /uploads/<filename>` — fichiers statiques servis depuis `UPLOAD_DIR`
 
 #### Exemples curl
@@ -111,14 +111,35 @@ curl -X POST "$NEXT_PUBLIC_API_URL/api/post/create" \
   -d '{"title":"Hello","content":"<p>World</p>","category":"TrustMedia","subCategory":"news"}' \
   -b cookie.txt
 
-# Upload d'image
-curl -X POST "$NEXT_PUBLIC_API_URL/api/uploads" -F 'image=@/chemin/vers/image.jpg'
+# Upload d'image (bearer ou cookie)
+curl -X POST "$NEXT_PUBLIC_API_URL/api/uploads" \
+  -H "Authorization: Bearer <token>" \
+  -F 'file=@/chemin/vers/image.jpg'
+
+# Upload vidéo
+curl -X POST "$NEXT_PUBLIC_API_URL/api/uploads" \
+  -H "Authorization: Bearer <token>" \
+  -F 'file=@/chemin/vers/video.mp4'
 ```
 
 ## Upload
-- Endpoint : `POST /api/uploads`
-- Accepte les champs `image` **ou** `file` (multipart).
-- Réponse : `{ success: true, data: { url, filename, mimetype, size, path }, message }` ; les fichiers sont servis via `/uploads/<filename>`.
+- Endpoint : `POST /api/uploads` (auth requis)
+- Accepte les champs `file` (recommandé) ou `image` (compatibilité legacy), multipart/form-data.
+- Types : images (`jpeg`, `png`, `webp`, `gif`, 10 Mo max) et vidéos (`mp4`, `webm`, 100 Mo max).
+- Réponse :
+  ```json
+  {
+    "success": true,
+    "data": {
+      "url": "/uploads/<filename>",
+      "name": "<filename>",
+      "mime": "image/png",
+      "size": 12345,
+      "type": "image" // ou "video"
+    }
+  }
+  ```
+- Les fichiers sont servis via `/uploads/<filename>` ; le dossier `UPLOAD_DIR` est créé automatiquement.
 
 ## Troubleshooting
 - **Mongo Atlas** :

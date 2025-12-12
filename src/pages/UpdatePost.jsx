@@ -1,12 +1,12 @@
 import { Alert, Button, FileInput, Select, TextInput } from 'flowbite-react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../redux/user/userSlice';
-import { uploadImageFile } from '../utils/uploadImage';
-import { apiRequest, API_BASE_URL } from '../utils/apiClient';
+import { uploadImageFile, uploadMediaFile } from '../utils/uploadImage';
+import { apiRequest } from '../utils/apiClient';
 import { ALL_SUBCATEGORIES, normalizeSubCategory, PRIMARY_SUBCATEGORIES } from '../utils/categories';
 
 const CATEGORY_OPTIONS = [
@@ -19,6 +19,7 @@ export default function UpdatePost() {
   const { postId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const quillRef = useRef(null);
 
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -76,7 +77,7 @@ export default function UpdatePost() {
     try {
       setUploadError('');
       setUploading(true);
-      const imageUrl = await uploadImageFile(file, API_BASE_URL);
+      const imageUrl = await uploadImageFile(file);
       setFormData((prev) => ({ ...prev, image: imageUrl }));
     } catch (error) {
       setUploadError(error.message);
@@ -85,16 +86,77 @@ export default function UpdatePost() {
     }
   };
 
+  const insertMediaIntoEditor = useCallback(
+    async (type) => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = type === 'image' ? 'image/*' : 'video/*';
+      input.onchange = async () => {
+        const selectedFile = input.files?.[0];
+        if (!selectedFile) return;
+        try {
+          setUploading(true);
+          const uploaded = await uploadMediaFile(selectedFile);
+          const quill = quillRef.current?.getEditor();
+          if (!quill || !uploaded.url) return;
+          const range = quill.getSelection(true);
+          const insertAt = range?.index ?? quill.getLength();
+          quill.insertEmbed(insertAt, type, uploaded.url, 'user');
+          quill.setSelection(insertAt + 1, 0);
+        } catch (error) {
+          setUploadError(error.message);
+        } finally {
+          setUploading(false);
+        }
+      };
+      input.click();
+    },
+    []
+  );
+
+  const quillModules = useMemo(
+    () => ({
+      toolbar: {
+        container: [
+          [{ header: [1, 2, 3, false] }],
+          ['bold', 'italic', 'underline', 'strike'],
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          ['blockquote', 'code-block'],
+          ['link', 'image', 'video'],
+          [{ align: [] }],
+          ['clean'],
+        ],
+        handlers: {
+          image: () => insertMediaIntoEditor('image'),
+          video: () => insertMediaIntoEditor('video'),
+        },
+      },
+    }),
+    [insertMediaIntoEditor]
+  );
+
+  const quillFormats = useMemo(
+    () => [
+      'header',
+      'bold',
+      'italic',
+      'underline',
+      'strike',
+      'blockquote',
+      'code-block',
+      'list',
+      'bullet',
+      'link',
+      'image',
+      'video',
+      'align',
+    ],
+    []
+  );
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setPublishError('');
-    const token = localStorage.getItem('token');
-
-    if (!token) {
-      setPublishError('Authentification requise pour mettre à jour.');
-      return;
-    }
-
     if (formData.category === 'TrustEvent') {
       if (!formData.eventDate || !formData.location) {
         setPublishError("Merci d'indiquer la date et le lieu de l'événement.");
@@ -108,7 +170,8 @@ export default function UpdatePost() {
     }
 
     try {
-      const data = await apiRequest(`/api/posts/${formData._id}`, {
+      const postIdentifier = formData._id || formData.id || postId;
+      const data = await apiRequest(`/api/posts/${postIdentifier}`, {
         method: 'PUT',
         auth: true,
         body: {
@@ -247,12 +310,15 @@ export default function UpdatePost() {
         {uploadError && <Alert color='failure'>{uploadError}</Alert>}
         {formData.image && <img src={formData.image} alt='upload' className='w-full h-72 object-cover' />}
         <ReactQuill
+          ref={quillRef}
           theme='snow'
           value={formData.content}
           placeholder='Rédigez votre contenu...'
           className='h-72 mb-12'
           required
           onChange={(value) => setFormData((prev) => ({ ...prev, content: value }))}
+          modules={quillModules}
+          formats={quillFormats}
         />
         <Button type='submit' gradientDuoTone='purpleToPink'>
           Mettre à jour

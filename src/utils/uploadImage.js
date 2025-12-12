@@ -1,6 +1,6 @@
-import { API_BASE_URL, getAuthToken } from './apiClient';
+import { uploadFile } from './apiClient';
 
-export const uploadImageFile = async (file, apiUrl = API_BASE_URL) => {
+export const uploadImageFile = async (file) => {
   if (!file) {
     throw new Error('Aucun fichier sélectionné');
   }
@@ -9,42 +9,20 @@ export const uploadImageFile = async (file, apiUrl = API_BASE_URL) => {
     throw new Error('Le fichier doit être une image.');
   }
 
-  const maxSizeInMb = 5;
+  const maxSizeInMb = 10;
   if (file.size > maxSizeInMb * 1024 * 1024) {
     throw new Error(`L'image doit faire moins de ${maxSizeInMb} Mo.`);
   }
 
-  const formData = new FormData();
-  // La plupart des backends attendent soit "image" soit "file" pour le champ binaire.
-  formData.append('image', file);
-  formData.append('file', file);
+  const uploaded = await uploadFile(file, 'file');
+  return uploaded.url;
+};
 
-  const token = getAuthToken();
-
-  const res = await fetch(`${apiUrl}/api/uploads`, {
-    method: 'POST',
-    body: formData,
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    credentials: 'include',
-  });
-
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.message || "L'upload de l'image a échoué.");
+export const uploadMediaFile = async (file) => {
+  if (!file) {
+    throw new Error('Aucun fichier sélectionné');
   }
 
-  const payload = data.data || data;
-  const imageUrl =
-    payload.url ||
-    payload.imageUrl ||
-    payload.image ||
-    payload.location ||
-    payload.secure_url ||
-    payload.id;
-
-  if (!imageUrl) {
-    throw new Error("Impossible de récupérer l'URL de l'image renvoyée par l'API.");
-  }
-
-  return imageUrl;
+  const uploaded = await uploadFile(file, 'file');
+  return uploaded;
 };

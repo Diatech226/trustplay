@@ -9,6 +9,8 @@ import commentRoutes from './routes/comment.route.js';
 import uploadRoutes from './routes/upload.route.js';
 import cookieParser from 'cookie-parser';
 import path from 'path';
+import fs from 'fs';
+import { absoluteUploadPath } from './controllers/upload.controller.js';
 import cors from 'cors';
 
 dotenv.config();
@@ -64,8 +66,11 @@ app.use('/api/comment', commentRoutes);
 app.use('/api/uploads', uploadRoutes);
 
 // Serve uploaded assets
-const uploadsDir = process.env.UPLOAD_DIR || 'uploads';
-app.use('/uploads', express.static(path.join(__dirname, uploadsDir)));
+if (!fs.existsSync(absoluteUploadPath)) {
+  fs.mkdirSync(absoluteUploadPath, { recursive: true });
+}
+
+app.use('/uploads', express.static(absoluteUploadPath));
 
 // Servir le frontend
 app.use(express.static(path.join(__dirname, 'client', 'dist')));
@@ -75,7 +80,10 @@ app.get('*', (req, res) => {
 });
 
 // Gestion des erreurs
-  app.use((err, req, res) => {
+app.use((err, req, res, next) => {
+  if (res.headersSent) {
+    return next(err);
+  }
   res.status(err.statusCode || 500).json({
     success: false,
     statusCode: err.statusCode || 500,

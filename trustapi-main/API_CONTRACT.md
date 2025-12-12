@@ -53,7 +53,7 @@
 ### Upload
 | Méthode | Route | Auth | Corps | Réponse |
 | --- | --- | --- | --- | --- |
-| POST | `/api/uploads` | Optionnel | `multipart/form-data` champ `image` **ou** `file` | `201 { success, data: { url, filename, mimetype, size, path }, message }` |
+| POST | `/api/uploads` | Oui | `multipart/form-data` champ `file` (ou `image` en compat) | `201 { success, data: { url, name, mime, size, type }, message }` |
 | GET | `/uploads/<filename>` | Non | – | Fichier statique (servi depuis `UPLOAD_DIR`) |
 
 ## Modèles de données
