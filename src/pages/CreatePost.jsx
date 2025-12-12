@@ -4,7 +4,7 @@ import 'react-quill/dist/quill.snow.css';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { uploadImageFile } from '../utils/uploadImage';
-import { apiRequest } from '../utils/apiClient';
+import { apiRequest, API_BASE_URL } from '../utils/apiClient';
 
 const MEDIA_SUBCATEGORIES = [
   { value: 'news', label: 'News' },
@@ -26,7 +26,6 @@ const CATEGORY_OPTIONS = [
 ];
 
 export default function CreatePost() {
-  const API_URL = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -53,7 +52,7 @@ export default function CreatePost() {
     try {
       setUploadError('');
       setUploading(true);
-      const imageUrl = await uploadImageFile(file, API_URL);
+      const imageUrl = await uploadImageFile(file, API_BASE_URL);
       setFormData((prev) => ({ ...prev, image: imageUrl }));
     } catch (error) {
       setUploadError(error.message);

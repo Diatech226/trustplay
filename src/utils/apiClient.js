@@ -1,9 +1,12 @@
-const API_URL = import.meta.env.VITE_API_URL;
+export const API_BASE_URL =
+  import.meta.env?.NEXT_PUBLIC_API_URL ||
+  import.meta.env?.VITE_API_URL ||
+  'http://localhost:3000';
 
 const buildUrl = (path) => {
   if (path.startsWith('http')) return path;
-  if (!path.startsWith('/')) return `${API_URL}/${path}`;
-  return `${API_URL}${path}`;
+  if (!path.startsWith('/')) return `${API_BASE_URL}/${path}`;
+  return `${API_BASE_URL}${path}`;
 };
 
 const logError = (message, details) => {
@@ -39,15 +42,20 @@ export async function apiRequest(path, { method = 'GET', body, headers = {}, aut
     const config = {
       method,
       headers: {
-        'Content-Type': 'application/json',
         ...headers,
       },
       credentials: 'include',
       ...rest,
     };
 
+    const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+
     if (body !== undefined) {
-      config.body = JSON.stringify(body);
+      config.body = isFormData ? body : JSON.stringify(body);
+    }
+
+    if (!isFormData) {
+      config.headers['Content-Type'] = config.headers['Content-Type'] || 'application/json';
     }
 
     if (auth) {

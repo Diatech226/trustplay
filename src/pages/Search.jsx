@@ -6,7 +6,7 @@ import PageHeader from '../components/layout/PageHeader';
 import PostCard from '../components/PostCard';
 import PostCardSkeleton from '../components/skeletons/PostCardSkeleton';
 import Seo from '../components/Seo';
-import { fetchJson } from '../utils/apiClient';
+import { fetchJson, API_BASE_URL } from '../utils/apiClient';
 
 export default function Search() {
   const [sidebarData, setSidebarData] = useState({
@@ -16,7 +16,6 @@ export default function Search() {
     dateRange: 'any',
     tags: '',
   });
-  const API_URL = import.meta.env.VITE_API_URL;
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showMore, setShowMore] = useState(false);
@@ -50,7 +49,7 @@ export default function Search() {
       const queryParams = new URLSearchParams(location.search);
       const searchQuery = queryParams.toString();
       try {
-        const data = await fetchJson(`${API_URL}/api/post/getposts?${searchQuery}`);
+        const data = await fetchJson(`${API_BASE_URL}/api/post/getposts?${searchQuery}`);
         const filtered = applyAdvancedFilters(data.posts, nextFilters);
         setPosts(filtered);
         if (data.posts.length === 9) {
@@ -65,7 +64,7 @@ export default function Search() {
       }
     };
     fetchPosts();
-  }, [location.search, API_URL]);
+  }, [location.search]);
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -95,7 +94,7 @@ export default function Search() {
     urlParams.set('startIndex', startIndex);
     const searchQuery = urlParams.toString();
     try {
-      const data = await fetchJson(`${API_URL}/api/post/getposts?${searchQuery}`);
+      const data = await fetchJson(`${API_BASE_URL}/api/post/getposts?${searchQuery}`);
       const filtered = applyAdvancedFilters([...posts, ...data.posts], sidebarData);
       setPosts(filtered);
       if (data.posts.length === 9) {

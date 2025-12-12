@@ -6,6 +6,7 @@ import PageContainer from './layout/PageContainer';
 import PageHeader from './layout/PageHeader';
 import Seo from './Seo';
 import PostCardSkeleton from './skeletons/PostCardSkeleton';
+import { API_BASE_URL } from '../utils/apiClient';
 
 const DEFAULT_LIMIT = 12;
 
@@ -19,7 +20,6 @@ const popularityFields = ['views', 'reads', 'readCount', 'likes'];
 const getTimestamp = (item) => new Date(item?.createdAt || item?.updatedAt || 0).getTime();
 
 export default function CategoryPageLayout({ title, subCategory, description = '', path }) {
-  const API_URL = import.meta.env.VITE_API_URL;
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -53,7 +53,7 @@ export default function CategoryPageLayout({ title, subCategory, description = '
           params.set('sortBy', 'views');
         }
 
-        const res = await fetch(`${API_URL}/api/post/getposts?${params.toString()}`);
+        const res = await fetch(`${API_BASE_URL}/api/post/getposts?${params.toString()}`);
         const data = await res.json();
         if (!res.ok) {
           throw new Error(data.message || 'Chargement impossible.');

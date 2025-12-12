@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { HiOutlineExclamationCircle } from 'react-icons/hi';
+import { apiRequest, API_BASE_URL } from '../utils/apiClient';
 
 // CMS: posts module table
 export default function DashPosts({ filters = { category: 'all', subCategory: 'all', status: 'all', query: '' } }) {
@@ -11,13 +12,12 @@ export default function DashPosts({ filters = { category: 'all', subCategory: 'a
   const [showMore, setShowMore] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [postIdToDelete, setPostIdToDelete] = useState('');
-  const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     const fetchPosts = async () => {
       if (!currentUser?.isAdmin) return;
       try {
-        const res = await fetch(`${API_URL}/api/post/getposts?userId=${currentUser._id}`);
+        const res = await fetch(`${API_BASE_URL}/api/post/getposts?userId=${currentUser._id}`);
         const data = await res.json();
         if (res.ok) {
           setUserPosts(data.posts);
@@ -32,7 +32,7 @@ export default function DashPosts({ filters = { category: 'all', subCategory: 'a
 
   const handleShowMore = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/post/getposts?userId=${currentUser._id}&startIndex=${userPosts.length}`);
+      const res = await fetch(`${API_BASE_URL}/api/post/getposts?userId=${currentUser._id}&startIndex=${userPosts.length}`);
       const data = await res.json();
       if (res.ok) {
         setUserPosts((prev) => [...prev, ...data.posts]);
@@ -46,14 +46,14 @@ export default function DashPosts({ filters = { category: 'all', subCategory: 'a
   const handleDeletePost = async () => {
     setShowModal(false);
     try {
-      const res = await fetch(`${API_URL}/api/post/deletepost/${postIdToDelete}/${currentUser._id}`, {
+      const data = await apiRequest(`/api/post/deletepost/${postIdToDelete}/${currentUser._id}`, {
         method: 'DELETE',
+        auth: true,
       });
-      const data = await res.json();
-      if (res.ok) {
+      if (data?.success) {
         setUserPosts((prev) => prev.filter((post) => post._id !== postIdToDelete));
       } else {
-        console.error('Error deleting post:', data.message);
+        console.error('Error deleting post:', data?.message);
       }
     } catch (error) {
       console.error('Error deleting post:', error);

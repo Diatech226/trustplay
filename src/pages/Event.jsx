@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import PageContainer from '../components/layout/PageContainer';
 import PageHeader from '../components/layout/PageHeader';
 import Seo from '../components/Seo';
-import { fetchJson } from '../utils/apiClient';
+import { fetchJson, API_BASE_URL } from '../utils/apiClient';
 
 export default function TrustEvent() {
   const [events, setEvents] = useState([]);
@@ -12,14 +12,13 @@ export default function TrustEvent() {
   const [signupError, setSignupError] = useState('');
   const [signupSuccess, setSignupSuccess] = useState('');
   const [signupLoading, setSignupLoading] = useState(false);
-  const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     const fetchEvents = async () => {
       try {
         setLoading(true);
         // fix: event list sorted by date (upcoming first)
-        const data = await fetchJson(`${API_URL}/api/post/getposts?category=TrustEvent&limit=6`);
+        const data = await fetchJson(`${API_BASE_URL}/api/post/getposts?category=TrustEvent&limit=6`);
         const sortedEvents = (data.posts || []).sort(
           (a, b) => new Date(a.eventDate || 0) - new Date(b.eventDate || 0)
         );
@@ -31,7 +30,7 @@ export default function TrustEvent() {
       }
     };
     fetchEvents();
-  }, [API_URL]);
+  }, []);
 
   const handleSignup = async (e) => {
     e.preventDefault();

@@ -1,4 +1,6 @@
-export const uploadImageFile = async (file, apiUrl) => {
+import { API_BASE_URL, getAuthToken } from './apiClient';
+
+export const uploadImageFile = async (file, apiUrl = API_BASE_URL) => {
   if (!file) {
     throw new Error('Aucun fichier sélectionné');
   }
@@ -17,9 +19,13 @@ export const uploadImageFile = async (file, apiUrl) => {
   formData.append('image', file);
   formData.append('file', file);
 
+  const token = getAuthToken();
+
   const res = await fetch(`${apiUrl}/api/uploads`, {
     method: 'POST',
     body: formData,
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    credentials: 'include',
   });
 
   const data = await res.json();

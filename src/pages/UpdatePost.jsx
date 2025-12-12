@@ -6,7 +6,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { setUser } from '../redux/user/userSlice';
 import { uploadImageFile } from '../utils/uploadImage';
-import { apiRequest } from '../utils/apiClient';
+import { apiRequest, API_BASE_URL } from '../utils/apiClient';
 
 const MEDIA_SUBCATEGORIES = [
   { value: 'news', label: 'News' },
@@ -29,7 +29,6 @@ const CATEGORY_OPTIONS = [
 
 export default function UpdatePost() {
   const { postId } = useParams();
-  const API_URL = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { currentUser } = useSelector((state) => state.user);
@@ -89,7 +88,7 @@ export default function UpdatePost() {
     try {
       setUploadError('');
       setUploading(true);
-      const imageUrl = await uploadImageFile(file, API_URL);
+      const imageUrl = await uploadImageFile(file, API_BASE_URL);
       setFormData((prev) => ({ ...prev, image: imageUrl }));
     } catch (error) {
       setUploadError(error.message);

@@ -1,43 +1,75 @@
 # API Contract — Trust Media
 
-## Convention
-- Base URL configurable via `VITE_API_URL` côté front.
-- Authentification : JWT en cookie `access_token` ou en header `Authorization: Bearer <token>`.
-- Réponses : `{ success, data?, message? }` avec duplication des champs principaux pour compatibilité (`posts`, `user`, `token`, ...).
+## Base
+- **Base URL** : configurable via `NEXT_PUBLIC_API_URL` (front) / `VITE_API_URL` fallback. Exemple local : `http://localhost:3000`.
+- **Prefix** : toutes les routes sont préfixées par `/api` sauf la statique `/uploads/*`.
+- **Auth** : JWT signé avec `JWT_SECRET`, transmis en cookie `access_token` (HttpOnly) **ou** header `Authorization: Bearer <token>`.
+- **CORS** : origines autorisées via `CORS_ORIGIN` (CSV), `credentials: true`, méthodes `GET,POST,PUT,DELETE,OPTIONS`, headers `Content-Type, Authorization`.
+- **Réponses** :
+  - Succès : `{ "success": true, "data": { ... }, "message"? }` + champs dupliqués pour compatibilité (`user`, `post`, `comments`, `token`...).
+  - Erreur : `{ "success": false, "message": "...", "statusCode"? }` avec le code HTTP correspondant.
 
-## Routage Backend → Frontend
-| Endpoint | Méthode | Frontend (écran/comp) | Payload entrée | Données retour clés | Auth |
-| --- | --- | --- | --- | --- | --- |
-| `/api/auth/signup` | POST | SignUp.jsx | `{ username, email, password }` | `message`, `data.userId` | Non |
-| `/api/auth/signin` | POST | SignIn.jsx | `{ email, password }` | `user`, `token`, cookie | Non |
-| `/api/auth/google` | POST | components/OAuth.jsx | `{ email, name, googlePhotoUrl }` | `user`, `token`, cookie | Non |
-| `/api/auth/signout` | POST | Header.jsx, DashSidebar.jsx, AdminLayout.jsx | – | `message` | Oui (cookie/bearer)
-| `/api/user/me` | GET | App.jsx (bootstrap session) | – | `data.user` | Oui |
-| `/api/user/getusers` | GET | DashboardComp, DashUsers | Query: `startIndex`, `limit`, `sort` | `users`, `totalUsers`, `lastMonthUsers` | Admin |
-| `/api/user/update/:userId` | PUT | DashProfile.jsx | Profil/mot de passe | `user` | Auth + propriétaire |
-| `/api/user/delete/:userId` | DELETE | DashProfile.jsx, DashUsers | – | `message` | Auth (admin ou propriétaire) |
-| `/api/post/create` | POST | CreatePost.jsx | Article/Event (`title`, `content`, `category`, `subCategory`, `image`, `eventDate`, `location`) | `post`, `slug` | Auth |
-| `/api/post/getposts` | GET | Home, Search, CategoryPageLayout, Event, DashPosts, DashboardComp, UpdatePost | Query: `userId`, `category`, `subCategory`, `slug`, `postId`, `searchTerm`, `startIndex`, `limit`, `order` | `posts`, `totalPosts` | Public |
-| `/api/post/updatepost/:postId/:userId` | PUT | UpdatePost.jsx | Corps identique à la création | `post`, `slug` | Auth (admin/auteur) |
-| `/api/post/deletepost/:postId/:userId` | DELETE | DashPosts.jsx | – | `message` | Auth (admin/auteur) |
-| `/api/comment/create` | POST | CommentSection.jsx | `{ postId, content }` | `comment` | Auth |
-| `/api/comment/getPostComments/:postId` | GET | CommentSection.jsx | – | `comments[]` | Public |
-| `/api/comment/getcomments` | GET | DashboardComp, DashComments | Query: `startIndex`, `limit`, `sort` | `comments`, `totalComments`, `lastMonthComments` | Admin |
-| `/api/comment/deleteComment/:commentId` | DELETE | CommentSection.jsx, DashComments | – | `message` | Auth (admin/propriétaire) |
-| `/api/comment/likeComment/:commentId` | PUT | CommentSection.jsx | – | `comment` (maj likes) | Auth |
-| `/api/uploads` | POST | utils/uploadImage.js (Create/Update Post) | `multipart/form-data` (`image` ou `file`) | `data.url` (URL publique) | Auth conseillée |
-| `/uploads/<filename>` | GET | assets uploadés | – | Fichier statique | Public |
+## Endpoints détaillés
 
-## Points de cohérence
-- Catégorie de filtrage côté front : utiliser `subCategory` (camelCase) aligné avec le backend.
-- Les appels administrateur doivent passer `{ auth: true }` dans `apiRequest` pour envoyer le cookie et le bearer local.
-- Les écrans TrustEvent (Event.jsx) consomment `/api/post/getposts?category=TrustEvent`; l'inscription événementielle reste à implémenter côté API.
+### Authentification
+| Méthode | Route | Auth | Corps | Réponse (200/201) |
+| --- | --- | --- | --- | --- |
+| POST | `/api/auth/signup` | Non | `{ username, email, password }` | `{ success, message: "Signup successful", data: { userId } }` |
+| POST | `/api/auth/signin` | Non | `{ email, password }` | `{ success, message, data: { user, token }, user, token }` + cookie `access_token` |
+| POST | `/api/auth/google` | Non | `{ email, name, googlePhotoUrl }` | Identique à `/signin` |
+| POST | `/api/auth/signout` | Facultatif | – | Vide le cookie, `{ success: true, message }` |
 
-## Format d'erreur attendu
-```json
-{
-  "success": false,
-  "message": "Raison de l'échec",
-  "statusCode": 400
-}
-```
+### Utilisateurs
+| Méthode | Route | Auth | Détails | Réponse principale |
+| --- | --- | --- | --- | --- |
+| GET | `/api/user/test` | Non | Ping API | `{ success: true, message }` |
+| GET | `/api/user/me` | Oui | Profil depuis le token | `{ success, data: { user }, user }` |
+| GET | `/api/user/getusers` | Oui (admin) | Query: `startIndex` (offset, défaut 0), `limit` (défaut 9), `sort` (`asc`/`desc`) | `{ success, users, totalUsers, lastMonthUsers, data: {...} }` |
+| GET | `/api/user/:userId` | Non | Récupérer un utilisateur par id | `{ success, data: { user }, user }` |
+| PUT | `/api/user/update/:userId` | Oui (proprio) | Corps optionnel : `username`, `email`, `profilePicture`, `password` | `{ success, data: { user }, user }` |
+| DELETE | `/api/user/delete/:userId` | Oui (proprio ou admin) | – | `{ success, message }` |
+| POST | `/api/user/signout` | Facultatif | – | Équivaut à `/api/auth/signout` |
+
+### Posts & Événements
+| Méthode | Route | Auth | Corps / Query | Réponse |
+| --- | --- | --- | --- | --- |
+| POST | `/api/post/create` | Oui | JSON : `title*`, `content*`, `category*` (`TrustMedia`, `TrustEvent`, `TrustProd`, `uncategorized`), `subCategory`, `image`, `eventDate`, `location` | `201 { success, message, data: { post }, post, slug }` |
+| GET | `/api/post/getposts` | Non | Query : `userId`, `category`, `subCategory`, `slug`, `postId`, `searchTerm`, `startIndex` (offset), `limit` (défaut 9), `order` (`asc`/`desc`) | `{ success, data: { posts, totalPosts }, posts, totalPosts }` |
+| PUT | `/api/post/updatepost/:postId/:userId` | Oui (proprio ou admin) | Corps identique à la création | `{ success, data: post, post, slug }` |
+| DELETE | `/api/post/deletepost/:postId/:userId` | Oui (proprio ou admin) | – | `{ success, message }` |
+
+> Les événements sont des posts avec `category = TrustEvent` et champs optionnels `eventDate`, `location`. Les anciennes routes `/api/post/*` sont conservées ; filtre `category=TrustEvent` pour une vue "Events".
+
+### Commentaires
+| Méthode | Route | Auth | Corps / Query | Réponse |
+| --- | --- | --- | --- | --- |
+| POST | `/api/comment/create` | Oui | `{ postId, content }` | `201 { success, data: comment, comment }` |
+| GET | `/api/comment/getPostComments/:postId` | Non | – | `{ success, data: { comments }, comments }` |
+| GET | `/api/comment/getcomments` | Oui (admin) | Query: `startIndex`, `limit`, `sort` (`asc`/`desc`) | `{ success, comments, totalComments, lastMonthComments, data: {...} }` |
+| PUT | `/api/comment/likeComment/:commentId` | Oui | – | `{ success, data: comment, comment }` |
+| PUT | `/api/comment/editComment/:commentId` | Oui (proprio ou admin) | `{ content }` | `{ success, data: comment, comment }` |
+| DELETE | `/api/comment/deleteComment/:commentId` | Oui (proprio ou admin) | – | `{ success, message }` |
+
+### Upload
+| Méthode | Route | Auth | Corps | Réponse |
+| --- | --- | --- | --- | --- |
+| POST | `/api/uploads` | Optionnel | `multipart/form-data` champ `image` **ou** `file` | `201 { success, data: { url, filename, mimetype, size, path }, message }` |
+| GET | `/uploads/<filename>` | Non | – | Fichier statique (servi depuis `UPLOAD_DIR`) |
+
+## Modèles de données
+- **User** : `username`, `email`, `password`, `profilePicture`, `isAdmin`, timestamps.
+- **Post** : `userId`, `title`, `slug` (slugify lowercase/strict), `content`, `image`, `category`, `subCategory`, `eventDate?`, `location?`, timestamps.
+- **Comment** : `userId`, `postId`, `content`, `likes[]`, `numberOfLikes`, timestamps.
+
+## Pagination & tri
+- `startIndex` : offset (0 par défaut).
+- `limit` : nombre d’éléments (9 par défaut sur posts/commentaires/utilisateurs).
+- `order` (`asc`/`desc`) pour les posts ; `sort` (`asc`/`desc`) pour les utilisateurs/commentaires.
+
+## Erreurs attendues
+- 400 : validation manquante (ex. login sans email/mot de passe, création de post sans `title/content/category`).
+- 401 : non authentifié.
+- 403 : non autorisé (propriété/admin).
+- 404 : ressource manquante.
+- 500 : erreur serveur ou Mongo.
+

@@ -3,6 +3,6 @@ import { handleUpload, uploadMiddleware } from '../controllers/upload.controller
 
 const router = express.Router();
 
-router.post('/', uploadMiddleware.single('image'), handleUpload);
+router.post('/', uploadMiddleware, handleUpload);
 
 export default router;

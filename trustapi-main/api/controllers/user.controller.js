@@ -3,7 +3,7 @@ import { errorHandler } from '../utils/error.js';
 import User from '../models/user.model.js';
 
 export const test = (req, res) => {
-  res.json({ message: 'API is working!' });
+  res.json({ success: true, message: 'API is working!' });
 };
 
 export const updateUser = async (req, res, next) => {
@@ -48,7 +48,7 @@ export const updateUser = async (req, res, next) => {
       { new: true }
     );
     const { password, ...rest } = updatedUser._doc;
-    res.status(200).json(rest);
+    res.status(200).json({ success: true, data: { user: rest }, user: rest });
   } catch (error) {
     next(error);
   }
@@ -60,7 +60,7 @@ export const deleteUser = async (req, res, next) => {
   }
   try {
     await User.findByIdAndDelete(req.params.userId);
-    res.status(200).json('User has been deleted');
+    res.status(200).json({ success: true, message: 'User has been deleted' });
   } catch (error) {
     next(error);
   }
@@ -71,8 +71,8 @@ export const signout = (req, res, next) => {
     res
       .clearCookie('access_token')
       .status(200)
-      .json('User has been signed out');
-   
+      .json({ success: true, message: 'User has been signed out' });
+
   } catch (error) {
     next(error);
   }
@@ -85,7 +85,7 @@ export const getMe = async (req, res, next) => {
       return next(errorHandler(404, 'User not found'));
     }
     const { password, ...rest } = user._doc;
-    res.status(200).json({ success: true, data: { user: rest } });
+    res.status(200).json({ success: true, data: { user: rest }, user: rest });
   } catch (error) {
     next(error);
   }
@@ -124,9 +124,11 @@ export const getUsers = async (req, res, next) => {
     });
 
     res.status(200).json({
+      success: true,
       users: usersWithoutPassword,
       totalUsers,
       lastMonthUsers,
+      data: { users: usersWithoutPassword, totalUsers, lastMonthUsers },
     });
   } catch (error) {
     next(error);
@@ -140,7 +142,7 @@ export const getUser = async (req, res, next) => {
       return next(errorHandler(404, 'User not found'));
     }
     const { password, ...rest } = user._doc;
-    res.status(200).json(rest);
+    res.status(200).json({ success: true, data: { user: rest }, user: rest });
   } catch (error) {
     next(error);
   }

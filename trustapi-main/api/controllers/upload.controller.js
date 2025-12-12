@@ -20,23 +20,30 @@ const storage = multer.diskStorage({
   },
 });
 
-export const uploadMiddleware = multer({ storage });
+const upload = multer({ storage });
+
+export const uploadMiddleware = upload.fields([
+  { name: 'image', maxCount: 1 },
+  { name: 'file', maxCount: 1 },
+]);
 
 export const handleUpload = (req, res) => {
-  if (!req.file) {
+  const uploadedFile = req.files?.image?.[0] || req.files?.file?.[0];
+
+  if (!uploadedFile) {
     return res.status(400).json({ success: false, message: 'No file uploaded' });
   }
 
-  const publicPath = `/uploads/${req.file.filename}`;
-  const absolutePath = path.join(absoluteUploadPath, req.file.filename);
+  const publicPath = `/uploads/${uploadedFile.filename}`;
+  const absolutePath = path.join(absoluteUploadPath, uploadedFile.filename);
 
   return res.status(201).json({
     success: true,
     message: 'File uploaded successfully',
     data: {
-      filename: req.file.filename,
-      mimetype: req.file.mimetype,
-      size: req.file.size,
+      filename: uploadedFile.filename,
+      mimetype: uploadedFile.mimetype,
+      size: uploadedFile.size,
       url: publicPath,
       path: absolutePath,
     },
