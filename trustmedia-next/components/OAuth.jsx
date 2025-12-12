@@ -33,8 +33,8 @@ export default function OAuth() {
       });
 
       const token = data.token || data.data?.token;
-      if (token) {
-        localStorage.setItem('token', token);
+      if (token && typeof window !== 'undefined') {
+        window.localStorage.setItem('token', token);
       }
 
       const user = data.user || data.data?.user || data;

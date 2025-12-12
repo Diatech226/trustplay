@@ -36,8 +36,8 @@ export default function SignIn() {
       const token = authResponse.token || authResponse.data?.token;
       const userFromAuth = authResponse.user || authResponse.data?.user;
 
-      if (token) {
-        localStorage.setItem('token', token);
+      if (token && typeof window !== 'undefined') {
+        window.localStorage.setItem('token', token);
       }
 
       // fix: align signin route with backend

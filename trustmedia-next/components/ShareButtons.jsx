@@ -1,3 +1,5 @@
+"use client";
+
 import { FaFacebookF, FaWhatsapp, FaXTwitter, FaLinkedinIn, FaLink } from 'react-icons/fa6';
 
 const shareOptions = [
@@ -8,10 +10,10 @@ const shareOptions = [
 ];
 
 export default function ShareButtons({ title, url }) {
-  const shareLink = url || window.location.href;
+  const shareLink = url || (typeof window !== 'undefined' ? window.location.href : '');
 
   const handleNativeShare = async () => {
-    if (navigator.share) {
+    if (typeof navigator !== 'undefined' && navigator.share) {
       try {
         await navigator.share({ title, url: shareLink });
       } catch (error) {
@@ -23,7 +25,7 @@ export default function ShareButtons({ title, url }) {
   return (
     <div className='flex flex-wrap items-center gap-2 text-sm font-semibold text-primary'>
       <button
-        onClick={() => navigator.clipboard.writeText(shareLink)}
+        onClick={() => typeof navigator !== 'undefined' && navigator.clipboard?.writeText(shareLink)}
         className='flex items-center gap-2 rounded-full bg-primary/10 px-3 py-2 text-primary transition hover:-translate-y-0.5 hover:bg-primary hover:text-white'
       >
         <FaLink />
