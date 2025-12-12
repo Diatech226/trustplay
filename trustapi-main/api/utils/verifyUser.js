@@ -26,17 +26,25 @@ import { errorHandler } from "./error.js";
 
 export const verifyToken = (req, res, next) => {
   try {
-    const bearerToken = req.headers.authorization?.replace("Bearer ", "");
+    const authorization = req.headers.authorization || req.headers.Authorization;
+    const bearerToken =
+      typeof authorization === "string" && authorization.startsWith("Bearer ")
+        ? authorization.replace("Bearer ", "")
+        : null;
     const cookieToken = req.cookies?.access_token;
     const token = bearerToken || cookieToken;
 
     if (!token) {
-      return next(errorHandler(401, "Unauthorized: No token provided"));
+      return res
+        .status(401)
+        .json({ success: false, message: "Unauthorized: Invalid or missing token" });
     }
 
     jwt.verify(token, process.env.JWT_SECRET, (err, decodedUser) => {
       if (err) {
-        return next(errorHandler(403, "Forbidden: Invalid token"));
+        return res
+          .status(401)
+          .json({ success: false, message: "Unauthorized: Invalid or missing token" });
       }
       req.user = decodedUser;
       next();

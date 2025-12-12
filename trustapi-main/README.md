@@ -44,9 +44,10 @@ Variables utilisées par le code :
 - `api/utils/*` : helpers (erreur, vérification JWT)
 
 ## Auth & CORS
-- Auth JWT avec cookie `access_token` (HttpOnly) **ou** header `Authorization: Bearer <token>` ; le middleware accepte les deux.
+- Auth JWT : le serveur signe un JWT avec `{ id, email, isAdmin }` et le renvoie dans `data.token` (et en cookie `access_token` HttpOnly en bonus). **Le header `Authorization: Bearer <token>` est la source de vérité pour toutes les routes protégées.**
+- Middleware `verifyToken` : lit d'abord le bearer, sinon le cookie ; en cas d'absence/erreur, renvoie `401 { success: false, message: "Unauthorized: Invalid or missing token" }` et n'exécute pas la route.
 - CORS : origines multiples via `CORS_ORIGIN`, `credentials: true`, méthodes `GET,POST,PUT,DELETE,OPTIONS`, headers `Content-Type, Authorization`.
-- Front : utiliser `NEXT_PUBLIC_API_URL` (ou `VITE_API_URL` en fallback) et appeler `fetch(..., { credentials: 'include' })`. Les requêtes authentifiées ajoutent le bearer si disponible.
+- Front : utiliser `NEXT_PUBLIC_API_URL` (ou `VITE_API_URL` en fallback) et appeler `fetch(..., { credentials: 'include' })`. Les requêtes authentifiées ajoutent automatiquement le bearer.
 
 ## Modèles de données
 - **User** : `username`, `email`, `password`, `profilePicture`, `isAdmin`, timestamps.
@@ -94,12 +95,26 @@ Résumé (voir le détail complet dans `API_CONTRACT.md`). Les routes sont préf
 - `POST /api/uploads` — `multipart/form-data` avec champ `file` (recommandé) ou `image` (compat)
 - `GET /uploads/<filename>` — fichiers statiques servis depuis `UPLOAD_DIR`
 
+### Flux Auth (JWT)
+1. **Signin** :
+   ```bash
+   curl -X POST "$NEXT_PUBLIC_API_URL/api/auth/signin" \
+     -H 'Content-Type: application/json' \
+     -d '{"email":"demo@example.com","password":"secret"}'
+   # => { "success": true, "data": { "user": { ... }, "token": "<JWT>" } }
+   ```
+2. **Appels protégés** : ajouter `Authorization: Bearer <token>` (le cookie `access_token` est accepté en secours)
+   ```bash
+   curl "$NEXT_PUBLIC_API_URL/api/user/me" \
+     -H "Authorization: Bearer <token>"
+   ```
+
 #### Exemples curl
 ```bash
-# Authentification
-curl -X POST "$NEXT_PUBLIC_API_URL/api/auth/signin" \
+# Signup
+curl -X POST "$NEXT_PUBLIC_API_URL/api/auth/signup" \
   -H 'Content-Type: application/json' \
-  -d '{"email":"demo@example.com","password":"secret"}' -c cookie.txt
+  -d '{"username":"demo","email":"demo@example.com","password":"secret"}'
 
 # Liste des posts paginés
 curl "$NEXT_PUBLIC_API_URL/api/post/getposts?limit=5&order=desc"

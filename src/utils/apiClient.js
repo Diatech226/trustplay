@@ -1,4 +1,5 @@
 import { store } from '../redux/store';
+import { signoutSuccess } from '../redux/user/userSlice';
 
 export const API_BASE_URL =
   import.meta.env?.NEXT_PUBLIC_API_URL ||
@@ -15,6 +16,18 @@ const logError = (message, details) => {
   console.error(`[API] ${message}`, details);
 };
 
+const handleUnauthorized = () => {
+  try {
+    store.dispatch(signoutSuccess());
+  } catch (error) {
+    // store not ready
+  }
+
+  if (typeof window !== 'undefined' && window.location.pathname !== '/sign-in') {
+    window.location.href = '/sign-in';
+  }
+};
+
 const parseResponse = async (response) => {
   let data = null;
   try {
@@ -25,8 +38,17 @@ const parseResponse = async (response) => {
 
   if (!response.ok) {
     const errorMessage = data?.message || `Requête échouée (${response.status})`;
+
+    if (response.status === 401) {
+      handleUnauthorized();
+    }
+
+    const error = new Error(errorMessage);
+    error.status = response.status;
+    error.data = data;
+
     logError(errorMessage, { status: response.status, url: response.url, body: data });
-    throw new Error(errorMessage);
+    throw error;
   }
 
   // Normalize success flag
