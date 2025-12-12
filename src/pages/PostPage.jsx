@@ -13,9 +13,7 @@ import Seo from '../components/Seo';
 import ArticleHeroSkeleton from '../components/skeletons/ArticleHeroSkeleton';
 import PostCardSkeleton from '../components/skeletons/PostCardSkeleton';
 import { logReading } from '../redux/history/historySlice';
-import { fetchJson } from '../utils/apiClient';
-
-const API_URL = import.meta.env.VITE_API_URL;
+import { fetchJson, API_BASE_URL } from '../utils/apiClient';
 
 export default function PostPage() {
   const { postSlug } = useParams();
@@ -31,7 +29,7 @@ export default function PostPage() {
       try {
         setLoading(true);
         setError(false);
-        const data = await fetchJson(`${API_URL}/api/post/getposts?slug=${postSlug}`);
+        const data = await fetchJson(`${API_BASE_URL}/api/post/getposts?slug=${postSlug}`);
         const foundPost = data.posts?.[0];
         setPost(foundPost);
         if (!foundPost) {
@@ -50,7 +48,7 @@ export default function PostPage() {
     const fetchRecentPosts = async () => {
       try {
         const data = await fetchJson(
-          `${API_URL}/api/post/getposts?subCategory=${post.subCategory}&limit=4`
+          `${API_BASE_URL}/api/post/getposts?subCategory=${post.subCategory}&limit=4`
         );
         const filtered = (data.posts || []).filter((p) => p.slug !== post.slug);
         setRecentPosts(filtered);

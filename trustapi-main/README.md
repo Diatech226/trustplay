@@ -1,21 +1,23 @@
 # Trust Media API
 
-## Présentation
-Backend Express/MongoDB qui alimente Trust Media (articles, événements TrustEvent, commentaires et administration). Il expose les routes REST consommées par le front Vite/Next, gère l'authentification JWT (cookies HttpOnly + bearer), le stockage des médias et quelques métriques d'administration.
+Backend Express/MongoDB qui alimente Trust Media (articles, événements TrustEvent, commentaires et administration). Ce README décrit l'installation, la configuration et le contrat d'API tel qu'implémenté dans le code.
 
-### Fonctionnalités principales
-- Authentification par email/mot de passe et Google OAuth (creds côté front, token JWT côté API)
-- Gestion des utilisateurs (profil, admin, statistiques)
-- Articles et événements (catégories, sous-catégories, pagination, recherche, slug)
-- Commentaires (CRUD, likes)
-- Upload de fichiers avec stockage disque et exposition statique
-- Administration : récupération des métriques globales (users/posts/comments)
+## Sommaire
+- [Prérequis](#prérequis)
+- [Installation](#installation)
+- [Configuration (.env)](#configuration-env)
+- [Architecture](#architecture)
+- [Auth & CORS](#auth--cors)
+- [Modèles de données](#modèles-de-données)
+- [Pagination & Slugs](#pagination--slugs)
+- [Endpoints principaux](#endpoints-principaux)
+- [Upload](#upload)
+- [Troubleshooting](#troubleshooting)
+- [Contract API détaillé](#contract-api-détaillé)
 
-## Stack
-- Node.js / Express 4
-- MongoDB + Mongoose 8
-- Authentification : JWT signé avec `JWT_SECRET` (cookie `access_token` + header `Authorization: Bearer`)
-- Upload : endpoint `/api/uploads` (multipart), fichiers servis depuis `/uploads/*`
+## Prérequis
+- Node.js 18+
+- MongoDB accessible via `DATABASE_URL` (Atlas ou local)
 
 ## Installation
 ```bash
@@ -24,17 +26,15 @@ npm run dev   # nodemon api/index.js
 npm start     # node api/index.js
 ```
 
-### Prérequis
-- Node 18+
-- MongoDB accessible via `DATABASE_URL`
+## Configuration (.env)
+Un exemple complet est fourni dans `.env.example`.
 
-### Variables d'environnement
-Un exemple est fourni dans `.env.example` :
-- `PORT` : port HTTP (3000 par défaut)
-- `DATABASE_URL` : URL MongoDB
+Variables utilisées par le code :
+- `PORT` : port HTTP (défaut 3000)
+- `DATABASE_URL` : URI MongoDB (ex. `mongodb+srv://user:pass@cluster/db`)
 - `JWT_SECRET` : clé de signature JWT
-- `CORS_ORIGIN` : liste d'origines autorisées (séparées par des virgules)
-- `UPLOAD_DIR` : répertoire de stockage des fichiers uploadés (servi via `/uploads`)
+- `CORS_ORIGIN` : origines autorisées (CSV, ex. `http://localhost:5173,http://localhost:3000`)
+- `UPLOAD_DIR` : répertoire pour stocker les fichiers uploadés (servi via `/uploads`)
 
 ## Architecture
 - `api/index.js` : bootstrap serveur, CORS, statiques, routage et gestion d'erreurs
@@ -43,64 +43,90 @@ Un exemple est fourni dans `.env.example` :
 - `api/models/*` : schémas Mongoose
 - `api/utils/*` : helpers (erreur, vérification JWT)
 
-## API
-Toutes les routes sont préfixées par `/api`. Les réponses suivent ce format :
-```json
-{ "success": true, "data": { ... }, "message": "optional" }
-{ "success": false, "message": "..." }
-```
+## Auth & CORS
+- Auth JWT avec cookie `access_token` (HttpOnly) **ou** header `Authorization: Bearer <token>` ; le middleware accepte les deux.
+- CORS : origines multiples via `CORS_ORIGIN`, `credentials: true`, méthodes `GET,POST,PUT,DELETE,OPTIONS`, headers `Content-Type, Authorization`.
+- Front : utiliser `NEXT_PUBLIC_API_URL` (ou `VITE_API_URL` en fallback) et appeler `fetch(..., { credentials: 'include' })`. Les requêtes authentifiées ajoutent le bearer si disponible.
+
+## Modèles de données
+- **User** : `username`, `email`, `password`, `profilePicture`, `isAdmin`, timestamps.
+- **Post** : `userId`, `title`, `slug` (slugify lowercase/strict), `content`, `image`, `category` (`TrustMedia`, `TrustEvent`, `TrustProd`, `uncategorized`), `subCategory`, `eventDate?`, `location?`, timestamps.
+- **Comment** : `userId`, `postId`, `content`, `likes[]`, `numberOfLikes`, timestamps.
+
+## Pagination & Slugs
+- `startIndex` : offset (0 par défaut).
+- `limit` : nombre d’éléments (défaut 9 sur posts/commentaires/utilisateurs).
+- `order` (`asc`/`desc`) sur les posts ; `sort` (`asc`/`desc`) sur les utilisateurs/commentaires.
+- Les slugs sont générés avec `slugify` en minuscule strict.
+
+## Endpoints principaux
+Résumé (voir le détail complet dans `API_CONTRACT.md`). Les routes sont préfixées par `/api`.
 
 ### Auth
-| Méthode | Route | Corps attendu | Réponse principale |
-| --- | --- | --- | --- |
-| POST | `/api/auth/signup` | `{ username, email, password }` | `message`, `data.userId` |
-| POST | `/api/auth/signin` | `{ email, password }` | `user`, `token`, cookie `access_token` |
-| POST | `/api/auth/google` | `{ email, name, googlePhotoUrl }` | `user`, `token`, cookie `access_token` |
-| POST | `/api/auth/signout` | – | Nettoie le cookie et retourne un message |
+- `POST /api/auth/signup` — `{ username, email, password }`
+- `POST /api/auth/signin` — `{ email, password }` → retourne `user`, `token`, cookie `access_token`
+- `POST /api/auth/google` — `{ email, name, googlePhotoUrl }`
+- `POST /api/auth/signout` — vide le cookie
 
 ### Utilisateurs
-| Méthode | Route | Détails |
-| --- | --- | --- |
-| GET | `/api/user/me` | (auth) Retourne le profil du token | 
-| PUT | `/api/user/update/:userId` | (auth) Met à jour profil/mot de passe | 
-| DELETE | `/api/user/delete/:userId` | (auth) Admin ou propriétaire |
-| GET | `/api/user/getusers?startIndex=&limit=&sort=` | (auth admin) Liste + stats `totalUsers`, `lastMonthUsers` |
-| GET | `/api/user/:userId` | Récupère un utilisateur par id |
+- `GET /api/user/me` (auth) — profil courant
+- `GET /api/user/getusers` (admin) — liste + stats `totalUsers`, `lastMonthUsers`
+- `PUT /api/user/update/:userId` (auth proprio) — met à jour `username/email/profilePicture/password`
+- `DELETE /api/user/delete/:userId` (auth proprio/admin)
+- `GET /api/user/:userId` — public
 
 ### Posts / Events
-| Méthode | Route | Détails |
-| --- | --- | --- |
-| POST | `/api/post/create` | (auth) Crée un post/event. Champs : `title`, `content`, `category` (`TrustMedia`, `TrustEvent`, `TrustProd`, `uncategorized`), `subCategory`, `image`, `eventDate`, `location`. Retourne `post`, `slug` |
-| PUT | `/api/post/updatepost/:postId/:userId` | (auth) Admin ou auteur |
-| DELETE | `/api/post/deletepost/:postId/:userId` | (auth) Admin ou auteur |
-| GET | `/api/post/getposts?userId=&category=&subCategory=&slug=&postId=&searchTerm=&startIndex=&limit=&order=` | Liste avec pagination + `totalPosts` |
+- `POST /api/post/create` (auth) — crée un article/événement (`title`, `content`, `category`, `subCategory`, `image`, `eventDate`, `location`)
+- `GET /api/post/getposts` — filtre par `userId`, `category`, `subCategory`, `slug`, `postId`, `searchTerm`, `startIndex`, `limit`, `order`
+- `PUT /api/post/updatepost/:postId/:userId` (auth proprio/admin)
+- `DELETE /api/post/deletepost/:postId/:userId` (auth proprio/admin)
+- Un événement est un post avec `category=TrustEvent`; filtrer `category=TrustEvent` pour la vue Events.
 
 ### Commentaires
-| Méthode | Route | Détails |
-| --- | --- | --- |
-| POST | `/api/comment/create` | (auth) `{ postId, content }` |
-| GET | `/api/comment/getPostComments/:postId` | Liste des commentaires d'un post |
-| GET | `/api/comment/getcomments?startIndex=&limit=&sort=` | (auth admin) Liste globale + stats `totalComments`, `lastMonthComments` |
-| PUT | `/api/comment/likeComment/:commentId` | (auth) Toggle like |
-| PUT | `/api/comment/editComment/:commentId` | (auth + owner/admin) Mise à jour du contenu |
-| DELETE | `/api/comment/deleteComment/:commentId` | (auth + owner/admin) |
+- `POST /api/comment/create` (auth) — `{ postId, content }`
+- `GET /api/comment/getPostComments/:postId` — liste des commentaires d'un post
+- `GET /api/comment/getcomments` (admin) — stats globales
+- `PUT /api/comment/likeComment/:commentId` (auth)
+- `PUT /api/comment/editComment/:commentId` (auth proprio/admin)
+- `DELETE /api/comment/deleteComment/:commentId` (auth proprio/admin)
 
 ### Upload
-| Méthode | Route | Corps attendu | Réponse |
-| --- | --- | --- | --- |
-| POST | `/api/uploads` | `multipart/form-data` avec champ `image` ou `file` | `data.url` (chemin public `/uploads/<filename>`) |
-| GET | `/uploads/<filename>` | – | Sert le fichier uploadé |
+- `POST /api/uploads` — `multipart/form-data` avec champ `image` **ou** `file`
+- `GET /uploads/<filename>` — fichiers statiques servis depuis `UPLOAD_DIR`
 
-### Auth & Permissions
-- Envoyer `Authorization: Bearer <token>` **ou** s'appuyer sur le cookie `access_token`.
-- Les routes d'administration vérifient `req.user.isAdmin` (payload JWT issu de Mongo).
+#### Exemples curl
+```bash
+# Authentification
+curl -X POST "$NEXT_PUBLIC_API_URL/api/auth/signin" \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"demo@example.com","password":"secret"}' -c cookie.txt
 
-### Erreurs
-- Middleware global retourne `{ success: false, statusCode, message }` avec le code HTTP adapté (400/401/403/404/500).
+# Liste des posts paginés
+curl "$NEXT_PUBLIC_API_URL/api/post/getposts?limit=5&order=desc"
 
-## Roadmap / Améliorations
-- Validation stricte des payloads (Joi/Zod) et messages traduits
-- Tests d'intégration (Supertest) sur les routes principales
-- Rate limiting + logs structurés
-- Webhook ou collection pour l'inscription aux événements
-- Support stockage objet (S3) pour les médias
+# Création de post (bearer + cookie inclus)
+curl -X POST "$NEXT_PUBLIC_API_URL/api/post/create" \
+  -H 'Authorization: Bearer <token>' \
+  -H 'Content-Type: application/json' \
+  -d '{"title":"Hello","content":"<p>World</p>","category":"TrustMedia","subCategory":"news"}' \
+  -b cookie.txt
+
+# Upload d'image
+curl -X POST "$NEXT_PUBLIC_API_URL/api/uploads" -F 'image=@/chemin/vers/image.jpg'
+```
+
+## Upload
+- Endpoint : `POST /api/uploads`
+- Accepte les champs `image` **ou** `file` (multipart).
+- Réponse : `{ success: true, data: { url, filename, mimetype, size, path }, message }` ; les fichiers sont servis via `/uploads/<filename>`.
+
+## Troubleshooting
+- **Mongo Atlas** :
+  - S’assurer que `DATABASE_URL` est renseigné et que l’utilisateur a le rôle `readWrite` sur la base.
+  - Ajouter votre IP dans la whitelist Atlas ; encoder les caractères spéciaux du mot de passe dans l’URI.
+  - En cas d’échec de connexion, le serveur s’arrête avec un message explicite.
+- **CORS** : vérifier `CORS_ORIGIN` (CSV) et que le front appelle avec `credentials: 'include'` pour conserver les cookies.
+- **Upload** : le dossier `UPLOAD_DIR` est créé automatiquement. En cas d’erreur 400 "No file uploaded", vérifier le nom de champ (`image` ou `file`).
+
+## Contract API détaillé
+Le mapping complet des routes, paramètres et réponses est maintenu dans [`API_CONTRACT.md`](./API_CONTRACT.md).

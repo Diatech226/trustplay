@@ -5,14 +5,13 @@ import PageContainer from '../components/layout/PageContainer';
 import PostCard from '../components/PostCard';
 import PostCardSkeleton from '../components/skeletons/PostCardSkeleton';
 import Seo from '../components/Seo';
-import { fetchJson } from '../utils/apiClient';
+import { fetchJson, API_BASE_URL } from '../utils/apiClient';
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const API_URL = import.meta.env.VITE_API_URL;
 
   const categories = [
     { name: 'Tous', key: 'all' },
@@ -26,7 +25,7 @@ export default function Home() {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const data = await fetchJson(`${API_URL}/api/post/getposts`);
+        const data = await fetchJson(`${API_BASE_URL}/api/post/getposts`);
         setPosts(data.posts || []);
       } catch (error) {
         setError('Erreur lors du chargement des posts.');
@@ -35,7 +34,7 @@ export default function Home() {
       }
     };
     fetchPosts();
-  }, [API_URL]);
+  }, []);
   
 
   // Optimisation : Utilisation de `useMemo` pour éviter le recalcul inutile

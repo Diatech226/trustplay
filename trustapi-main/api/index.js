@@ -13,13 +13,18 @@ import cors from 'cors';
 dotenv.config();
 
 // Connexion à MongoDB
+if (!process.env.DATABASE_URL) {
+  console.error('DATABASE_URL est manquant dans votre environnement. Merci de le renseigner.');
+  process.exit(1);
+}
+
 mongoose
-  .connect(process.env.DATABASE_URL, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(process.env.DATABASE_URL)
   .then(() => console.log('MongoDB is connected'))
-  .catch(err => console.log(err));
+  .catch((err) => {
+    console.error('Impossible de se connecter à MongoDB. Vérifiez DATABASE_URL et les droits réseau.', err.message);
+    process.exit(1);
+  });
 
 const __dirname = path.resolve();
 const app = express();
@@ -29,13 +34,20 @@ app.use(express.json());
 app.use(cookieParser());
 
 const allowedOrigins = (process.env.CORS_ORIGIN || '').split(',').filter(Boolean);
-app.use(
-  cors({
-    origin: allowedOrigins.length > 0 ? allowedOrigins : true,
-    methods: 'GET,POST,PUT,DELETE',
-    credentials: true,
-  })
-);
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 app.use((req, res, next) => {
   res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");

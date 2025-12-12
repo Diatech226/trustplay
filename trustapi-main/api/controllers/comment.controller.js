@@ -1,6 +1,5 @@
 import Comment from "../models/comment.model.js";
 import Post from "../models/post.model.js";
-import mongoose from "mongoose";
 import { errorHandler } from "../utils/error.js";
 
 /** ✅ Create a Comment */
@@ -45,10 +44,10 @@ export const getPostComments = async (req, res) => {
       .populate("userId", "username profilePicture") // 👈 Peuple le champ userId avec username et profilePicture
       .sort({ createdAt: -1 }); // Trie les commentaires du plus récent au plus ancien
 
-    res.status(200).json(comments);
+    res.status(200).json({ success: true, data: { comments }, comments });
   } catch (error) {
     console.error("Error fetching comments:", error);
-    res.status(500).json({ message: "Erreur lors de la récupération des commentaires." });
+    res.status(500).json({ success: false, message: "Erreur lors de la récupération des commentaires." });
   }
 };
 
