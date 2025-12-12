@@ -5,7 +5,8 @@ import PageContainer from '../components/layout/PageContainer';
 import PostCard from '../components/PostCard';
 import PostCardSkeleton from '../components/skeletons/PostCardSkeleton';
 import Seo from '../components/Seo';
-import { fetchJson, API_BASE_URL } from '../utils/apiClient';
+import { fetchJson } from '../utils/apiClient';
+import { normalizeSubCategory, PRIMARY_SUBCATEGORIES } from '../utils/categories';
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
@@ -15,18 +16,18 @@ export default function Home() {
 
   const categories = [
     { name: 'Tous', key: 'all' },
-    { name: 'News', key: 'news' },
-    { name: 'Politique', key: 'politique' },
-    { name: 'Science/Tech', key: 'science' },
-    { name: 'Sport', key: 'sport' },
-    { name: 'Cinéma', key: 'cinema' },
+    ...PRIMARY_SUBCATEGORIES.map((cat) => ({ name: cat.label, key: cat.value })),
   ];
 
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const data = await fetchJson(`${API_BASE_URL}/api/post/getposts`);
-        setPosts(data.posts || []);
+        const data = await fetchJson('/api/posts');
+        const normalizedPosts = (data.posts || data.data?.posts || []).map((post) => ({
+          ...post,
+          subCategory: normalizeSubCategory(post.subCategory),
+        }));
+        setPosts(normalizedPosts);
       } catch (error) {
         setError('Erreur lors du chargement des posts.');
       } finally {
@@ -40,7 +41,7 @@ export default function Home() {
   // Optimisation : Utilisation de `useMemo` pour éviter le recalcul inutile
   const filteredPosts = useMemo(() => {
     if (selectedCategory === 'all') return posts;
-    return posts.filter((post) => post.subCategory === selectedCategory);
+    return posts.filter((post) => normalizeSubCategory(post.subCategory) === selectedCategory);
   }, [selectedCategory, posts]);
 
   const featuredPost = posts[0];

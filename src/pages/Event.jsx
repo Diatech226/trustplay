@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import PageContainer from '../components/layout/PageContainer';
 import PageHeader from '../components/layout/PageHeader';
 import Seo from '../components/Seo';
-import { fetchJson, API_BASE_URL } from '../utils/apiClient';
+import { fetchJson } from '../utils/apiClient';
+import { normalizeSubCategory } from '../utils/categories';
 
 export default function TrustEvent() {
   const [events, setEvents] = useState([]);
@@ -18,8 +19,11 @@ export default function TrustEvent() {
       try {
         setLoading(true);
         // fix: event list sorted by date (upcoming first)
-        const data = await fetchJson(`${API_BASE_URL}/api/post/getposts?category=TrustEvent&limit=6`);
-        const sortedEvents = (data.posts || []).sort(
+        const data = await fetchJson(`/api/posts?category=TrustEvent&limit=6`);
+        const sortedEvents = (data.posts || data.data?.posts || []).map((event) => ({
+          ...event,
+          subCategory: normalizeSubCategory(event.subCategory),
+        })).sort(
           (a, b) => new Date(a.eventDate || 0) - new Date(b.eventDate || 0)
         );
         setEvents(sortedEvents);

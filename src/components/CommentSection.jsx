@@ -15,18 +15,26 @@ export default function CommentSection({ postId }) {
   const [submitting, setSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState(null);
+
+  const mapComment = (item) => ({
+    ...item,
+    userId: item?.userId?._id || item?.userId,
+    userName: item?.userName || item?.username || item?.userId?.username,
+    profilePicture: item?.profilePicture || item?.userId?.profilePicture,
+  });
   useEffect(() => {
     const fetchComments = async () => {
       try {
         setLoading(true);
         const data = await apiRequest(`/api/comment/getPostComments/${postId}`);
-        setComments(data.comments || data);
+        const fetched = data.comments || data.data?.comments || data;
+        setComments(Array.isArray(fetched) ? fetched.map(mapComment) : []);
       } catch (error) {
         console.error(error.message);
         setCommentError("Impossible de charger les commentaires.");
       } finally {
         setLoading(false);
-      } 
+      }
     };
 
     fetchComments();
@@ -53,15 +61,8 @@ export default function CommentSection({ postId }) {
         },
       });
 
-      const createdComment = responseData.comment || responseData;
-      setComments((prev) => [
-        ...prev,
-        {
-          ...createdComment,
-          userName: currentUser.username,
-          profilePicture: currentUser.profilePicture,
-        },
-      ]);
+      const createdComment = responseData.comment || responseData.data?.comment || responseData;
+      setComments((prev) => [...prev, mapComment({ ...createdComment, userId: createdComment.userId || currentUser.id || currentUser._id })]);
       setComment("");
       setCommentError(null);
     } catch (error) {

@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import userRoutes from './routes/user.route.js';
 import authRoutes from './routes/auth.route.js';
 import postRoutes from './routes/post.route.js';
+import postsRoutes from './routes/posts.route.js';
 import commentRoutes from './routes/comment.route.js';
 import uploadRoutes from './routes/upload.route.js';
 import cookieParser from 'cookie-parser';
@@ -58,6 +59,7 @@ app.use((req, res, next) => {
 app.use('/api/user', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/post', postRoutes);
+app.use('/api/posts', postsRoutes);
 app.use('/api/comment', commentRoutes);
 app.use('/api/uploads', uploadRoutes);
 
@@ -73,7 +75,7 @@ app.get('*', (req, res) => {
 });
 
 // Gestion des erreurs
-app.use((err, req, res, next) => {
+  app.use((err, req, res) => {
   res.status(err.statusCode || 500).json({
     success: false,
     statusCode: err.statusCode || 500,

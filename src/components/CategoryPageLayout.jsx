@@ -6,7 +6,8 @@ import PageContainer from './layout/PageContainer';
 import PageHeader from './layout/PageHeader';
 import Seo from './Seo';
 import PostCardSkeleton from './skeletons/PostCardSkeleton';
-import { API_BASE_URL } from '../utils/apiClient';
+import { apiRequest } from '../utils/apiClient';
+import { normalizeSubCategory } from '../utils/categories';
 
 const DEFAULT_LIMIT = 12;
 
@@ -40,8 +41,9 @@ export default function CategoryPageLayout({ title, subCategory, description = '
       try {
         const params = new URLSearchParams();
         params.set('limit', DEFAULT_LIMIT);
-        if (subCategory) {
-          params.set('subCategory', subCategory);
+        const normalizedSub = normalizeSubCategory(subCategory);
+        if (normalizedSub) {
+          params.set('subCategory', normalizedSub);
         }
 
         if (sort === 'asc') {
@@ -53,13 +55,12 @@ export default function CategoryPageLayout({ title, subCategory, description = '
           params.set('sortBy', 'views');
         }
 
-        const res = await fetch(`${API_BASE_URL}/api/post/getposts?${params.toString()}`);
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.message || 'Chargement impossible.');
-        }
+        const data = await apiRequest(`/api/posts?${params.toString()}`);
 
-        let fetchedPosts = data.posts || [];
+        let fetchedPosts = (data.posts || data.data?.posts || []).map((post) => ({
+          ...post,
+          subCategory: normalizeSubCategory(post.subCategory),
+        }));
         if (sort === 'popular') {
           fetchedPosts = [...fetchedPosts].sort((a, b) => {
             const score = (item) => {
@@ -84,7 +85,7 @@ export default function CategoryPageLayout({ title, subCategory, description = '
     };
 
     fetchPosts();
-  }, [API_URL, sort, subCategory]);
+  }, [sort, subCategory]);
 
   return (
     <main className='min-h-screen bg-mist/60 py-8 dark:bg-slate-950'>

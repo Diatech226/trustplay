@@ -35,7 +35,7 @@ export default function DashboardComp() {
     };
     const fetchPosts = async () => {
       try {
-        const data = await apiRequest('/api/post/getposts?limit=5', { auth: true });
+        const data = await apiRequest('/api/posts?limit=5', { auth: true });
         setPosts(data.posts);
         setTotalPosts(data.totalPosts);
         setLastMonthPosts(data.lastMonthPosts);

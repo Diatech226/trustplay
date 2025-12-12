@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { HiOutlineExclamationCircle } from 'react-icons/hi';
-import { apiRequest, API_BASE_URL } from '../utils/apiClient';
+import { apiRequest } from '../utils/apiClient';
 
 // CMS: posts module table
 export default function DashPosts({ filters = { category: 'all', subCategory: 'all', status: 'all', query: '' } }) {
@@ -17,9 +17,8 @@ export default function DashPosts({ filters = { category: 'all', subCategory: 'a
     const fetchPosts = async () => {
       if (!currentUser?.isAdmin) return;
       try {
-        const res = await fetch(`${API_BASE_URL}/api/post/getposts?userId=${currentUser._id}`);
-        const data = await res.json();
-        if (res.ok) {
+        const data = await apiRequest(`/api/posts?userId=${currentUser._id}`);
+        if (data?.posts) {
           setUserPosts(data.posts);
           setShowMore(data.posts.length >= 9);
         }
@@ -28,13 +27,12 @@ export default function DashPosts({ filters = { category: 'all', subCategory: 'a
       }
     };
     fetchPosts();
-  }, [API_URL, currentUser]);
+  }, [currentUser]);
 
   const handleShowMore = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/post/getposts?userId=${currentUser._id}&startIndex=${userPosts.length}`);
-      const data = await res.json();
-      if (res.ok) {
+      const data = await apiRequest(`/api/posts?userId=${currentUser._id}&startIndex=${userPosts.length}`);
+      if (data?.posts) {
         setUserPosts((prev) => [...prev, ...data.posts]);
         setShowMore(data.posts.length >= 9);
       }
@@ -46,7 +44,7 @@ export default function DashPosts({ filters = { category: 'all', subCategory: 'a
   const handleDeletePost = async () => {
     setShowModal(false);
     try {
-      const data = await apiRequest(`/api/post/deletepost/${postIdToDelete}/${currentUser._id}`, {
+      const data = await apiRequest(`/api/posts/${postIdToDelete}`, {
         method: 'DELETE',
         auth: true,
       });

@@ -47,7 +47,8 @@ export const updateUser = async (req, res, next) => {
       },
       { new: true }
     );
-    const { password, ...rest } = updatedUser._doc;
+      const rest = updatedUser.toObject ? updatedUser.toObject() : { ...updatedUser._doc };
+      delete rest.password;
     res.status(200).json({ success: true, data: { user: rest }, user: rest });
   } catch (error) {
     next(error);
@@ -84,7 +85,8 @@ export const getMe = async (req, res, next) => {
     if (!user) {
       return next(errorHandler(404, 'User not found'));
     }
-    const { password, ...rest } = user._doc;
+    const rest = user.toObject ? user.toObject() : { ...user._doc };
+    delete rest.password;
     res.status(200).json({ success: true, data: { user: rest }, user: rest });
   } catch (error) {
     next(error);
@@ -106,8 +108,9 @@ export const getUsers = async (req, res, next) => {
       .limit(limit);
 
     const usersWithoutPassword = users.map((user) => {
-      const { password, ...rest } = user._doc;
-      return rest;
+      const userData = user.toObject ? user.toObject() : { ...user._doc };
+      delete userData.password;
+      return userData;
     });
 
     const totalUsers = await User.countDocuments();
@@ -141,7 +144,8 @@ export const getUser = async (req, res, next) => {
     if (!user) {
       return next(errorHandler(404, 'User not found'));
     }
-    const { password, ...rest } = user._doc;
+    const rest = user.toObject ? user.toObject() : { ...user._doc };
+    delete rest.password;
     res.status(200).json({ success: true, data: { user: rest }, user: rest });
   } catch (error) {
     next(error);

@@ -113,6 +113,11 @@ export default function Header() {
                 {currentUser.email}
               </span>
             </Dropdown.Header>
+            {currentUser.isAdmin && (
+              <Link to={'/dashboard'}>
+                <Dropdown.Item>Dashboard</Dropdown.Item>
+              </Link>
+            )}
             <Link to={'/dashboard/profile'}>
               <Dropdown.Item>Profile</Dropdown.Item>
             </Link>
