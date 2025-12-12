@@ -1,3 +1,5 @@
+"use client";
+
 import { Component } from 'react';
 
 export default class ErrorBoundary extends Component {
@@ -16,7 +18,9 @@ export default class ErrorBoundary extends Component {
 
   handleRetry = () => {
     this.setState({ hasError: false });
-    window.location.reload();
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
   };
 
   render() {

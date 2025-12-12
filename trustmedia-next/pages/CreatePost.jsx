@@ -68,7 +68,7 @@ export default function CreatePost() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setPublishError('');
-    const token = localStorage.getItem('token');
+    const token = typeof window !== 'undefined' ? window.localStorage.getItem('token') : null;
 
     if (!token) {
       setPublishError('Authentification requise pour publier.');

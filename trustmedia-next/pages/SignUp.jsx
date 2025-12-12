@@ -31,8 +31,8 @@ export default function SignUp() {
         body: formData,
       });
 
-      if (data.token) {
-        localStorage.setItem('token', data.token);
+      if (data.token && typeof window !== 'undefined') {
+        window.localStorage.setItem('token', data.token);
       }
 
       setLoading(false);

@@ -33,7 +33,14 @@ const parseResponse = async (response) => {
   return data;
 };
 
-export const getAuthToken = () => localStorage.getItem('token');
+export const getAuthToken = () => {
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.localStorage.getItem('token');
+  } catch {
+    return null;
+  }
+};
 
 export async function apiRequest(path, { method = 'GET', body, headers = {}, auth = false, ...rest } = {}) {
   try {
