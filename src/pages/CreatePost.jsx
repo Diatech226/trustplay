@@ -1,10 +1,10 @@
 import { Alert, Button, FileInput, Select, TextInput } from 'flowbite-react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import { useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { uploadImageFile } from '../utils/uploadImage';
-import { apiRequest, API_BASE_URL } from '../utils/apiClient';
+import { uploadImageFile, uploadMediaFile } from '../utils/uploadImage';
+import { apiRequest } from '../utils/apiClient';
 import { ALL_SUBCATEGORIES, normalizeSubCategory, PRIMARY_SUBCATEGORIES } from '../utils/categories';
 
 const CATEGORY_OPTIONS = [
@@ -15,6 +15,7 @@ const CATEGORY_OPTIONS = [
 
 export default function CreatePost() {
   const navigate = useNavigate();
+  const quillRef = useRef(null);
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
@@ -40,7 +41,7 @@ export default function CreatePost() {
     try {
       setUploadError('');
       setUploading(true);
-      const imageUrl = await uploadImageFile(file, API_BASE_URL);
+      const imageUrl = await uploadImageFile(file);
       setFormData((prev) => ({ ...prev, image: imageUrl }));
     } catch (error) {
       setUploadError(error.message);
@@ -49,16 +50,77 @@ export default function CreatePost() {
     }
   };
 
+  const insertMediaIntoEditor = useCallback(
+    async (type) => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = type === 'image' ? 'image/*' : 'video/*';
+      input.onchange = async () => {
+        const selectedFile = input.files?.[0];
+        if (!selectedFile) return;
+        try {
+          setUploading(true);
+          const uploaded = await uploadMediaFile(selectedFile);
+          const quill = quillRef.current?.getEditor();
+          if (!quill || !uploaded.url) return;
+          const range = quill.getSelection(true);
+          const insertAt = range?.index ?? quill.getLength();
+          quill.insertEmbed(insertAt, type, uploaded.url, 'user');
+          quill.setSelection(insertAt + 1, 0);
+        } catch (error) {
+          setUploadError(error.message);
+        } finally {
+          setUploading(false);
+        }
+      };
+      input.click();
+    },
+    []
+  );
+
+  const quillModules = useMemo(
+    () => ({
+      toolbar: {
+        container: [
+          [{ header: [1, 2, 3, false] }],
+          ['bold', 'italic', 'underline', 'strike'],
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          ['blockquote', 'code-block'],
+          ['link', 'image', 'video'],
+          [{ align: [] }],
+          ['clean'],
+        ],
+        handlers: {
+          image: () => insertMediaIntoEditor('image'),
+          video: () => insertMediaIntoEditor('video'),
+        },
+      },
+    }),
+    [insertMediaIntoEditor]
+  );
+
+  const quillFormats = useMemo(
+    () => [
+      'header',
+      'bold',
+      'italic',
+      'underline',
+      'strike',
+      'blockquote',
+      'code-block',
+      'list',
+      'bullet',
+      'link',
+      'image',
+      'video',
+      'align',
+    ],
+    []
+  );
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setPublishError('');
-    const token = localStorage.getItem('token');
-
-    if (!token) {
-      setPublishError('Authentification requise pour publier.');
-      return;
-    }
-
     if (formData.category === 'TrustMedia' && !formData.subCategory) {
       setPublishError('Merci de sélectionner une rubrique éditoriale.');
       return;
@@ -81,9 +143,6 @@ export default function CreatePost() {
       const data = await apiRequest('/api/posts', {
         method: 'POST',
         auth: true,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
         body: {
           ...formData,
           subCategory: normalizeSubCategory(formData.subCategory),
@@ -209,13 +268,16 @@ export default function CreatePost() {
         {formData.image && <img src={formData.image} alt='upload' className='w-full h-72 object-cover' />}
 
         <ReactQuill
-          theme='snow'
-          placeholder='Rédigez votre contenu...'
-          className='h-72 mb-12'
-          required
-          value={formData.content}
-          onChange={(value) => setFormData({ ...formData, content: value })}
-        />
+        ref={quillRef}
+        theme='snow'
+        placeholder='Rédigez votre contenu...'
+        className='h-72 mb-12'
+        required
+        value={formData.content}
+        onChange={(value) => setFormData({ ...formData, content: value })}
+        modules={quillModules}
+        formats={quillFormats}
+      />
 
         <Button type='submit' gradientDuoTone='purpleToPink' disabled={submitting || uploading}>
           {submitting ? 'Publication...' : 'Publier'}

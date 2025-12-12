@@ -1,3 +1,5 @@
+import { store } from '../redux/store';
+
 export const API_BASE_URL =
   import.meta.env?.NEXT_PUBLIC_API_URL ||
   import.meta.env?.VITE_API_URL ||
@@ -35,7 +37,23 @@ const parseResponse = async (response) => {
   return data;
 };
 
-export const getAuthToken = () => localStorage.getItem('token');
+export const getAuthToken = () => {
+  const state = store.getState?.();
+  const tokenFromStore = state?.user?.currentUser?.token || state?.user?.currentUser?.data?.token;
+  const tokenFromStorage = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
+  return tokenFromStore || tokenFromStorage || state?.user?.currentUser?.accessToken;
+};
+
+const normalizeUploadResponse = (payload) => {
+  if (!payload) return null;
+  const data = payload.data || payload;
+  return {
+    ...data,
+    url: data.url || data.location || data.path,
+    name: data.name || data.filename,
+    mime: data.mime || data.mimetype,
+  };
+};
 
 export async function apiRequest(path, { method = 'GET', body, headers = {}, auth = false, ...rest } = {}) {
   try {
@@ -75,4 +93,30 @@ export async function apiRequest(path, { method = 'GET', body, headers = {}, aut
 
 export async function fetchJson(url, options = {}) {
   return apiRequest(url, options);
+}
+
+export async function uploadFile(file, fieldName = 'file') {
+  if (!file) {
+    throw new Error('Aucun fichier sélectionné');
+  }
+
+  const formData = new FormData();
+  formData.append(fieldName, file);
+  // Compat: certains anciens backends attendent le champ "file" par défaut
+  if (fieldName !== 'file') {
+    formData.append('file', file);
+  }
+
+  const response = await apiRequest('/api/uploads', {
+    method: 'POST',
+    body: formData,
+    auth: true,
+  });
+
+  const normalized = normalizeUploadResponse(response);
+  if (!normalized?.url) {
+    throw new Error("Impossible de récupérer l'URL de fichier");
+  }
+
+  return normalized;
 }

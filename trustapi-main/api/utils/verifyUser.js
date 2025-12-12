@@ -26,7 +26,7 @@ import { errorHandler } from "./error.js";
 
 export const verifyToken = (req, res, next) => {
   try {
-    const bearerToken = req.headers.authorization?.replace('Bearer ', '');
+    const bearerToken = req.headers.authorization?.replace("Bearer ", "");
     const cookieToken = req.cookies?.access_token;
     const token = bearerToken || cookieToken;
 
@@ -38,7 +38,7 @@ export const verifyToken = (req, res, next) => {
       if (err) {
         return next(errorHandler(403, "Forbidden: Invalid token"));
       }
-      req.user = decodedUser; // Stocker les infos de l'utilisateur
+      req.user = decodedUser;
       next();
     });
   } catch (error) {
