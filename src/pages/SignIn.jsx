@@ -29,8 +29,8 @@ export default function SignIn() {
         body: formData,
       });
 
-      const token = authResponse.token || authResponse.data?.token;
-      const userFromAuth = authResponse.user || authResponse.data?.user;
+      const token = authResponse?.data?.token || authResponse?.token;
+      const userFromAuth = authResponse?.data?.user || authResponse?.user;
 
       if (token) {
         localStorage.setItem('token', token);
@@ -40,7 +40,7 @@ export default function SignIn() {
       let profile = userFromAuth;
       if (token && !profile) {
         const meResponse = await apiRequest('/api/user/me', { auth: true });
-        profile = meResponse.user || meResponse.data?.user || meResponse;
+        profile = meResponse.user || meResponse.data?.user || meResponse?.data || meResponse;
       }
 
       if (!profile) {
@@ -50,7 +50,7 @@ export default function SignIn() {
       dispatch(signInSuccess({ ...profile, token }));
       navigate('/');
     } catch (error) {
-      dispatch(signInFailure(error.message));
+      dispatch(signInFailure(error?.message || 'Impossible de se connecter'));
     }
   };
 

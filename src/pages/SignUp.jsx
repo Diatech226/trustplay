@@ -22,19 +22,15 @@ export default function SignUp() {
       setLoading(true);
       setErrorMessage(null);
   
-      const data = await apiRequest('/api/auth/signup', {
+      await apiRequest('/api/auth/signup', {
         method: 'POST',
         body: formData,
       });
 
-      if (data.token) {
-        localStorage.setItem('token', data.token);
-      }
-
       setLoading(false);
       navigate('/sign-in');
     } catch (error) {
-      setErrorMessage(error.message);
+      setErrorMessage(error?.message || 'Impossible de créer le compte');
       setLoading(false);
     }
   };
