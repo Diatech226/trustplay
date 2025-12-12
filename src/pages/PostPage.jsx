@@ -13,7 +13,8 @@ import Seo from '../components/Seo';
 import ArticleHeroSkeleton from '../components/skeletons/ArticleHeroSkeleton';
 import PostCardSkeleton from '../components/skeletons/PostCardSkeleton';
 import { logReading } from '../redux/history/historySlice';
-import { fetchJson, API_BASE_URL } from '../utils/apiClient';
+import { fetchJson } from '../utils/apiClient';
+import { normalizeSubCategory } from '../utils/categories';
 
 export default function PostPage() {
   const { postSlug } = useParams();
@@ -29,9 +30,12 @@ export default function PostPage() {
       try {
         setLoading(true);
         setError(false);
-        const data = await fetchJson(`${API_BASE_URL}/api/post/getposts?slug=${postSlug}`);
-        const foundPost = data.posts?.[0];
-        setPost(foundPost);
+        const data = await fetchJson(`/api/posts?slug=${postSlug}`);
+        const foundPost = data.posts?.[0] || data.data?.posts?.[0];
+        const normalizedPost = foundPost
+          ? { ...foundPost, subCategory: normalizeSubCategory(foundPost.subCategory) }
+          : null;
+        setPost(normalizedPost);
         if (!foundPost) {
           setError(true);
         }
@@ -47,10 +51,12 @@ export default function PostPage() {
     if (!post?.subCategory) return;
     const fetchRecentPosts = async () => {
       try {
-        const data = await fetchJson(
-          `${API_BASE_URL}/api/post/getposts?subCategory=${post.subCategory}&limit=4`
-        );
-        const filtered = (data.posts || []).filter((p) => p.slug !== post.slug);
+        const data = await fetchJson(`/api/posts?subCategory=${post.subCategory}&limit=4`);
+        const normalizedPosts = (data.posts || data.data?.posts || []).map((item) => ({
+          ...item,
+          subCategory: normalizeSubCategory(item.subCategory),
+        }));
+        const filtered = normalizedPosts.filter((p) => p.slug !== post.slug);
         setRecentPosts(filtered);
       } catch (error) {
         console.warn('[Articles similaires] Impossible de charger les articles.', error);
@@ -98,9 +104,8 @@ export default function PostPage() {
     politique: { label: 'Politique', href: '/politique' },
     economie: { label: 'Économie', href: '/search?subCategory=economie' },
     culture: { label: 'Culture', href: '/search?subCategory=culture' },
-    technologie: { label: 'Technologie', href: '/search?subCategory=technologie' },
     portraits: { label: 'Portraits', href: '/search?subCategory=portraits' },
-    science: { label: 'Science & Tech', href: '/science' },
+    'science-tech': { label: 'Science & Tech', href: '/science' },
     sport: { label: 'Sport', href: '/sport' },
     cinema: { label: 'Cinéma', href: '/cinema' },
   };

@@ -5,19 +5,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { uploadImageFile } from '../utils/uploadImage';
 import { apiRequest, API_BASE_URL } from '../utils/apiClient';
-
-const MEDIA_SUBCATEGORIES = [
-  { value: 'news', label: 'News' },
-  { value: 'politique', label: 'Politique' },
-  { value: 'economie', label: 'Économie' },
-  { value: 'culture', label: 'Culture' },
-  { value: 'technologie', label: 'Technologie' },
-  { value: 'sport', label: 'Sport' },
-  { value: 'portraits', label: 'Portraits' },
-  // Legacy sub categories kept for backward compatibility
-  { value: 'science', label: 'Science/Tech' },
-  { value: 'cinema', label: 'Cinéma' },
-];
+import { ALL_SUBCATEGORIES, normalizeSubCategory, PRIMARY_SUBCATEGORIES } from '../utils/categories';
 
 const CATEGORY_OPTIONS = [
   { value: 'TrustMedia', label: 'Média' },
@@ -35,7 +23,7 @@ export default function CreatePost() {
   const [formData, setFormData] = useState({
     title: '',
     category: CATEGORY_OPTIONS[0].value,
-    subCategory: MEDIA_SUBCATEGORIES[0].value,
+    subCategory: PRIMARY_SUBCATEGORIES[0].value,
     content: '',
     image: '',
     eventDate: '',
@@ -90,13 +78,16 @@ export default function CreatePost() {
 
     try {
       setSubmitting(true);
-      const data = await apiRequest('/api/post/create', {
+      const data = await apiRequest('/api/posts', {
         method: 'POST',
         auth: true,
         headers: {
           Authorization: `Bearer ${token}`,
         },
-        body: formData,
+        body: {
+          ...formData,
+          subCategory: normalizeSubCategory(formData.subCategory),
+        },
       });
 
       const slug = data.slug || data.post?.slug || data.data?.post?.slug;
@@ -127,7 +118,7 @@ export default function CreatePost() {
               setFormData({
                 ...formData,
                 category: e.target.value,
-                subCategory: e.target.value === 'TrustMedia' ? MEDIA_SUBCATEGORIES[0].value : '',
+                subCategory: e.target.value === 'TrustMedia' ? PRIMARY_SUBCATEGORIES[0].value : '',
               })
             }
           >
@@ -141,16 +132,16 @@ export default function CreatePost() {
         </div>
 
         {formData.category === 'TrustMedia' && (
-          <Select
-            required
-            value={formData.subCategory}
-            onChange={(e) => setFormData({ ...formData, subCategory: e.target.value })}
-          >
-            <option value=''>Choisir une rubrique</option>
-            {MEDIA_SUBCATEGORIES.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
+        <Select
+          required
+          value={formData.subCategory}
+          onChange={(e) => setFormData({ ...formData, subCategory: e.target.value })}
+        >
+          <option value=''>Choisir une rubrique</option>
+          {ALL_SUBCATEGORIES.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
             ))}
           </Select>
         )}

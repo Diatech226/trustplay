@@ -4,7 +4,7 @@ export default function SciencePage() {
   return (
     <CategoryPageLayout
       title='Science & Tech'
-      subCategory='science'
+      subCategory='science-tech'
       path='/science'
       description='Innovations, découvertes et nouvelles technologies.'
     />

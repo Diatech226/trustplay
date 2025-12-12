@@ -6,7 +6,8 @@ import PageHeader from '../components/layout/PageHeader';
 import PostCard from '../components/PostCard';
 import PostCardSkeleton from '../components/skeletons/PostCardSkeleton';
 import Seo from '../components/Seo';
-import { fetchJson, API_BASE_URL } from '../utils/apiClient';
+import { fetchJson } from '../utils/apiClient';
+import { normalizeSubCategory, PRIMARY_SUBCATEGORIES } from '../utils/categories';
 
 export default function Search() {
   const [sidebarData, setSidebarData] = useState({
@@ -30,7 +31,7 @@ export default function Search() {
     const urlParams = new URLSearchParams(location.search);
     const searchTermFromUrl = urlParams.get('searchTerm') || '';
     const sortFromUrl = urlParams.get('sort') || 'recent';
-    const subCategoryFromUrl = urlParams.get('subCategory') || 'all';
+    const subCategoryFromUrl = normalizeSubCategory(urlParams.get('subCategory')) || 'all';
     const dateRangeFromUrl = urlParams.get('dateRange') || 'any';
     const tagsFromUrl = urlParams.get('tags') || '';
     const nextFilters = {
@@ -49,10 +50,14 @@ export default function Search() {
       const queryParams = new URLSearchParams(location.search);
       const searchQuery = queryParams.toString();
       try {
-        const data = await fetchJson(`${API_BASE_URL}/api/post/getposts?${searchQuery}`);
-        const filtered = applyAdvancedFilters(data.posts, nextFilters);
+        const data = await fetchJson(`/api/posts?${searchQuery}`);
+        const normalizedPosts = (data.posts || data.data?.posts || []).map((item) => ({
+          ...item,
+          subCategory: normalizeSubCategory(item.subCategory),
+        }));
+        const filtered = applyAdvancedFilters(normalizedPosts, nextFilters);
         setPosts(filtered);
-        if (data.posts.length === 9) {
+        if ((data.posts || []).length === 9) {
           setShowMore(true);
         } else {
           setShowMore(false);
@@ -81,7 +86,7 @@ export default function Search() {
     if (sidebarData.subCategory === 'all') {
       urlParams.delete('subCategory');
     } else {
-      urlParams.set('subCategory', sidebarData.subCategory);
+      urlParams.set('subCategory', normalizeSubCategory(sidebarData.subCategory));
     }
     const searchQuery = urlParams.toString();
     navigate(`/search?${searchQuery}`);
@@ -94,10 +99,14 @@ export default function Search() {
     urlParams.set('startIndex', startIndex);
     const searchQuery = urlParams.toString();
     try {
-      const data = await fetchJson(`${API_BASE_URL}/api/post/getposts?${searchQuery}`);
-      const filtered = applyAdvancedFilters([...posts, ...data.posts], sidebarData);
+      const data = await fetchJson(`/api/posts?${searchQuery}`);
+      const normalizedPosts = (data.posts || data.data?.posts || []).map((item) => ({
+        ...item,
+        subCategory: normalizeSubCategory(item.subCategory),
+      }));
+      const filtered = applyAdvancedFilters([...posts, ...normalizedPosts], sidebarData);
       setPosts(filtered);
-      if (data.posts.length === 9) {
+      if ((data.posts || []).length === 9) {
         setShowMore(true);
       } else {
         setShowMore(false);
@@ -110,8 +119,9 @@ export default function Search() {
   const applyAdvancedFilters = (list, filters) => {
     // advanced search
     let results = [...list];
-    if (filters.subCategory !== 'all') {
-      results = results.filter((item) => item.subCategory === filters.subCategory);
+    const normalizedFilterSub = normalizeSubCategory(filters.subCategory);
+    if (filters.subCategory !== 'all' && normalizedFilterSub) {
+      results = results.filter((item) => normalizeSubCategory(item.subCategory) === normalizedFilterSub);
     }
     if (filters.searchTerm) {
       const term = filters.searchTerm.toLowerCase();
@@ -184,11 +194,11 @@ export default function Search() {
                 <label className='text-sm font-semibold text-slate-700 dark:text-slate-200'>Rubrique</label>
                 <Select onChange={handleChange} value={sidebarData.subCategory} id='subCategory'>
                   <option value='all'>Toutes</option>
-                  <option value='news'>News</option>
-                  <option value='politique'>Politique</option>
-                  <option value='science'>Science/Tech</option>
-                  <option value='sport'>Sport</option>
-                  <option value='cinema'>Cinéma</option>
+                  {PRIMARY_SUBCATEGORIES.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </Select>
               </div>
               <div className='space-y-2'>

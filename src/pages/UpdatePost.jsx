@@ -3,23 +3,11 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { setUser } from '../redux/user/userSlice';
 import { uploadImageFile } from '../utils/uploadImage';
 import { apiRequest, API_BASE_URL } from '../utils/apiClient';
-
-const MEDIA_SUBCATEGORIES = [
-  { value: 'news', label: 'News' },
-  { value: 'politique', label: 'Politique' },
-  { value: 'economie', label: 'Économie' },
-  { value: 'culture', label: 'Culture' },
-  { value: 'technologie', label: 'Technologie' },
-  { value: 'sport', label: 'Sport' },
-  { value: 'portraits', label: 'Portraits' },
-  // Legacy sub categories kept for backward compatibility
-  { value: 'science', label: 'Science/Tech' },
-  { value: 'cinema', label: 'Cinéma' },
-];
+import { ALL_SUBCATEGORIES, normalizeSubCategory, PRIMARY_SUBCATEGORIES } from '../utils/categories';
 
 const CATEGORY_OPTIONS = [
   { value: 'TrustMedia', label: 'Média' },
@@ -31,7 +19,6 @@ export default function UpdatePost() {
   const { postId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { currentUser } = useSelector((state) => state.user);
 
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -40,7 +27,7 @@ export default function UpdatePost() {
   const [formData, setFormData] = useState({
     title: '',
     category: CATEGORY_OPTIONS[0].value,
-    subCategory: MEDIA_SUBCATEGORIES[0].value,
+    subCategory: PRIMARY_SUBCATEGORIES[0].value,
     content: '',
     image: '',
     eventDate: '',
@@ -52,9 +39,9 @@ export default function UpdatePost() {
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const data = await apiRequest(`/api/post/getposts?postId=${postId}`);
-        if (data.posts && data.posts[0]) {
-          const fetchedPost = data.posts[0];
+        const data = await apiRequest(`/api/posts?postId=${postId}`);
+        const fetchedPost = data.posts?.[0] || data.data?.posts?.[0];
+        if (fetchedPost) {
           const normalizedCategory =
             fetchedPost.category === 'Media'
               ? 'TrustMedia'
@@ -65,6 +52,7 @@ export default function UpdatePost() {
             ...prev,
             ...fetchedPost,
             category: normalizedCategory,
+            subCategory: normalizeSubCategory(fetchedPost.subCategory) || PRIMARY_SUBCATEGORIES[0].value,
             // CMS: events (TrustEvent)
             eventDate: fetchedPost.eventDate || '',
             location: fetchedPost.location || '',
@@ -78,7 +66,7 @@ export default function UpdatePost() {
     };
 
     fetchPost();
-  }, [postId, API_URL]);
+  }, [postId]);
 
   const handleUploadImage = async () => {
     if (!file) {
@@ -120,17 +108,14 @@ export default function UpdatePost() {
     }
 
     try {
-      const data = await apiRequest(
-        `/api/post/updatepost/${formData._id}/${currentUser?._id}`,
-        {
-          method: 'PUT',
-          auth: true,
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        }
-      );
+      const data = await apiRequest(`/api/posts/${formData._id}`, {
+        method: 'PUT',
+        auth: true,
+        body: {
+          ...formData,
+          subCategory: normalizeSubCategory(formData.subCategory),
+        },
+      });
 
       if (data.user) {
         dispatch(setUser(data.user));
@@ -156,16 +141,19 @@ export default function UpdatePost() {
             onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
             value={formData.title}
           />
-          <Select
-            value={formData.category}
-            onChange={(e) =>
-              setFormData((prev) => ({
-                ...prev,
-                category: e.target.value,
-                subCategory: e.target.value === 'TrustMedia' ? prev.subCategory || MEDIA_SUBCATEGORIES[0].value : '',
-              }))
-            }
-          >
+            <Select
+              value={formData.category}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  category: e.target.value,
+                  subCategory:
+                    e.target.value === 'TrustMedia'
+                      ? prev.subCategory || PRIMARY_SUBCATEGORIES[0].value
+                      : '',
+                }))
+              }
+            >
             <option value=''>Choisir une catégorie</option>
             {CATEGORY_OPTIONS.map((category) => (
               <option key={category.value} value={category.value}>
@@ -182,7 +170,7 @@ export default function UpdatePost() {
             onChange={(e) => setFormData((prev) => ({ ...prev, subCategory: e.target.value }))}
           >
             <option value=''>Choisir une rubrique</option>
-            {MEDIA_SUBCATEGORIES.map((option) => (
+            {ALL_SUBCATEGORIES.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
