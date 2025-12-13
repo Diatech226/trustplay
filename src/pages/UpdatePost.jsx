@@ -6,7 +6,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../redux/user/userSlice';
 import { uploadImageFile, uploadMediaFile } from '../utils/uploadImage';
-import { apiRequest } from '../utils/apiClient';
+import { apiRequest } from '../lib/apiClient';
 import { ALL_SUBCATEGORIES, normalizeSubCategory, PRIMARY_SUBCATEGORIES } from '../utils/categories';
 
 const CATEGORY_OPTIONS = [

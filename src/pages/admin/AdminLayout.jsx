@@ -3,7 +3,7 @@ import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { HiCollection, HiDocumentText, HiOutlineCog, HiOutlinePhotograph, HiOutlineUserGroup, HiSparkles, HiUserCircle } from 'react-icons/hi';
 import { useDispatch, useSelector } from 'react-redux';
 import { signoutSuccess } from '../../redux/user/userSlice';
-import { apiRequest } from '../../utils/apiClient';
+import { apiRequest } from '../../lib/apiClient';
 
 // CMS: admin layout
 export default function AdminLayout() {
@@ -14,7 +14,7 @@ export default function AdminLayout() {
 
   useEffect(() => {
     if (!currentUser) return;
-    if (!currentUser.isAdmin && location.pathname.startsWith('/dashboard') && location.pathname !== '/dashboard/profile') {
+    if (currentUser.role !== 'ADMIN' && location.pathname.startsWith('/dashboard') && location.pathname !== '/dashboard/profile') {
       navigate('/dashboard/profile', { replace: true });
     }
   }, [currentUser, location.pathname, navigate]);
@@ -50,7 +50,7 @@ export default function AdminLayout() {
           </div>
           <nav className='space-y-1'>
             {navItems
-              .filter((item) => (item.adminOnly ? currentUser?.isAdmin : true))
+            .filter((item) => (item.adminOnly ? currentUser?.role === 'ADMIN' : true))
               .map((item) => (
                 <NavLink
                   key={item.to}
@@ -89,7 +89,7 @@ export default function AdminLayout() {
               )}
               <div>
                 <p className='font-semibold text-slate-900 dark:text-white'>{currentUser?.username}</p>
-                <p className='text-xs uppercase tracking-[0.25em] text-slate-500'>{currentUser?.isAdmin ? 'Administrateur' : 'Membre'}</p>
+                <p className='text-xs uppercase tracking-[0.25em] text-slate-500'>{currentUser?.role === 'ADMIN' ? 'Administrateur' : 'Membre'}</p>
               </div>
             </div>
           </header>

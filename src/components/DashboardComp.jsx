@@ -8,7 +8,7 @@ import {
 } from 'react-icons/hi';
 import { Button, Table } from 'flowbite-react';
 import { Link } from 'react-router-dom';
-import { apiRequest } from '../utils/apiClient';
+import { apiRequest } from '../lib/apiClient';
 
 export default function DashboardComp() {
   const [users, setUsers] = useState([]);
@@ -53,7 +53,7 @@ export default function DashboardComp() {
         console.log(error.message);
       }
     };
-    if (currentUser.isAdmin) {
+    if (currentUser.role === 'ADMIN') {
       fetchUsers();
       fetchPosts();
       fetchComments();

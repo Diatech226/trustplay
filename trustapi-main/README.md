@@ -44,13 +44,13 @@ Variables utilisées par le code :
 - `api/utils/*` : helpers (erreur, vérification JWT)
 
 ## Auth & CORS
-- Auth JWT : le serveur signe un JWT avec `{ id, email, isAdmin }` et le renvoie dans `data.token` (et en cookie `access_token` HttpOnly en bonus). **Le header `Authorization: Bearer <token>` est la source de vérité pour toutes les routes protégées.**
-- Middleware `verifyToken` : lit d'abord le bearer, sinon le cookie ; en cas d'absence/erreur, renvoie `401 { success: false, message: "Unauthorized: Invalid or missing token" }` et n'exécute pas la route.
+- Auth JWT : le serveur signe un JWT avec `{ id, email, role }` et le renvoie dans `data.token`. **Le header `Authorization: Bearer <token>` est la source de vérité pour toutes les routes protégées.**
+- Middleware `verifyToken` : lit uniquement le bearer ; en cas d'absence, renvoie `401 { success: false, message: "Unauthorized: No token provided" }`, et en cas de signature invalide renvoie `401 { success: false, message: "Unauthorized: Invalid token" }`. Le payload décodé est exposé sur `req.user` (`{ id, email, role }`).
 - CORS : origines multiples via `CORS_ORIGIN`, `credentials: true`, méthodes `GET,POST,PUT,DELETE,OPTIONS`, headers `Content-Type, Authorization`.
 - Front : utiliser `NEXT_PUBLIC_API_URL` (ou `VITE_API_URL` en fallback) et appeler `fetch(..., { credentials: 'include' })`. Les requêtes authentifiées ajoutent automatiquement le bearer.
 
 ## Modèles de données
-- **User** : `username`, `email`, `password`, `profilePicture`, `isAdmin`, timestamps.
+- **User** : `username`, `email`, `passwordHash`, `role` (`USER` par défaut, `ADMIN` pour l'admin), `profilePicture`, timestamps.
 - **Post** : `userId`, `title`, `slug` (slugify lowercase/strict), `content`, `image`, `category` (`TrustMedia`, `TrustEvent`, `TrustProd`, `uncategorized`), `subCategory`, `eventDate?`, `location?`, timestamps.
 - **Comment** : `userId`, `postId`, `content`, `likes[]`, `numberOfLikes`, timestamps.
 
@@ -65,9 +65,9 @@ Résumé (voir le détail complet dans `API_CONTRACT.md`). Les routes sont préf
 
 ### Auth
 - `POST /api/auth/signup` — `{ username, email, password }`
-- `POST /api/auth/signin` — `{ email, password }` → retourne `user`, `token`, cookie `access_token`
-- `POST /api/auth/google` — `{ email, name, googlePhotoUrl }`
-- `POST /api/auth/signout` — vide le cookie
+- `POST /api/auth/signin` — `{ email, password }` → retourne `user`, `token`
+- `POST /api/auth/signout` — `{ success: true }`
+- `GET /api/user/me` — retourne le profil du porteur du token
 
 ### Utilisateurs
 - `GET /api/user/me` (auth) — profil courant
@@ -75,6 +75,8 @@ Résumé (voir le détail complet dans `API_CONTRACT.md`). Les routes sont préf
 - `PUT /api/user/update/:userId` (auth proprio) — met à jour `username/email/profilePicture/password`
 - `DELETE /api/user/delete/:userId` (auth proprio/admin)
 - `GET /api/user/:userId` — public
+
+> ⚙️ **Promotion admin** : pour donner le rôle administrateur à un utilisateur, changer son champ `role` à `ADMIN` directement dans MongoDB (aucune whitelist côté serveur).
 
 ### Posts / Events
 - `POST /api/post/create` (auth) — crée un article/événement (`title`, `content`, `category`, `subCategory`, `image`, `eventDate`, `location`)

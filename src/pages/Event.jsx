@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import PageContainer from '../components/layout/PageContainer';
 import PageHeader from '../components/layout/PageHeader';
 import Seo from '../components/Seo';
-import { fetchJson } from '../utils/apiClient';
+import { fetchJson } from '../lib/apiClient';
 import { normalizeSubCategory } from '../utils/categories';
 
 export default function TrustEvent() {

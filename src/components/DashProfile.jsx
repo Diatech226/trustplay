@@ -16,7 +16,7 @@ import { useDispatch } from 'react-redux';
 import { HiOutlineExclamationCircle } from 'react-icons/hi';
 import { Link } from 'react-router-dom';
 import { uploadImageFile } from '../utils/uploadImage';
-import { apiRequest, getAuthToken, API_BASE_URL } from '../utils/apiClient';
+import { API_BASE_URL, apiRequest, getAuthToken } from '../lib/apiClient';
 
 export default function DashProfile() {
   const { currentUser, error, loading } = useSelector((state) => state.user);
@@ -89,7 +89,8 @@ export default function DashProfile() {
       });
 
       const updatedUser = data.user || data;
-      dispatch(updateSuccess({ ...updatedUser, token: getAuthToken() }));
+      const token = await getAuthToken();
+      dispatch(updateSuccess({ user: updatedUser, token }));
       setUpdateUserSuccess("User's profile updated successfully");
     } catch (error) {
       dispatch(updateFailure(error.message));
@@ -196,7 +197,7 @@ export default function DashProfile() {
         >
           {loading ? 'Loading...' : 'Update'}
         </Button>
-        {currentUser.isAdmin && (
+        {currentUser.role === 'ADMIN' && (
           <Link to={'/create-post'}>
             <Button
               type='button'

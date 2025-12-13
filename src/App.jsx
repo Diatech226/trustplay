@@ -8,8 +8,8 @@ import ScrollToTop from './components/ScrollToTop';
 import LoadingScreen from './components/LoadingScreen';
 import { HelmetProvider } from "react-helmet-async";
 import { useDispatch, useSelector } from 'react-redux';
-import { setUser, signoutSuccess } from './redux/user/userSlice';
-import { apiRequest, getAuthToken } from './utils/apiClient';
+import { restoreSession, setUser, signoutSuccess } from './redux/user/userSlice';
+import { apiRequest, getAuthToken } from './lib/apiClient';
 
 const Home = lazy(() => import('./pages/Home'));
 const About = lazy(() => import('./pages/About'));
@@ -43,20 +43,22 @@ const NotificationsPreferences = lazy(() => import('./pages/NotificationsPrefere
 
 export default function App() {
   const dispatch = useDispatch();
-  const { currentUser } = useSelector((state) => state.user);
+  const { currentUser, token } = useSelector((state) => state.user);
 
   useEffect(() => {
-    const token = getAuthToken();
-    const shouldRefresh = !currentUser || typeof currentUser.isAdmin === 'undefined';
-    if (!token || !shouldRefresh) return;
+    dispatch(restoreSession());
+  }, [dispatch]);
 
+  useEffect(() => {
     const fetchProfile = async () => {
+      const storedToken = token || (await getAuthToken());
+      const shouldRefresh = storedToken && (!currentUser || !currentUser.role);
+      if (!shouldRefresh) return;
       try {
         const me = await apiRequest('/api/user/me', { auth: true });
         const profile = me.user || me.data?.user || me;
         if (profile) {
-          // fix: admin detection based on ADMIN_EMAILS env var
-          dispatch(setUser({ ...profile, token }));
+          dispatch(setUser({ user: profile, token: storedToken }));
         }
       } catch (error) {
         console.error('Unable to refresh session', error.message);
@@ -65,7 +67,7 @@ export default function App() {
     };
 
     fetchProfile();
-  }, [currentUser, dispatch]);
+  }, [currentUser, dispatch, token]);
 
   return (
     <BrowserRouter>

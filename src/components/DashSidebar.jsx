@@ -12,7 +12,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { signoutSuccess } from '../redux/user/userSlice';
 import { useDispatch } from 'react-redux';
 import { useSelector } from 'react-redux';
-import { apiRequest } from '../utils/apiClient';
+import { apiRequest } from '../lib/apiClient';
 
 export default function DashSidebar() {
   const location = useLocation();
@@ -40,7 +40,7 @@ export default function DashSidebar() {
     <Sidebar className='w-full md:w-56'>
       <Sidebar.Items>
         <Sidebar.ItemGroup className='flex flex-col gap-1'>
-          {currentUser && currentUser.isAdmin && (
+          {currentUser && currentUser.role === 'ADMIN' && (
             <Link to='/dashboard'>
               <Sidebar.Item
                 active={tab === 'dash' || !tab}
@@ -55,14 +55,14 @@ export default function DashSidebar() {
             <Sidebar.Item
               active={tab === 'profile'}
               icon={HiUser}
-              label={currentUser.isAdmin ? 'Admin' : 'User'}
+              label={currentUser.role === 'ADMIN' ? 'Admin' : 'User'}
               labelColor='dark'
               as='div'
             >
               Profil
             </Sidebar.Item>
           </Link>
-          {currentUser.isAdmin && (
+          {currentUser.role === 'ADMIN' && (
             <Link to='/dashboard/posts'>
               <Sidebar.Item
                 active={tab === 'posts'}
@@ -73,7 +73,7 @@ export default function DashSidebar() {
               </Sidebar.Item>
             </Link>
           )}
-          {currentUser.isAdmin && (
+          {currentUser.role === 'ADMIN' && (
             <>
               <Link to='/dashboard/users'>
                 <Sidebar.Item

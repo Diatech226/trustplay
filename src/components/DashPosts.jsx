@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { HiOutlineExclamationCircle } from 'react-icons/hi';
-import { apiRequest } from '../utils/apiClient';
+import { apiRequest } from '../lib/apiClient';
 
 // CMS: posts module table
 export default function DashPosts({ filters = { category: 'all', subCategory: 'all', status: 'all', query: '' } }) {
@@ -15,7 +15,7 @@ export default function DashPosts({ filters = { category: 'all', subCategory: 'a
 
   useEffect(() => {
     const fetchPosts = async () => {
-      if (!currentUser?.isAdmin) return;
+      if (currentUser?.role !== 'ADMIN') return;
       try {
         const data = await apiRequest(`/api/posts?userId=${currentUser._id}`);
         if (data?.posts) {
@@ -78,7 +78,7 @@ export default function DashPosts({ filters = { category: 'all', subCategory: 'a
 
   return (
     <div className='overflow-x-auto p-3'>
-      {currentUser.isAdmin && visiblePosts.length > 0 ? (
+      {currentUser.role === 'ADMIN' && visiblePosts.length > 0 ? (
         <>
           <Table hoverable>
             <Table.Head>

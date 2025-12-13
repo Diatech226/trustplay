@@ -3,8 +3,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { signInStart, signInSuccess, signInFailure } from '../redux/user/userSlice';
-import OAuth from '../components/OAuth';
-import { apiRequest } from '../utils/apiClient';
+import { apiRequest } from '../lib/apiClient';
 
 export default function SignIn() {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -32,22 +31,17 @@ export default function SignIn() {
       const token = authResponse?.data?.token || authResponse?.token;
       const userFromAuth = authResponse?.data?.user || authResponse?.user;
 
-      if (token) {
-        localStorage.setItem('token', token);
-      }
-
-      // fix: align signin route with backend
       let profile = userFromAuth;
       if (token && !profile) {
         const meResponse = await apiRequest('/api/user/me', { auth: true });
         profile = meResponse.user || meResponse.data?.user || meResponse?.data || meResponse;
       }
 
-      if (!profile) {
+      if (!profile || !token) {
         throw new Error('Utilisateur introuvable après connexion');
       }
 
-      dispatch(signInSuccess({ ...profile, token }));
+      dispatch(signInSuccess({ user: profile, token }));
       navigate('/');
     } catch (error) {
       dispatch(signInFailure(error?.message || 'Impossible de se connecter'));
@@ -66,8 +60,7 @@ export default function SignIn() {
             Blog
           </Link>
           <p className='text-sm mt-5'>
-            This is a demo project. You can sign in with your email and password
-            or with Google.
+            This is a demo project. You can sign in with your email and password.
           </p>
         </div>
 
@@ -110,7 +103,6 @@ export default function SignIn() {
                 'Sign In'
               )}
             </Button>
-            <OAuth />
           </form>
           <div className='flex gap-2 text-sm mt-5'>
             <span>Don't have an account?</span>

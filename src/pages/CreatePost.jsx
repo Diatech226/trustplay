@@ -4,7 +4,7 @@ import 'react-quill/dist/quill.snow.css';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { uploadImageFile, uploadMediaFile } from '../utils/uploadImage';
-import { apiRequest } from '../utils/apiClient';
+import { apiRequest } from '../lib/apiClient';
 import { ALL_SUBCATEGORIES, normalizeSubCategory, PRIMARY_SUBCATEGORIES } from '../utils/categories';
 
 const CATEGORY_OPTIONS = [

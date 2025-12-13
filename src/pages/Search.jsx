@@ -6,7 +6,7 @@ import PageHeader from '../components/layout/PageHeader';
 import PostCard from '../components/PostCard';
 import PostCardSkeleton from '../components/skeletons/PostCardSkeleton';
 import Seo from '../components/Seo';
-import { fetchJson } from '../utils/apiClient';
+import { fetchJson } from '../lib/apiClient';
 import { normalizeSubCategory, PRIMARY_SUBCATEGORIES } from '../utils/categories';
 
 export default function Search() {

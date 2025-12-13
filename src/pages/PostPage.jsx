@@ -13,7 +13,7 @@ import Seo from '../components/Seo';
 import ArticleHeroSkeleton from '../components/skeletons/ArticleHeroSkeleton';
 import PostCardSkeleton from '../components/skeletons/PostCardSkeleton';
 import { logReading } from '../redux/history/historySlice';
-import { fetchJson } from '../utils/apiClient';
+import { fetchJson } from '../lib/apiClient';
 import { normalizeSubCategory } from '../utils/categories';
 
 export default function PostPage() {
