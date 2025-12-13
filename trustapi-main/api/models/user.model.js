@@ -37,6 +37,14 @@ const userSchema = new mongoose.Schema(
         ref: "Comment",
       },
     ],
+    passwordResetTokenHash: {
+      type: String,
+      default: null,
+    },
+    passwordResetExpiresAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );

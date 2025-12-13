@@ -139,3 +139,17 @@ export async function fetchJson(url, options) {
 export async function getAuthToken() {
   return getStoredToken();
 }
+
+export const forgotPassword = (email) =>
+  post('/api/auth/forgot-password', {
+    body: { email },
+    auth: false,
+  });
+
+export const resetPassword = (email, token, newPassword) =>
+  post('/api/auth/reset-password', {
+    body: { email, token, newPassword },
+    auth: false,
+  });
+
+export const authApi = { forgotPassword, resetPassword };
