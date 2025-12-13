@@ -34,7 +34,9 @@ Variables utilisées par le code :
 - `DATABASE_URL` : URI MongoDB (ex. `mongodb+srv://user:pass@cluster/db`)
 - `JWT_SECRET` : clé de signature JWT
 - `CORS_ORIGIN` : origines autorisées (CSV, ex. `http://localhost:5173,http://localhost:3000`)
+- `FRONTEND_URL` : URL publique du frontend (utilisée pour construire les liens de reset password)
 - `UPLOAD_DIR` : répertoire pour stocker les fichiers uploadés (servi via `/uploads`)
+- SMTP (optionnel) : `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` pour envoyer les emails de reset. Si non définis, le serveur loguera simplement l’URL de réinitialisation en console.
 
 ## Architecture
 - `api/index.js` : bootstrap serveur, CORS, statiques, routage et gestion d'erreurs
@@ -67,6 +69,8 @@ Résumé (voir le détail complet dans `API_CONTRACT.md`). Les routes sont préf
 - `POST /api/auth/signup` — `{ username, email, password }`
 - `POST /api/auth/signin` — `{ email, password }` → retourne `user`, `token`
 - `POST /api/auth/signout` — `{ success: true }`
+- `POST /api/auth/forgot-password` — `{ email }` → Toujours 200 ; stocke un hash de token avec expiration 15 min et envoie (ou log) l’URL `${FRONTEND_URL}/reset-password?token=...&email=...`
+- `POST /api/auth/reset-password` — `{ email, token, newPassword }` → vérifie le hash+expiration, met à jour le mot de passe (min. 8 caractères), supprime le token et renvoie éventuellement `user` + `token` pour reconnexion auto
 - `GET /api/user/me` — retourne le profil du porteur du token
 
 ### Utilisateurs
@@ -109,6 +113,19 @@ Résumé (voir le détail complet dans `API_CONTRACT.md`). Les routes sont préf
    ```bash
    curl "$NEXT_PUBLIC_API_URL/api/user/me" \
      -H "Authorization: Bearer <token>"
+   ```
+
+3. **Mot de passe oublié / reset** :
+   ```bash
+   # Demande de lien de réinitialisation (réponse 200 même si l'email n'existe pas)
+   curl -X POST "$NEXT_PUBLIC_API_URL/api/auth/forgot-password" \
+     -H 'Content-Type: application/json' \
+     -d '{"email":"demo@example.com"}'
+
+   # Depuis le lien reçu (ou loggé), soumettre le nouveau mot de passe
+   curl -X POST "$NEXT_PUBLIC_API_URL/api/auth/reset-password" \
+     -H 'Content-Type: application/json' \
+     -d '{"email":"demo@example.com","token":"<token>","newPassword":"NewSecurePass!"}'
    ```
 
 #### Exemples curl

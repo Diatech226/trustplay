@@ -14,6 +14,8 @@ import { apiRequest, getAuthToken } from './lib/apiClient';
 const Home = lazy(() => import('./pages/Home'));
 const About = lazy(() => import('./pages/About'));
 const SignIn = lazy(() => import('./pages/SignIn'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const AdminPosts = lazy(() => import('./pages/admin/AdminPosts'));
@@ -80,6 +82,8 @@ export default function App() {
             <Route path='/about' element={<About />} />
             <Route path='/sign-in' element={<SignIn />} />
             <Route path='/sign-up' element={<SignUp />} />
+            <Route path='/forgot-password' element={<ForgotPassword />} />
+            <Route path='/reset-password' element={<ResetPassword />} />
             <Route path='/search' element={<Search />} />
             <Route path='/event' element={<TrustEvent />} />
             <Route path='/production' element={<TrustProd />} />

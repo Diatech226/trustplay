@@ -88,6 +88,11 @@ export default function SignIn() {
                 required
                 value={formData.password}
               />
+              <div className='text-right mt-1'>
+                <Link to='/forgot-password' className='text-sm text-blue-500'>
+                  Mot de passe oublié ?
+                </Link>
+              </div>
             </div>
             <Button
               gradientDuoTone='purpleToPink'
