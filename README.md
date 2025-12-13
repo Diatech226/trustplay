@@ -7,7 +7,7 @@ Site web de média en ligne construit avec React et Vite. L'application propose 
 - Navigation complète via `react-router-dom` : accueil `/`, page article `/post/:postSlug`, recherche `/search`, pages institutionnelles (à propos, politique de confidentialité, conditions), sections événementiels et production.
 - Page de détail d'article avec image, métadonnées, contenu HTML et suggestions d'articles récents.
 - Recherche et filtrage des posts avec critères (terme, ordre chronologique, catégorie) et pagination par chargement incrémental.
-- Authentification par email/mot de passe et Google OAuth, token stocké côté navigateur ; redirections protégées (dashboard, création/mise à jour d'article).
+- Authentification locale email/mot de passe via API JWT, session persistée côté navigateur (storage asynchrone) ; redirections protégées (dashboard, création/mise à jour d'article).
 - Création et modification d'articles avec éditeur riche (ReactQuill), upload d'image envoyé au backend (`/api/uploads`) et gestion des catégories/sous-catégories (TrustMedia, TrustEvent, TrustProduction + News/Politique/…).
 - Gestion des commentaires avec création authentifiée et affichage de la liste des commentaires d’un article.
 - Thème clair/sombre mémorisé via Redux Persist.
@@ -15,7 +15,7 @@ Site web de média en ligne construit avec React et Vite. L'application propose 
 ## Architecture technique
 - **Frontend** : React 18 + Vite 5, routage `react-router-dom`, composants UI `flowbite-react`, icônes `react-icons`, éditeur riche `react-quill`.
 - **État global** : Redux Toolkit (`@reduxjs/toolkit`) avec persistance (`redux-persist`) pour l'utilisateur et le thème.
-- **Auth & médias** : Firebase (auth Google) ; les images sont envoyées au backend.
+- **Auth & médias** : Auth locale JWT (backend Express/MongoDB) ; les images/vidéos sont envoyées au backend (`/api/uploads`).
 - **Appel API** : toutes les données métiers (posts, commentaires, utilisateurs) proviennent d’un backend REST configuré via `VITE_API_URL` (non inclus dans ce dépôt).
 - **Styles** : Tailwind CSS + plugins (`@tailwindcss/line-clamp`, `tailwind-scrollbar`).
 
@@ -27,7 +27,7 @@ src/
   components/         # Header/Footer, cartes d’articles, sections dashboard, commentaires, etc.
   pages/              # Pages routées : Home, Search, PostPage, Dashboard, Auth, etc.
   redux/              # Store, slices user & theme
-  firebase.js         # Initialisation Firebase (clés via VITE_FIREBASE_API_KEY)
+  lib/                # apiClient (gestion bearer/401) et asyncStorage (wrapper localStorage)
   index.css           # Styles globaux (Tailwind)
 ```
 
@@ -46,12 +46,11 @@ npm run lint      # linting ESLint
 Créer un fichier `.env` à la racine du projet (ou équivalent Vite) avec au minimum :
 
 - `VITE_API_URL` (obligatoire) : base URL du backend REST (ex. https://api.example.com). Utilisé pour la récupération et la création de posts, commentaires, utilisateurs, etc.
-- `VITE_FIREBASE_API_KEY` (obligatoire) : clé API Firebase pour l’authentification Google et le stockage des images.
 
 ## Modèle de données (côté frontend)
 Les types sont consommés depuis l’API, mais les champs utilisés permettent d’identifier :
 - **Post** : `_id`, `title`, `slug`, `category` (TrustMedia/TrustEvent/TrustProduction), `subCategory` (news, politique, economie, culture, technologie, sport, portraits), `content` (HTML), `image`, `createdAt`, `eventDate`, `location` (pour les événements).
-- **User** : `id`/`_id`, `username`, `email`, `profilePicture`, `token`, rôle (admin pour l’accès aux routes protégées), drapeau `isAdmin` (utilisé côté dashboard).
+- **User** : `id`/`_id`, `username`, `email`, `profilePicture`, `token`, `role` (`ADMIN` pour les routes protégées admin).
 - **Comment** : `_id`, `postId`, `userId`, `content`, `userName`, `profilePicture`, timestamps.
 
 ## Routage & contenu éditorial
@@ -73,13 +72,12 @@ Les types sont consommés depuis l’API, mais les champs utilisés permettent d
 - La page d’accueil filtre côté client sur `subCategory` une fois les posts chargés.
 
 ### Médias
-- Upload d’images via Firebase Storage (`uploadBytesResumable`) depuis la page de création/mise à jour d’article. Les images sont ensuite référencées par URL dans le contenu.
-- Les images des posts sont affichées directement depuis l’URL stockée.
+- Upload d’images/vidéos via `/api/uploads` (Multer côté backend) depuis la page de création/mise à jour d’article ou l’éditeur.
+- Les URLs retournées par l’API sont stockées sur les posts/contenus.
 
 ### Authentification & autorisations
-- Auth email/mot de passe contre l’API (`/api/auth/signin`, `/api/auth/signup`) avec stockage du token dans `localStorage`.
-- Auth Google via Firebase (`/api/auth/google`).
-- Routes protégées (`PrivateRoute`, `OnlyAdminPrivateRoute`) contrôlent l’accès au dashboard et aux pages d’édition.
+- Auth email/mot de passe contre l’API (`/api/auth/signin`, `/api/auth/signup`), stockage du token dans un wrapper asynchrone autour de `localStorage`.
+- Routes protégées (`PrivateRoute`, `OnlyAdminPrivateRoute`) contrôlent l’accès au dashboard et aux pages d’édition (rôle `ADMIN`).
 
 ### Workflow éditorial (front)
 - Création/édition : formulaires `CreatePost.jsx` et `UpdatePost.jsx` envoient les données au backend (token JWT requis). Les sous-catégories sont obligatoires pour TrustMedia.
@@ -93,7 +91,6 @@ Les types sont consommés depuis l’API, mais les champs utilisés permettent d
 ## Déploiement
 - Build frontend Vite (`npm run build`), prévisualisation via `npm run preview`.
 - Architecture CSR (client-side rendering). L’API distante doit être accessible via `VITE_API_URL`.
-- Firebase est requis pour l’auth Google et le stockage des médias.
 
 ## 🛣️ Roadmap & pistes d’amélioration
 ### Itération 1 – Structuration éditoriale

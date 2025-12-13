@@ -1,4 +1,4 @@
-import { uploadFile } from './apiClient';
+import { uploadFile } from '../lib/apiClient';
 
 export const uploadImageFile = async (file) => {
   if (!file) {

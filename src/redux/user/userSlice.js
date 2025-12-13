@@ -1,11 +1,38 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import asyncStorage from '../../lib/asyncStorage';
 
-const initialState = {
-  currentUser: JSON.parse(localStorage.getItem('user')) || null,
-  error: null,
-  loading: false,
+const persistAuth = (user, token) => {
+  if (user && token) {
+    asyncStorage.setItem('auth', JSON.stringify({ user, token }));
+  } else {
+    asyncStorage.removeItem('auth');
+  }
 };
 
+export const restoreSession = createAsyncThunk('user/restoreSession', async () => {
+  const raw = await asyncStorage.getItem('auth');
+  if (!raw) return { user: null, token: null };
+  try {
+    const parsed = JSON.parse(raw);
+    return { user: parsed.user || parsed.currentUser || null, token: parsed.token || null };
+  } catch (error) {
+    return { user: null, token: null };
+  }
+});
+
+const initialState = {
+  currentUser: null,
+  token: null,
+  error: null,
+  loading: false,
+  initialized: false,
+};
+
+const resolveAuthPayload = (payload = {}) => {
+  const user = payload.user || payload.data?.user || payload.currentUser || payload;
+  const token = payload.token || payload.data?.token || payload.accessToken;
+  return { user, token };
+};
 
 const userSlice = createSlice({
   name: 'user',
@@ -15,7 +42,6 @@ const userSlice = createSlice({
       state.loading = true;
       state.error = null;
     },
-    
     signInFailure: (state, action) => {
       state.loading = false;
       state.error = action.payload;
@@ -25,13 +51,12 @@ const userSlice = createSlice({
       state.error = null;
     },
     updateSuccess: (state, action) => {
-      state.currentUser = action.payload;
+      const { user } = resolveAuthPayload(action.payload);
+      state.currentUser = user;
       state.loading = false;
       state.error = null;
-      localStorage.setItem('user', JSON.stringify(action.payload));
-      localStorage.setItem('token', action.payload.token);
+      persistAuth(user, state.token);
     },
-    
     updateFailure: (state, action) => {
       state.loading = false;
       state.error = action.payload;
@@ -42,8 +67,10 @@ const userSlice = createSlice({
     },
     deleteUserSuccess: (state) => {
       state.currentUser = null;
+      state.token = null;
       state.loading = false;
       state.error = null;
+      persistAuth(null, null);
     },
     deleteUserFailure: (state, action) => {
       state.loading = false;
@@ -51,28 +78,44 @@ const userSlice = createSlice({
     },
     signoutSuccess: (state) => {
       state.currentUser = null;
+      state.token = null;
       state.error = null;
       state.loading = false;
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
+      persistAuth(null, null);
     },
-    
     signInSuccess: (state, action) => {
-      state.currentUser = action.payload;
+      const { user, token } = resolveAuthPayload(action.payload);
+      state.currentUser = user;
+      state.token = token || state.token;
       state.loading = false;
       state.error = null;
-      localStorage.setItem('user', JSON.stringify(action.payload));
-      localStorage.setItem('token', action.payload.token);
+      persistAuth(user, state.token);
     },
-    
     setUser: (state, action) => {
-      state.currentUser = action.payload;
+      const { user, token } = resolveAuthPayload(action.payload);
+      state.currentUser = user;
+      state.token = token || state.token;
       state.loading = false;
       state.error = null;
-      localStorage.setItem('user', JSON.stringify(action.payload));
-      localStorage.setItem('token', action.payload.token);
+      persistAuth(user, state.token);
     },
-    
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(restoreSession.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(restoreSession.fulfilled, (state, action) => {
+        state.currentUser = action.payload.user;
+        state.token = action.payload.token;
+        state.loading = false;
+        state.error = null;
+        state.initialized = true;
+      })
+      .addCase(restoreSession.rejected, (state) => {
+        state.loading = false;
+        state.initialized = true;
+      });
   },
 });
 

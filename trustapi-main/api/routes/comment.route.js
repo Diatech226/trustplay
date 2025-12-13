@@ -1,5 +1,5 @@
 import express from 'express';
-import { verifyToken } from '../utils/verifyUser.js';
+import { requireAdmin, verifyToken } from '../utils/verifyUser.js';
 import {
   createComment,
   deleteComment,
@@ -14,7 +14,7 @@ const router = express.Router();
 
 router.post('/create', verifyToken, createComment);
 router.get('/getPostComments/:postId', getPostComments);
-router.get('/getcomments', verifyToken, getComments);
+router.get('/getcomments', verifyToken, requireAdmin, getComments);
 router.put('/likeComment/:commentId', verifyToken, likeComment);
 router.put('/editComment/:commentId', verifyToken, editComment);
 router.delete('/deleteComment/:commentId', verifyToken, deleteComment);

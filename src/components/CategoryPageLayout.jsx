@@ -6,7 +6,7 @@ import PageContainer from './layout/PageContainer';
 import PageHeader from './layout/PageHeader';
 import Seo from './Seo';
 import PostCardSkeleton from './skeletons/PostCardSkeleton';
-import { apiRequest } from '../utils/apiClient';
+import { apiRequest } from '../lib/apiClient';
 import { normalizeSubCategory } from '../utils/categories';
 
 const DEFAULT_LIMIT = 12;

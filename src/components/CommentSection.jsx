@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import Comment from './Comment';
 import { HiOutlineExclamationCircle } from 'react-icons/hi';
-import { apiRequest } from '../utils/apiClient';
+import { apiRequest } from '../lib/apiClient';
 
 export default function CommentSection({ postId }) {
   const { currentUser } = useSelector((state) => state.user);
@@ -67,7 +67,7 @@ export default function CommentSection({ postId }) {
       setCommentError(null);
     } catch (error) {
       console.error("Error adding comment:", error.message);
-      setCommentError(error.message);
+      setCommentError(error.status === 401 ? 'Connecte-toi' : error.message);
     } finally {
       setSubmitting(false);
     }
@@ -146,7 +146,7 @@ export default function CommentSection({ postId }) {
                     });
                     setComments((prev) => prev.filter((c) => (c._id || c.id) !== commentToDelete));
                   } catch (error) {
-                    setCommentError(error.message);
+                    setCommentError(error.status === 401 ? 'Connecte-toi' : error.message);
                   } finally {
                     setShowModal(false);
                   }

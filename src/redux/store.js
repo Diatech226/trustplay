@@ -5,7 +5,7 @@ import favoritesReducer from './favorites/favoritesSlice';
 import historyReducer from './history/historySlice';
 import notificationsReducer from './notifications/notificationsSlice';
 import { persistReducer, persistStore } from 'redux-persist';
-import storage from 'redux-persist/lib/storage';
+import asyncStorage from '../lib/asyncStorage';
 
 const rootReducer = combineReducers({
   user: userReducer,
@@ -17,16 +17,16 @@ const rootReducer = combineReducers({
 
 const persistConfig = {
   key: 'root',
-  storage,
+  storage: asyncStorage,
   version: 1,
   whitelist: ['user', 'favorites', 'history', 'notifications'],
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
-export const logoutAndClearPersistedData = () => (dispatch) => {
+export const logoutAndClearPersistedData = () => async (dispatch) => {
   dispatch(signoutSuccess());
-  storage.removeItem('persist:root');
+  await asyncStorage.removeItem('persist:root');
 };
 
 export const store = configureStore({

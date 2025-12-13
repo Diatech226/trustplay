@@ -2,6 +2,13 @@ import bcryptjs from 'bcryptjs';
 import { errorHandler } from '../utils/error.js';
 import User from '../models/user.model.js';
 
+const sanitizeUser = (userDoc = {}) => {
+  const userObj = userDoc.toObject ? userDoc.toObject() : { ...userDoc };
+  delete userObj.password;
+  delete userObj.passwordHash;
+  return userObj;
+};
+
 export const test = (req, res) => {
   res.json({ success: true, message: 'API is working!' });
 };
@@ -10,17 +17,16 @@ export const updateUser = async (req, res, next) => {
   if (req.user.id !== req.params.userId) {
     return next(errorHandler(403, 'You are not allowed to update this user'));
   }
+  const updates = {};
   if (req.body.password) {
     if (req.body.password.length < 6) {
       return next(errorHandler(400, 'Password must be at least 6 characters'));
     }
-    req.body.password = bcryptjs.hashSync(req.body.password, 10);
+    updates.passwordHash = bcryptjs.hashSync(req.body.password, 10);
   }
   if (req.body.username) {
     if (req.body.username.length < 7 || req.body.username.length > 20) {
-      return next(
-        errorHandler(400, 'Username must be between 7 and 20 characters')
-      );
+      return next(errorHandler(400, 'Username must be between 7 and 20 characters'));
     }
     if (req.body.username.includes(' ')) {
       return next(errorHandler(400, 'Username cannot contain spaces'));
@@ -29,26 +35,25 @@ export const updateUser = async (req, res, next) => {
       return next(errorHandler(400, 'Username must be lowercase'));
     }
     if (!req.body.username.match(/^[a-zA-Z0-9]+$/)) {
-      return next(
-        errorHandler(400, 'Username can only contain letters and numbers')
-      );
+      return next(errorHandler(400, 'Username can only contain letters and numbers'));
     }
+    updates.username = req.body.username;
+  }
+  if (req.body.email) {
+    updates.email = req.body.email.toLowerCase();
+  }
+  if (req.body.profilePicture) {
+    updates.profilePicture = req.body.profilePicture;
   }
   try {
     const updatedUser = await User.findByIdAndUpdate(
       req.params.userId,
       {
-        $set: {
-          username: req.body.username,
-          email: req.body.email,
-          profilePicture: req.body.profilePicture,
-          password: req.body.password,
-        },
+        $set: updates,
       },
       { new: true }
     );
-      const rest = updatedUser.toObject ? updatedUser.toObject() : { ...updatedUser._doc };
-      delete rest.password;
+    const rest = sanitizeUser(updatedUser);
     res.status(200).json({ success: true, data: { user: rest }, user: rest });
   } catch (error) {
     next(error);
@@ -56,24 +61,12 @@ export const updateUser = async (req, res, next) => {
 };
 
 export const deleteUser = async (req, res, next) => {
-  if (!req.user.isAdmin && req.user.id !== req.params.userId) {
+  if (req.user.role !== 'ADMIN' && req.user.id !== req.params.userId) {
     return next(errorHandler(403, 'You are not allowed to delete this user'));
   }
   try {
     await User.findByIdAndDelete(req.params.userId);
     res.status(200).json({ success: true, message: 'User has been deleted' });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const signout = (req, res, next) => {
-  try {
-    res
-      .clearCookie('access_token')
-      .status(200)
-      .json({ success: true, message: 'User has been signed out' });
-
   } catch (error) {
     next(error);
   }
@@ -85,8 +78,7 @@ export const getMe = async (req, res, next) => {
     if (!user) {
       return next(errorHandler(404, 'User not found'));
     }
-    const rest = user.toObject ? user.toObject() : { ...user._doc };
-    delete rest.password;
+    const rest = sanitizeUser(user);
     res.status(200).json({ success: true, data: { user: rest }, user: rest });
   } catch (error) {
     next(error);
@@ -94,7 +86,7 @@ export const getMe = async (req, res, next) => {
 };
 
 export const getUsers = async (req, res, next) => {
-  if (!req.user.isAdmin) {
+  if (req.user.role !== 'ADMIN') {
     return next(errorHandler(403, 'You are not allowed to see all users'));
   }
   try {
@@ -107,11 +99,7 @@ export const getUsers = async (req, res, next) => {
       .skip(startIndex)
       .limit(limit);
 
-    const usersWithoutPassword = users.map((user) => {
-      const userData = user.toObject ? user.toObject() : { ...user._doc };
-      delete userData.password;
-      return userData;
-    });
+    const usersWithoutPassword = users.map(sanitizeUser);
 
     const totalUsers = await User.countDocuments();
 
@@ -144,8 +132,7 @@ export const getUser = async (req, res, next) => {
     if (!user) {
       return next(errorHandler(404, 'User not found'));
     }
-    const rest = user.toObject ? user.toObject() : { ...user._doc };
-    delete rest.password;
+    const rest = sanitizeUser(user);
     res.status(200).json({ success: true, data: { user: rest }, user: rest });
   } catch (error) {
     next(error);

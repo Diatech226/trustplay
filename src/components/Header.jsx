@@ -6,7 +6,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { toggleTheme } from '../redux/theme/themeSlice';
 import { signoutSuccess } from '../redux/user/userSlice';
 import { useEffect, useState } from 'react';
-import { apiRequest } from '../utils/apiClient';
+import { apiRequest } from '../lib/apiClient';
 
 export default function Header() {
   const path = useLocation().pathname;
@@ -113,7 +113,7 @@ export default function Header() {
                 {currentUser.email}
               </span>
             </Dropdown.Header>
-            {currentUser.isAdmin && (
+            {currentUser.role === 'ADMIN' && (
               <Link to={'/dashboard'}>
                 <Dropdown.Item>Dashboard</Dropdown.Item>
               </Link>

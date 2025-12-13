@@ -68,7 +68,7 @@ export const updatepost = async (req, res, next) => {
   try {
     const postId = req.params.postId;
     const targetUserId = req.params.userId;
-    if (!req.user?.isAdmin) {
+    if (req.user?.role !== 'ADMIN') {
       let ownerId = targetUserId;
       if (!ownerId && postId) {
         const existing = await Post.findById(postId).select('userId');
@@ -153,7 +153,7 @@ export const deletepost = async (req, res, next) => {
   try {
     const postId = req.params.postId;
     const targetUserId = req.params.userId;
-    if (!req.user?.isAdmin) {
+    if (req.user?.role !== 'ADMIN') {
       let ownerId = targetUserId;
       if (!ownerId && postId) {
         const existing = await Post.findById(postId).select('userId');
