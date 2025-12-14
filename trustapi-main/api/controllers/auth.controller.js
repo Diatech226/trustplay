@@ -1,5 +1,5 @@
 import User from '../models/user.model.js';
-import bcryptjs from 'bcryptjs';
+import bcrypt from 'bcryptjs';
 import { errorHandler } from '../utils/error.js';
 import jwt from 'jsonwebtoken';
 import { generatePasswordResetToken, hashResetToken } from '../utils/passwordReset.js';
@@ -34,7 +34,7 @@ export const signup = async (req, res, next) => {
       return next(errorHandler(409, 'User with this email or username already exists'));
     }
 
-    const hashedPassword = bcryptjs.hashSync(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = new User({
       username,
@@ -54,22 +54,27 @@ export const signup = async (req, res, next) => {
   }
 };
 
-export const signin = async (req, res, next) => {
-  const { email, password } = req.body;
+export const signin = async (req, res) => {
+  const { email, password } = req.body || {};
 
   if (!email || !password || email === '' || password === '') {
-    return next(errorHandler(400, 'Email and password are required'));
+    return res.status(400).json({ success: false, message: 'Email and password are required' });
   }
 
   try {
     const validUser = await User.findOne({ email: email.toLowerCase() });
     if (!validUser) {
-      return next(errorHandler(401, 'Invalid credentials'));
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
-    const validPassword = bcryptjs.compareSync(password, validUser.passwordHash);
+    const validPassword = await bcrypt.compare(password, validUser.passwordHash);
     if (!validPassword) {
-      return next(errorHandler(401, 'Invalid credentials'));
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET is missing in the environment variables.');
+      return res.status(500).json({ success: false, message: 'Internal server error' });
     }
 
     const token = jwt.sign(
@@ -80,12 +85,13 @@ export const signin = async (req, res, next) => {
 
     const userProfile = sanitizeUser(validUser);
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: { user: userProfile, token },
     });
   } catch (error) {
-    next(error);
+    console.error('Signin error:', error.stack || error);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -97,11 +103,11 @@ export const signout = (_req, res, next) => {
   }
 };
 
-export const forgotPassword = async (req, res, next) => {
-  const { email } = req.body;
+export const forgotPassword = async (req, res) => {
+  const { email } = req.body || {};
 
   if (!email) {
-    return next(errorHandler(400, 'Email is required'));
+    return res.status(400).json({ success: false, message: 'Email is required' });
   }
 
   try {
@@ -127,50 +133,56 @@ export const forgotPassword = async (req, res, next) => {
       }
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: 'Si un compte existe, un lien de réinitialisation a été envoyé.',
     });
   } catch (error) {
-    next(error);
+    console.error('Forgot password error:', error.stack || error);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
-export const resetPassword = async (req, res, next) => {
-  const { email, token, newPassword } = req.body;
+export const resetPassword = async (req, res) => {
+  const { email, token, newPassword } = req.body || {};
 
   if (!email || !token || !newPassword) {
-    return next(errorHandler(400, 'Email, token and new password are required'));
+    return res.status(400).json({ success: false, message: 'Email, token and new password are required' });
   }
 
   if (newPassword.length < 8) {
-    return next(errorHandler(400, 'Password must be at least 8 characters long'));
+    return res.status(400).json({ success: false, message: 'Password must be at least 8 characters long' });
   }
 
   try {
     const user = await User.findOne({ email: email.toLowerCase() });
 
     if (!user || !user.passwordResetTokenHash || !user.passwordResetExpiresAt) {
-      return next(errorHandler(400, 'Invalid or expired reset token'));
+      return res.status(400).json({ success: false, message: 'Invalid or expired reset token' });
     }
 
     if (user.passwordResetExpiresAt.getTime() < Date.now()) {
       user.passwordResetTokenHash = null;
       user.passwordResetExpiresAt = null;
       await user.save();
-      return next(errorHandler(400, 'Reset token has expired'));
+      return res.status(400).json({ success: false, message: 'Reset token has expired' });
     }
 
     const hashedToken = hashResetToken(token);
     if (hashedToken !== user.passwordResetTokenHash) {
-      return next(errorHandler(400, 'Invalid or expired reset token'));
+      return res.status(400).json({ success: false, message: 'Invalid or expired reset token' });
     }
 
-    const hashedPassword = bcryptjs.hashSync(newPassword, 10);
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
     user.passwordHash = hashedPassword;
     user.passwordResetTokenHash = null;
     user.passwordResetExpiresAt = null;
     await user.save();
+
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET is missing in the environment variables.');
+      return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
 
     const authToken = jwt.sign(
       { id: user._id, email: user.email, role: user.role },
@@ -180,12 +192,13 @@ export const resetPassword = async (req, res, next) => {
 
     const userProfile = sanitizeUser(user);
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: 'Mot de passe mis à jour.',
       data: { token: authToken, user: userProfile },
     });
   } catch (error) {
-    next(error);
+    console.error('Reset password error:', error.stack || error);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };

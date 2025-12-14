@@ -64,6 +64,9 @@ app.use('/api/post', postRoutes);
 app.use('/api/posts', postsRoutes);
 app.use('/api/comment', commentRoutes);
 app.use('/api/uploads', uploadRoutes);
+app.get('/api/health', (_req, res) => {
+  res.json({ success: true });
+});
 
 // Serve uploaded assets
 if (!fs.existsSync(absoluteUploadPath)) {
