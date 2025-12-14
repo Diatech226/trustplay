@@ -37,6 +37,8 @@ Variables utilisées par le code :
 - `FRONTEND_URL` : URL publique du frontend (utilisée pour construire les liens de reset password)
 - `UPLOAD_DIR` : répertoire pour stocker les fichiers uploadés (servi via `/uploads`)
 - SMTP (optionnel) : `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` pour envoyer les emails de reset. Si non définis, le serveur loguera simplement l’URL de réinitialisation en console.
+- Mode dev fail-safe : si l’un des paramètres SMTP requis manque, aucun transporteur n’est créé, l’URL de reset est affichée en console et le flux continue.
+- Résilience SMTP : en cas de timeout/ECONNRESET/TLS, les erreurs sont loguées avec le préfixe `[MAILER]` sans bloquer les routes `forgot-password` et `reset-password`.
 
 ## Architecture
 - `api/index.js` : bootstrap serveur, CORS, statiques, routage et gestion d'erreurs
@@ -122,10 +124,13 @@ Résumé (voir le détail complet dans `API_CONTRACT.md`). Les routes sont préf
      -H 'Content-Type: application/json' \
      -d '{"email":"demo@example.com"}'
 
+   # En mode dev sans SMTP, l'URL de reset est affichée dans les logs serveur
+
    # Depuis le lien reçu (ou loggé), soumettre le nouveau mot de passe
    curl -X POST "$NEXT_PUBLIC_API_URL/api/auth/reset-password" \
      -H 'Content-Type: application/json' \
      -d '{"email":"demo@example.com","token":"<token>","newPassword":"NewSecurePass!"}'
+   # Même si l'envoi d'email échoue, le reset réussit tant que le token est valide
    ```
 
 #### Exemples curl

@@ -137,10 +137,9 @@ export const forgotPassword = async (req, res) => {
         user.email
       )}`;
 
-      try {
-        await sendResetPasswordEmail(user.email, resetUrl);
-      } catch (error) {
-        console.error('Failed to send reset email', error.message);
+      const mailDelivered = await sendResetPasswordEmail(user.email, resetUrl);
+      if (!mailDelivered) {
+        console.error('[FORGOT_PASSWORD] Mailer failed to send reset email');
       }
     }
 
@@ -156,6 +155,8 @@ export const forgotPassword = async (req, res) => {
 
 export const resetPassword = async (req, res) => {
   const { email, token, newPassword } = req.body || {};
+  const logPrefix = '[RESET_PASSWORD]';
+  let lastAction = 'starting';
 
   if (!email || !token || !newPassword) {
     return res.status(400).json({ success: false, message: 'Email, token and new password are required' });
@@ -166,6 +167,7 @@ export const resetPassword = async (req, res) => {
   }
 
   try {
+    lastAction = 'fetching user';
     const user = await User.findOne({ email: email.toLowerCase() });
 
     if (!user || !user.passwordResetTokenHash || !user.passwordResetExpiresAt) {
@@ -173,6 +175,7 @@ export const resetPassword = async (req, res) => {
     }
 
     if (user.passwordResetExpiresAt.getTime() < Date.now()) {
+      lastAction = 'saving expired token cleanup';
       user.passwordResetTokenHash = null;
       user.passwordResetExpiresAt = null;
       await user.save();
@@ -184,6 +187,7 @@ export const resetPassword = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid or expired reset token' });
     }
 
+    lastAction = 'saving new password';
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     user.passwordHash = hashedPassword;
     user.authProvider = 'local';
@@ -210,7 +214,8 @@ export const resetPassword = async (req, res) => {
       data: { token: authToken, user: userProfile },
     });
   } catch (error) {
-    console.error('Reset password error:', error.stack || error);
+    console.error(`${logPrefix} ${lastAction} failed:`, error.message);
+    console.error(error.stack || error);
     return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
