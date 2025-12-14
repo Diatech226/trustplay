@@ -52,7 +52,7 @@ Variables utilisées par le code :
 - Front : utiliser `NEXT_PUBLIC_API_URL` (ou `VITE_API_URL` en fallback) et appeler `fetch(..., { credentials: 'include' })`. Les requêtes authentifiées ajoutent automatiquement le bearer.
 
 ## Modèles de données
-- **User** : `username`, `email`, `passwordHash`, `role` (`USER` par défaut, `ADMIN` pour l'admin), `profilePicture`, timestamps.
+- **User** : `username`, `email`, `passwordHash` (obligatoire uniquement pour `authProvider=local`), `authProvider` (`local` par défaut, compat `google`/`firebase`), `role` (`USER` par défaut, `ADMIN` pour l'admin, `client` accepté en lecture pour les anciens comptes), `profilePicture`, timestamps.
 - **Post** : `userId`, `title`, `slug` (slugify lowercase/strict), `content`, `image`, `category` (`TrustMedia`, `TrustEvent`, `TrustProd`, `uncategorized`), `subCategory`, `eventDate?`, `location?`, timestamps.
 - **Comment** : `userId`, `postId`, `content`, `likes[]`, `numberOfLikes`, timestamps.
 
@@ -70,7 +70,7 @@ Résumé (voir le détail complet dans `API_CONTRACT.md`). Les routes sont préf
 - `POST /api/auth/signin` — `{ email, password }` → retourne `user`, `token`
 - `POST /api/auth/signout` — `{ success: true }`
 - `POST /api/auth/forgot-password` — `{ email }` → Toujours 200 ; stocke un hash de token avec expiration 15 min et envoie (ou log) l’URL `${FRONTEND_URL}/reset-password?token=...&email=...`
-- `POST /api/auth/reset-password` — `{ email, token, newPassword }` → vérifie le hash+expiration, met à jour le mot de passe (min. 8 caractères), supprime le token et renvoie éventuellement `user` + `token` pour reconnexion auto
+- `POST /api/auth/reset-password` — `{ email, token, newPassword }` → vérifie le hash+expiration, met à jour le mot de passe (min. 8 caractères), supprime le token et renvoie éventuellement `user` + `token` pour reconnexion auto. Les comptes SSO peuvent ainsi définir un mot de passe local.
 - `GET /api/user/me` — retourne le profil du porteur du token
 
 ### Utilisateurs
@@ -182,6 +182,8 @@ curl -X POST "$NEXT_PUBLIC_API_URL/api/uploads" \
   - En cas d’échec de connexion, le serveur s’arrête avec un message explicite.
 - **CORS** : vérifier `CORS_ORIGIN` (CSV) et que le front appelle avec `credentials: 'include'` pour conserver les cookies.
 - **Upload** : le dossier `UPLOAD_DIR` est créé automatiquement. En cas d’erreur 400 "No file uploaded", vérifier le nom de champ (`image` ou `file`).
+- **Migration des rôles legacy** : si votre base contient des utilisateurs avec `role: "client"` (ou un ancien rôle de livraison),
+  normalisez les rôles en lançant `npm run migrate:roles` (nécessite `DATABASE_URL`).
 
 ## Contract API détaillé
 Le mapping complet des routes, paramètres et réponses est maintenu dans [`API_CONTRACT.md`](./API_CONTRACT.md).
