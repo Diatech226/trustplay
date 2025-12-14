@@ -40,6 +40,7 @@ export const signup = async (req, res, next) => {
       username,
       email,
       passwordHash: hashedPassword,
+      authProvider: 'local',
       role: 'USER',
     });
 
@@ -65,6 +66,16 @@ export const signin = async (req, res) => {
     const validUser = await User.findOne({ email: email.toLowerCase() });
     if (!validUser) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    if (validUser.authProvider && validUser.authProvider !== 'local') {
+      return res
+        .status(400)
+        .json({ success: false, message: 'Connectez-vous via votre fournisseur SSO (Google/Firebase).' });
+    }
+
+    if (!validUser.passwordHash) {
+      return res.status(400).json({ success: false, message: 'No local password is set for this account.' });
     }
 
     const validPassword = await bcrypt.compare(password, validUser.passwordHash);
@@ -117,7 +128,7 @@ export const forgotPassword = async (req, res) => {
       const { resetToken, resetTokenHash, passwordResetExpiresAt } = generatePasswordResetToken();
       user.passwordResetTokenHash = resetTokenHash;
       user.passwordResetExpiresAt = passwordResetExpiresAt;
-      await user.save();
+      await user.save({ validateBeforeSave: false });
 
       const frontendUrl = (process.env.FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:5173')
         .split(',')[0]
@@ -175,6 +186,7 @@ export const resetPassword = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     user.passwordHash = hashedPassword;
+    user.authProvider = 'local';
     user.passwordResetTokenHash = null;
     user.passwordResetExpiresAt = null;
     await user.save();

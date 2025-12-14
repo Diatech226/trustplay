@@ -18,12 +18,19 @@ const userSchema = new mongoose.Schema(
     },
     passwordHash: {
       type: String,
-      required: true,
+      required: function requiredPassword() {
+        return this.authProvider === 'local';
+      },
       minlength: 6,
+    },
+    authProvider: {
+      type: String,
+      enum: ['local', 'google', 'firebase'],
+      default: 'local',
     },
     role: {
       type: String,
-      enum: ["USER", "ADMIN"],
+      enum: ["USER", "ADMIN", "client"],
       default: "USER",
     },
     profilePicture: {
