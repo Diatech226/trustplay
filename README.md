@@ -12,6 +12,14 @@ Site web de média en ligne construit avec React et Vite. L'application propose 
 - Gestion des commentaires avec création authentifiée et affichage de la liste des commentaires d’un article.
 - Thème clair/sombre mémorisé via Redux Persist.
 
+## CMS agence (dashboard)
+- Layout pro : sidebar collapsible, header avec recherche globale, notifications, switch thème et breadcrumbs automatiques.
+- Navigation élargie : Dashboard, Articles, Pages, Médias, Événements, Campagnes, Clients, Projets, Newsletter, Formulaires, Commentaires, Utilisateurs, Paramètres et journal d’activité.
+- Composants réutilisables : `AdminSidebar`, `AdminHeader`, `PageShell`, `ResourceTable`, `KpiCard` pour structurer les modules.
+- Données démo prêtes (`src/admin/config/mockData.js`) pour visualiser le CMS sans backend.
+- Seed d’exemple pour l’API (`trustapi-main/scripts/cms-seed.json`) afin de pré-remplir posts/pages/events/campagnes.
+- RBAC côté UI : affichage conditionnel des entrées selon le rôle (ADMIN/MANAGER/EDITOR/VIEWER) et redirection sécurisée.
+
 ## Architecture technique
 - **Frontend** : React 18 + Vite 5, routage `react-router-dom`, composants UI `flowbite-react`, icônes `react-icons`, éditeur riche `react-quill`.
 - **État global** : Redux Toolkit (`@reduxjs/toolkit`) avec persistance (`redux-persist`) pour l'utilisateur et le thème.
@@ -41,6 +49,11 @@ npm run build     # build de production
 npm run preview   # prévisualisation du build
 npm run lint      # linting ESLint
 ```
+
+### Démarrage de l’admin CMS
+- Front : `npm run dev` puis ouvrir `/dashboard` (connexion requise ; le rôle ADMIN débloque tous les modules).
+- Backend : utiliser l’API Express/MongoDB (répertoire `trustapi-main`) pointée par `VITE_API_URL`.
+- Démo sans backend : les pages Admin utilisent des données mock pour illustrer le layout ; branchez vos endpoints REST pour rendre les tables interactives.
 
 ## Configuration & variables d'environnement
 Créer un fichier `.env` à la racine du projet (ou équivalent Vite) avec au minimum :
@@ -87,6 +100,13 @@ Les types sont consommés depuis l’API, mais les champs utilisés permettent d
 ## Tests & qualité
 - Linting : `npm run lint` (ESLint avec plugins React, React Hooks, React Refresh).
 - Aucun test unitaire ou e2e n’est défini dans ce dépôt.
+
+### Checklist QA admin (extrait)
+- Connexion / déconnexion et redirection 401 vers `/sign-in`.
+- Accès role-based : ADMIN voit tous les modules, les rôles inférieurs restent cantonnés aux sections autorisées.
+- Navigation sidebar (collapsible) + breadcrumbs cohérents.
+- CRUD basiques sur Articles, Pages, Événements via vos endpoints REST ; upload média via `/api/uploads`.
+- Journal d’activité lisible et pages vides avec états empty/loading à compléter côté API.
 
 ## Déploiement
 - Build frontend Vite (`npm run build`), prévisualisation via `npm run preview`.

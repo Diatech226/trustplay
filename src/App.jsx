@@ -19,8 +19,16 @@ const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const AdminPosts = lazy(() => import('./pages/admin/AdminPosts'));
+const AdminPages = lazy(() => import('./pages/admin/AdminPages'));
 const AdminMedia = lazy(() => import('./pages/admin/AdminMedia'));
 const AdminComments = lazy(() => import('./pages/admin/AdminComments'));
+const AdminEvents = lazy(() => import('./pages/admin/AdminEvents'));
+const AdminCampaigns = lazy(() => import('./pages/admin/AdminCampaigns'));
+const AdminClients = lazy(() => import('./pages/admin/AdminClients'));
+const AdminProjects = lazy(() => import('./pages/admin/AdminProjects'));
+const AdminNewsletter = lazy(() => import('./pages/admin/AdminNewsletter'));
+const AdminForms = lazy(() => import('./pages/admin/AdminForms'));
+const AdminActivity = lazy(() => import('./pages/admin/AdminActivity'));
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
 const DashProfile = lazy(() => import('./components/DashProfile'));
@@ -104,8 +112,16 @@ export default function App() {
                   <Route path='posts' element={<AdminPosts />} />
                   <Route path='posts/create' element={<CreatePost />} />
                   <Route path='posts/:postId/edit' element={<UpdatePost />} />
+                  <Route path='pages' element={<AdminPages />} />
                   <Route path='comments' element={<AdminComments />} />
+                  <Route path='events' element={<AdminEvents />} />
                   <Route path='media' element={<AdminMedia />} />
+                  <Route path='campaigns' element={<AdminCampaigns />} />
+                  <Route path='clients' element={<AdminClients />} />
+                  <Route path='projects' element={<AdminProjects />} />
+                  <Route path='newsletter' element={<AdminNewsletter />} />
+                  <Route path='forms' element={<AdminForms />} />
+                  <Route path='activity' element={<AdminActivity />} />
                   <Route path='users' element={<AdminUsers />} />
                   <Route path='settings' element={<AdminSettings />} />
                 </Route>

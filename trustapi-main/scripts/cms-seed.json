@@ -1,0 +1,30 @@
+{
+  "posts": [
+    {
+      "title": "Roadmap Q3",
+      "slug": "roadmap-q3",
+      "status": "published",
+      "author": "camille",
+      "category": "TrustMedia",
+      "subCategory": "news"
+    }
+  ],
+  "pages": [
+    { "title": "Landing Générale", "slug": "landing-generale", "status": "published", "sections": 6 }
+  ],
+  "events": [
+    { "name": "Meetup Paris", "slug": "meetup-paris", "date": "2024-06-02", "location": "Paris", "capacity": 120 }
+  ],
+  "campaigns": [
+    { "name": "Ads été", "type": "ads", "budget": 12000, "status": "active" }
+  ],
+  "clients": [
+    { "name": "Nova Industries", "status": "active", "contactEmail": "aline@nova.com" }
+  ],
+  "projects": [
+    { "name": "Série vidéo", "client": "Nova Industries", "status": "in_progress", "due": "2024-07-15" }
+  ],
+  "newsletter": [
+    { "name": "Newsletter mai", "audience": "clients", "status": "ready" }
+  ]
+}
