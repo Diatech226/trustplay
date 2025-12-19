@@ -1,17 +1,31 @@
-import AdminSectionHeader from '../../components/admin/AdminSectionHeader';
+import PageShell from '../../admin/components/PageShell';
+import ResourceTable from '../../admin/components/ResourceTable';
 
-// CMS: users module
+const users = [
+  { id: 1, name: 'Camille', role: 'ADMIN', email: 'camille@trust.fr' },
+  { id: 2, name: 'Louis', role: 'EDITOR', email: 'louis@trust.fr' },
+  { id: 3, name: 'Nina', role: 'MANAGER', email: 'nina@trust.fr' },
+];
+
 export default function AdminUsers() {
   return (
-    <div className='space-y-6'>
-      <AdminSectionHeader
-        title='Utilisateurs'
-        subtitle="Préparez les rôles (admin, auteur, lecteur) et le contrôle d'accès"
+    <PageShell
+      title='Utilisateurs & rôles'
+      description='Attribuez des rôles (ADMIN, MANAGER, EDITOR, VIEWER) et sécurisez les accès.'
+      actions={
+        <button className='rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow hover:bg-primary/90'>
+          Inviter un membre
+        </button>
+      }
+    >
+      <ResourceTable
+        columns={[
+          { header: 'Nom', accessor: 'name' },
+          { header: 'Email', accessor: 'email' },
+          { header: 'Rôle', accessor: 'role' },
+        ]}
+        data={users}
       />
-      <div className='rounded-xl border border-dashed border-slate-300 bg-white/60 p-6 text-sm text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300'>
-        <p className='font-medium text-slate-800 dark:text-white'>Structure en attente</p>
-        <p className='mt-2 max-w-2xl'>Ajoutez ici la table des utilisateurs dès que l'API sera disponible. Inclure les filtres par rôle et actions de modification.</p>
-      </div>
-    </div>
+    </PageShell>
   );
 }

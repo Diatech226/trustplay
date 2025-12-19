@@ -1,19 +1,32 @@
-import { Button } from 'flowbite-react';
-import AdminSectionHeader from '../../components/admin/AdminSectionHeader';
+import PageShell from '../../admin/components/PageShell';
 
-// CMS: media manager
+const media = [
+  { id: 1, name: 'hero-agence.jpg', type: 'Image', usage: 'Page accueil', size: '1.2 Mo' },
+  { id: 2, name: 'video-demo.mp4', type: 'Vidéo', usage: 'Landing campagne', size: '24 Mo' },
+];
+
 export default function AdminMedia() {
   return (
-    <div className='space-y-6'>
-      <AdminSectionHeader
-        title='Médias'
-        subtitle='Centralisez vos images depuis le backend MongoDB'
-        action={<Button color='light'>Uploader un média</Button>}
-      />
-      <div className='rounded-xl border border-dashed border-slate-300 bg-white/60 p-6 text-sm text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300'>
-        <p className='font-medium text-slate-800 dark:text-white'>Gestionnaire à venir</p>
-        <p className='mt-2 max-w-2xl'>Préparez la future intégration : liste paginée des images stockées via l'API upload, sélection et réutilisation directe dans les formulaires d'articles.</p>
+    <PageShell
+      title='Médiathèque'
+      description='Uploader, taguer et suivre les usages des médias pour toutes vos pages.'
+      actions={
+        <button className='rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow hover:bg-primary/90'>
+          Uploader un média
+        </button>
+      }
+    >
+      <div className='grid gap-4 md:grid-cols-2'>
+        {media.map((item) => (
+          <div key={item.id} className='flex items-center justify-between rounded-xl border border-slate-200 bg-white/60 p-4 dark:border-slate-800 dark:bg-slate-900/60'>
+            <div>
+              <p className='font-semibold text-slate-900 dark:text-white'>{item.name}</p>
+              <p className='text-sm text-slate-500'>{item.type} · {item.usage}</p>
+            </div>
+            <span className='text-xs text-slate-500'>{item.size}</span>
+          </div>
+        ))}
       </div>
-    </div>
+    </PageShell>
   );
 }

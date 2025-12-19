@@ -1,14 +1,21 @@
-import AdminSectionHeader from '../../components/admin/AdminSectionHeader';
+import PageShell from '../../admin/components/PageShell';
 
-// CMS: settings module
 export default function AdminSettings() {
   return (
-    <div className='space-y-6'>
-      <AdminSectionHeader title='Paramètres' subtitle='Préparez les réglages éditoriaux et les préférences CMS' />
-      <div className='rounded-xl border border-dashed border-slate-300 bg-white/60 p-6 text-sm text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300'>
-        <p className='font-medium text-slate-800 dark:text-white'>À compléter</p>
-        <p className='mt-2 max-w-2xl'>Ajoutez ici les options de configuration (statuts par défaut, workflow éditorial, paramètres SEO) pour transformer l'admin en CMS complet.</p>
+    <PageShell
+      title='Paramètres du CMS'
+      description='Configuration générale, webhooks, sécurité et branding.'
+    >
+      <div className='space-y-6'>
+        <div className='rounded-xl border border-slate-200 bg-white/70 p-4 dark:border-slate-800 dark:bg-slate-900/60'>
+          <h3 className='text-lg font-semibold text-slate-900 dark:text-white'>Branding</h3>
+          <p className='text-sm text-slate-600 dark:text-slate-300'>Logo, couleurs, métadonnées sociales.</p>
+        </div>
+        <div className='rounded-xl border border-slate-200 bg-white/70 p-4 dark:border-slate-800 dark:bg-slate-900/60'>
+          <h3 className='text-lg font-semibold text-slate-900 dark:text-white'>Sécurité & authentification</h3>
+          <p className='text-sm text-slate-600 dark:text-slate-300'>Rôles, renouvellement de token, exigences de mot de passe.</p>
+        </div>
       </div>
-    </div>
+    </PageShell>
   );
 }
