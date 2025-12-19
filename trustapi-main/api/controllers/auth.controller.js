@@ -117,11 +117,15 @@ export const signout = (_req, res, next) => {
 export const forgotPassword = async (req, res) => {
   const { email } = req.body || {};
 
-  if (!email) {
-    return res.status(400).json({ success: false, message: 'Email is required' });
-  }
-
   try {
+    if (!email) {
+      console.warn('[FORGOT_PASSWORD] Email is missing in request body');
+      return res.status(200).json({
+        success: true,
+        message: 'Si un compte existe, un lien a été envoyé.',
+      });
+    }
+
     const user = await User.findOne({ email: email.toLowerCase() });
 
     if (user) {
@@ -130,9 +134,7 @@ export const forgotPassword = async (req, res) => {
       user.passwordResetExpiresAt = passwordResetExpiresAt;
       await user.save({ validateBeforeSave: false });
 
-      const frontendUrl = (process.env.FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:5173')
-        .split(',')[0]
-        .replace(/\/$/, '');
+      const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
       const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}&email=${encodeURIComponent(
         user.email
       )}`;
@@ -145,11 +147,14 @@ export const forgotPassword = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Si un compte existe, un lien de réinitialisation a été envoyé.',
+      message: 'Si un compte existe, un lien a été envoyé.',
     });
   } catch (error) {
     console.error('Forgot password error:', error.stack || error);
-    return res.status(500).json({ success: false, message: 'Internal server error' });
+    return res.status(200).json({
+      success: true,
+      message: 'Si un compte existe, un lien a été envoyé.',
+    });
   }
 };
 
