@@ -372,7 +372,17 @@ export default function UpdatePost() {
           </Button>
         </div>
         {uploadError && <Alert color='failure'>{uploadError}</Alert>}
-        {formData.image && <img src={formData.image} alt='upload' className='w-full h-72 object-cover' />}
+        {formData.image && (
+          <img
+            src={formData.image}
+            alt='upload'
+            loading='lazy'
+            decoding='async'
+            width='960'
+            height='288'
+            className='w-full h-72 object-cover'
+          />
+        )}
         <ReactQuill
           ref={quillRef}
           theme='snow'

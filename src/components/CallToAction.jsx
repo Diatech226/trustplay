@@ -30,6 +30,10 @@ export default function CallToAction() {
           src="https://upload.wikimedia.org/wikipedia/commons/f/f3/Audio_video.jpg"
           alt="Audio Vidéo"
           className="w-full h-auto rounded-lg shadow-md"
+          loading='lazy'
+          decoding='async'
+          width='640'
+          height='360'
         />
       </div>
     </div>

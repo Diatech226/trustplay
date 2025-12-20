@@ -15,6 +15,7 @@ import PostCardSkeleton from '../components/skeletons/PostCardSkeleton';
 import { logReading } from '../redux/history/historySlice';
 import { fetchJson } from '../lib/apiClient';
 import { normalizeSubCategory } from '../utils/categories';
+import { logPageView } from '../lib/analytics';
 
 export default function PostPage() {
   const { postSlug } = useParams();
@@ -79,13 +80,34 @@ export default function PostPage() {
     }
   }, [dispatch, post]);
 
+  useEffect(() => {
+    if (post?.slug) {
+      logPageView({
+        slug: post.slug,
+        title: post.title,
+        page: `/post/${post.slug}`,
+        metadata: { category: post.subCategory },
+      });
+    }
+  }, [post?.slug, post?.title, post?.subCategory]);
+
+  const withFormatParam = (format) => {
+    if (!post?.image) return '';
+    const separator = post.image.includes('?') ? '&' : '?';
+    return `${post.image}${separator}format=${format}`;
+  };
+
   const metaDescription = useMemo(
     () => post?.content?.replace(/<[^>]+>/g, '').slice(0, 180) || 'Article Trust Media',
     [post]
   );
+  const siteBase = useMemo(
+    () => import.meta.env?.VITE_SITE_URL || window?.location?.origin || '',
+    []
+  );
   const articleUrl = useMemo(
-    () => (post ? `${window?.location?.origin || ''}/post/${post.slug}` : undefined),
-    [post]
+    () => (post && siteBase ? `${siteBase}/post/${post.slug}` : undefined),
+    [post, siteBase]
   );
   const structuredData = post
     ? {
@@ -163,15 +185,19 @@ export default function PostPage() {
         <section className='overflow-hidden rounded-3xl border border-subtle bg-white shadow-card dark:border-slate-800 dark:bg-slate-900'>
           <div className='grid gap-0 lg:grid-cols-5'>
             <div className='relative lg:col-span-3'>
-              <img
-                src={post && post.image}
-                alt={post && post.title}
-                loading='lazy'
-                decoding='async'
-                width='960'
-                height='540'
-                className='h-full w-full object-cover'
-              />
+              <picture>
+                <source srcSet={withFormatParam('avif')} type='image/avif' />
+                <source srcSet={withFormatParam('webp')} type='image/webp' />
+                <img
+                  src={post && post.image}
+                  alt={post && post.title}
+                  loading='lazy'
+                  decoding='async'
+                  width='960'
+                  height='540'
+                  className='h-full w-full object-cover'
+                />
+              </picture>
               {post?.subCategory && subCategoryPaths[post.subCategory] && (
                 <Link
                   to={subCategoryPaths[post.subCategory].href}

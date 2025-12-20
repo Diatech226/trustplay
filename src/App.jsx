@@ -29,6 +29,7 @@ const AdminProjects = lazy(() => import('./pages/admin/AdminProjects'));
 const AdminNewsletter = lazy(() => import('./pages/admin/AdminNewsletter'));
 const AdminForms = lazy(() => import('./pages/admin/AdminForms'));
 const AdminActivity = lazy(() => import('./pages/admin/AdminActivity'));
+const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
 const DashProfile = lazy(() => import('./components/DashProfile'));
@@ -122,6 +123,7 @@ export default function App() {
                   <Route path='campaigns' element={<AdminCampaigns />} />
                   <Route path='clients' element={<AdminClients />} />
                   <Route path='projects' element={<AdminProjects />} />
+                  <Route path='analytics' element={<AdminAnalytics />} />
                   <Route path='newsletter' element={<AdminNewsletter />} />
                   <Route path='forms' element={<AdminForms />} />
                   <Route path='activity' element={<AdminActivity />} />

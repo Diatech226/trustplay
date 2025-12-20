@@ -4,6 +4,7 @@ import PageHeader from '../components/layout/PageHeader';
 import Seo from '../components/Seo';
 import { fetchJson } from '../lib/apiClient';
 import { normalizeSubCategory } from '../utils/categories';
+import { logEventSignup } from '../lib/analytics';
 
 export default function TrustEvent() {
   const [events, setEvents] = useState([]);
@@ -51,6 +52,13 @@ export default function TrustEvent() {
       // Backend does not expose a registration endpoint yet
       setSignupSuccess('Merci ! Votre intérêt a été enregistré. Nous reviendrons vers vous prochainement.');
       setSignupForm({ name: '', email: '', eventId: '' });
+      const eventInfo = events.find((evt) => evt._id === signupForm.eventId);
+      logEventSignup({
+        eventId: signupForm.eventId,
+        eventName: eventInfo?.title,
+        page: '/event',
+        metadata: { email: signupForm.email },
+      });
     } catch (err) {
       setSignupError(err.message || "Impossible de soumettre votre participation.");
     } finally {
