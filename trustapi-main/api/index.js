@@ -1,6 +1,6 @@
+import 'dotenv/config';
 import express from 'express';
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
 import userRoutes from './routes/user.route.js';
 import authRoutes from './routes/auth.route.js';
 import postRoutes from './routes/post.route.js';
@@ -12,8 +12,6 @@ import path from 'path';
 import fs from 'fs';
 import { absoluteUploadPath } from './controllers/upload.controller.js';
 import cors from 'cors';
-
-dotenv.config();
 
 // Connexion à MongoDB
 if (!process.env.DATABASE_URL) {
