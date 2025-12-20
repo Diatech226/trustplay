@@ -74,9 +74,12 @@ export const deleteUser = async (req, res, next) => {
 
 export const getMe = async (req, res, next) => {
   try {
+    if (!req.user?.id) {
+      return next(errorHandler(401, 'Unauthorized'));
+    }
     const user = await User.findById(req.user.id);
     if (!user) {
-      return next(errorHandler(404, 'User not found'));
+      return next(errorHandler(401, 'Unauthorized'));
     }
     const rest = sanitizeUser(user);
     res.status(200).json({ success: true, data: { user: rest }, user: rest });
