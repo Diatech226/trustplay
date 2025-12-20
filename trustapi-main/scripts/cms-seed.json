@@ -1,4 +1,67 @@
 {
+  "clients": [
+    {
+      "name": "Nova Industries",
+      "status": "active",
+      "notes": "SaaS B2B en scale-up, privilégier LinkedIn/ABM et études clients.",
+      "contacts": [
+        { "name": "Aline Dupont", "email": "aline@nova.com", "role": "CMO", "phone": "+33 6 11 11 11 11" }
+      ]
+    },
+    {
+      "name": "Atlas Mobility",
+      "status": "onboarding",
+      "notes": "Refonte du site + kit campagne paid, équipe marketing réduite.",
+      "contacts": [
+        { "name": "Maxime", "email": "max@atlas.io", "role": "Head of Growth" }
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "title": "Série vidéo produit",
+      "client": "Nova Industries",
+      "status": "in_progress",
+      "deadline": "2024-07-15",
+      "brief": "3 vidéos demo + 1 teaser social pour le lancement Q3.",
+      "attachments": [
+        { "name": "logo-nova.png", "url": "/uploads/logo-nova.png", "mime": "image/png" }
+      ]
+    },
+    {
+      "title": "Brandbook & landing campagne",
+      "client": "Atlas Mobility",
+      "status": "planning",
+      "deadline": "2024-08-20",
+      "brief": "Refonte du brandbook + landing leadgen dédiée à l'offre mobilité.",
+      "attachments": []
+    }
+  ],
+  "campaigns": [
+    {
+      "title": "Ads été",
+      "project": "Série vidéo produit",
+      "channel": "Paid ads",
+      "goal": "Générer 200 démos/mois sur la cible mid-market",
+      "budget": 12000,
+      "status": "in_progress",
+      "kpis": ["CPL < 45€", "ROAS > 2.5"],
+      "schedule": { "start": "2024-06-01", "end": "2024-07-31" },
+      "assets": [
+        { "name": "visuel-cover.jpg", "url": "/uploads/visuel-cover.jpg", "mime": "image/jpeg" }
+      ]
+    },
+    {
+      "title": "Newsletter clients",
+      "project": "Brandbook & landing campagne",
+      "channel": "Email",
+      "goal": "Réactiver la base clients dormante",
+      "budget": 2500,
+      "status": "planned",
+      "kpis": ["OR > 35%", "CTR > 6%"],
+      "assets": []
+    }
+  ],
   "posts": [
     {
       "title": "Roadmap Q3",
@@ -14,15 +77,6 @@
   ],
   "events": [
     { "name": "Meetup Paris", "slug": "meetup-paris", "date": "2024-06-02", "location": "Paris", "capacity": 120 }
-  ],
-  "campaigns": [
-    { "name": "Ads été", "type": "ads", "budget": 12000, "status": "active" }
-  ],
-  "clients": [
-    { "name": "Nova Industries", "status": "active", "contactEmail": "aline@nova.com" }
-  ],
-  "projects": [
-    { "name": "Série vidéo", "client": "Nova Industries", "status": "in_progress", "due": "2024-07-15" }
   ],
   "newsletter": [
     { "name": "Newsletter mai", "audience": "clients", "status": "ready" }

@@ -40,6 +40,40 @@ Une analyse détaillée (architecture, benchmark, risques) est disponible dans [
 - **Rubriques publiques** : pages `/politique`, `/science-tech`, `/sport`, `/cinema` avec tri date/popularité, filtres de période et pagination, breadcrumbs cohérents.
 - **SEO & partage** : `react-helmet-async` enrichi (canonical, OG/Twitter) + schéma Article sur la page article.
 
+## Itération 3 – Cockpit agence (clients/projets/campagnes)
+- **Modèles Mongo + API CRUD** : nouveaux schémas `Client`, `Project`, `Campaign` (relations client → projet → campagne) avec endpoints REST `/api/clients`, `/api/projects`, `/api/campaigns` protégés (`ADMIN/MANAGER/EDITOR`). Cascade automatique sur les suppressions.
+- **Admin UI** : vues Clients / Projets / Campagnes branchées sur l'API avec filtres, tri, pagination, sélection détaillée et actions rapides (génération de brief, assignation de statut, joindre un média depuis la médiathèque).
+- **Médias liés** : attachement direct des assets uploadés aux projets/campagnes (champ `attachments`/`assets`), réutilisable depuis la Media Library.
+- **Documentation & seed** : README/API contract enrichis + seed JSON mis à jour pour injecter des clients/projets/campagnes (`trustapi-main/scripts/cms-seed.json`).
+
+### Exemples JSON rapides
+```json
+{
+  "client": {
+    "name": "Nova Industries",
+    "status": "active",
+    "contacts": [{ "name": "Aline Dupont", "email": "aline@nova.com", "role": "CMO" }]
+  },
+  "project": {
+    "clientId": "<mongoId>",
+    "title": "Série vidéo produit",
+    "status": "in_progress",
+    "deadline": "2024-07-15",
+    "brief": "3 vidéos demo + 1 teaser social",
+    "attachments": [{ "name": "storyboard.pdf", "url": "/uploads/storyboard.pdf", "mime": "application/pdf" }]
+  },
+  "campaign": {
+    "projectId": "<mongoId>",
+    "channel": "Paid ads",
+    "goal": "200 démos/mois",
+    "budget": 12000,
+    "kpis": [{ "name": "CPL < 45€" }],
+    "schedule": { "start": "2024-06-01", "end": "2024-07-31" },
+    "assets": [{ "name": "visuel-cover.jpg", "url": "/uploads/visuel-cover.jpg", "mime": "image/jpeg" }]
+  }
+}
+```
+
 ### Guide SEO rapide
 - Renseigner **seoTitle** et **seoDescription** dans les formulaires de création/édition pour contrôler les balises `<title>`/meta description (160 caractères). L'image OG peut être surchargée via `ogImage`.
 - Utiliser les **tags** pour enrichir le référencement interne et les filtres front ; ils sont aussi inclus dans le schéma Article et l'index texte Mongo.

@@ -56,6 +56,27 @@
 | POST | `/api/uploads` | Oui | `multipart/form-data` champ `file` (ou `image` en compat) | `201 { success, data: { url, name, mime, size, type }, message }` |
 | GET | `/uploads/<filename>` | Non | – | Fichier statique (servi depuis `UPLOAD_DIR`) |
 
+## Agence (clients/projets/campagnes)
+Toutes les routes sont protégées `verifyToken` + rôle `ADMIN`/`MANAGER`/`EDITOR`.
+
+| Méthode | Route | Auth | Payload | Réponse |
+| --- | --- | --- | --- | --- |
+| GET | `/api/clients` | Oui | Query `searchTerm?`, `status?`, `page?`, `limit?`, `sort?` | `{ success, data: { items: [Client], total, page, pages, limit } }` |
+| POST | `/api/clients` | Oui | `{ name, contacts?, notes?, status?, tags? }` | `201 { success, data: { client } }` |
+| GET | `/api/clients/:id` | Oui | – | `{ success, data: { client, projects: [{ ...project, campaignCount }] } }` |
+| PUT | `/api/clients/:id` | Oui | Champs partiels | `{ success, data: { client } }` |
+| DELETE | `/api/clients/:id` | Oui | – | Supprime également les projets/campagnes liés |
+| GET | `/api/projects` | Oui | Query `clientId?`, `status?`, `searchTerm?`, `page?`, `limit?`, `sort?` | `{ success, data: { items: [Project], total, page, pages, limit } }` |
+| POST | `/api/projects` | Oui | `{ clientId*, title*, brief?, status?, deadline?, attachments?, tags? }` | `201 { success, data: { project } }` |
+| GET | `/api/projects/:id` | Oui | – | `{ success, data: { project, campaigns } }` |
+| PUT | `/api/projects/:id` | Oui | Champs partiels | `{ success, data: { project } }` |
+| DELETE | `/api/projects/:id` | Oui | – | Supprime les campagnes associées |
+| GET | `/api/campaigns` | Oui | Query `projectId?`, `status?`, `channel?`, `searchTerm?`, `page?`, `limit?`, `sort?` | `{ success, data: { items: [Campaign], total, page, pages, limit } }` |
+| POST | `/api/campaigns` | Oui | `{ projectId*, channel*, title?, goal?, budget?, kpis?, assets?, schedule?, status? }` | `201 { success, data: { campaign } }` |
+| GET | `/api/campaigns/:id` | Oui | – | `{ success, data: { campaign } }` (avec projet+client) |
+| PUT | `/api/campaigns/:id` | Oui | Champs partiels | `{ success, data: { campaign } }` |
+| DELETE | `/api/campaigns/:id` | Oui | – | `200 { success, message }` |
+
 ## Modèles de données
 - **User** : `username`, `email`, `password`, `profilePicture`, `isAdmin`, timestamps.
 - **Post** : `userId`, `title`, `slug` (slugify lowercase/strict), `content`, `image`, `category`, `subCategory`, `eventDate?`, `location?`, timestamps.

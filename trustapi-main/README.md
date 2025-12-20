@@ -57,9 +57,12 @@ Variables utilisées par le code :
 - Front : utiliser `NEXT_PUBLIC_API_URL` (ou `VITE_API_URL` en fallback) et appeler `fetch(..., { credentials: 'include' })`. Les requêtes authentifiées ajoutent automatiquement le bearer.
 
 ## Modèles de données
-- **User** : `username`, `email`, `passwordHash` (obligatoire uniquement pour `authProvider=local`), `authProvider` (`local` par défaut, compat `google`/`firebase`), `role` (`USER` par défaut, `ADMIN` pour l'admin, `client` accepté en lecture pour les anciens comptes), `profilePicture`, timestamps.
+- **User** : `username`, `email`, `passwordHash` (obligatoire uniquement pour `authProvider=local`), `authProvider` (`local` par défaut, compat `google`/`firebase`), `role` (`USER` par défaut, `ADMIN`, `MANAGER`, `EDITOR`, `VIEWER`, `client`), `profilePicture`, timestamps.
 - **Post** : `userId`, `title`, `slug` (slugify lowercase/strict), `content`, `image`, `category` (`TrustMedia`, `TrustEvent`, `TrustProd`, `uncategorized`), `subCategory`, `eventDate?`, `location?`, timestamps.
 - **Comment** : `userId`, `postId`, `content`, `likes[]`, `numberOfLikes`, timestamps.
+- **Client** : `name`, `contacts[]` (`name/email/phone/role`), `notes`, `status` (`prospect/onboarding/active/paused/archived`), `tags`, timestamps.
+- **Project** : `clientId`, `title`, `brief`, `status` (`planning/in_progress/delivered/on_hold/archived`), `deadline`, `attachments[]` (médias liés), `tags`, timestamps.
+- **Campaign** : `projectId`, `title`, `channel`, `goal`, `budget`, `kpis[]`, `assets[]` (médias liés), `schedule { start, end, cadence? }`, `status` (`planned/in_progress/delivered/on_hold/archived`).
 
 ## Pagination & Slugs
 - `startIndex` : offset (0 par défaut).
@@ -105,6 +108,16 @@ Résumé (voir le détail complet dans `API_CONTRACT.md`). Les routes sont préf
 ### Upload
 - `POST /api/uploads` — `multipart/form-data` avec champ `file` (recommandé) ou `image` (compat)
 - `GET /uploads/<filename>` — fichiers statiques servis depuis `UPLOAD_DIR`
+
+### Agence (clients / projets / campagnes)
+- `GET /api/clients` — liste paginée + recherche plein texte, filtre par statut ; `POST` pour créer un client avec contacts/notes.
+- `GET /api/clients/:id` — détail + projets rattachés ; `PUT`/`DELETE` pour mettre à jour ou supprimer (cascade sur projets/campagnes).
+- `GET /api/projects` — filtre par client/statut/recherche ; `POST` pour créer un projet (brief, deadline, statut, pièces jointes médias).
+- `GET /api/projects/:id` — détail + campagnes ; `PUT`/`DELETE` pour mises à jour/cascade.
+- `GET /api/campaigns` — filtre par projet/canal/statut ; `POST` pour créer une campagne (objectif, budget, KPIs, planning, assets médias).
+- `GET /api/campaigns/:id` — détail (avec projet + client) ; `PUT`/`DELETE` pour modifier/supprimer.
+
+Toutes ces routes exigent un rôle `ADMIN`/`MANAGER`/`EDITOR` + Bearer JWT.
 
 ### Flux Auth (JWT)
 1. **Signin** :
