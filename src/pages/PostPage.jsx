@@ -93,8 +93,11 @@ export default function PostPage() {
         '@type': 'Article',
         headline: post.title,
         image: [post.image],
-        datePublished: post.createdAt,
+        datePublished: post.publishedAt || post.createdAt,
+        dateModified: post.updatedAt,
         author: post.author || 'Rédaction Trust',
+        keywords: (post.tags || []).join(','),
+        description: metaDescription,
         url: articleUrl,
       }
     : null;
@@ -105,7 +108,7 @@ export default function PostPage() {
     economie: { label: 'Économie', href: '/search?subCategory=economie' },
     culture: { label: 'Culture', href: '/search?subCategory=culture' },
     portraits: { label: 'Portraits', href: '/search?subCategory=portraits' },
-    'science-tech': { label: 'Science & Tech', href: '/science' },
+    'science-tech': { label: 'Science & Tech', href: '/science-tech' },
     sport: { label: 'Sport', href: '/sport' },
     cinema: { label: 'Cinéma', href: '/cinema' },
   };
@@ -142,14 +145,14 @@ export default function PostPage() {
   return (
     <main className='min-h-screen bg-white/60 pb-16 dark:bg-slate-950'>
       <Seo
-        title={`${post?.title || 'Article'} | Trust Media`}
-        description={metaDescription}
-        image={post?.image}
+        title={`${post?.seoTitle || post?.title || 'Article'} | Trust Media`}
+        description={post?.seoDescription || metaDescription}
+        image={post?.ogImage || post?.image}
         url={articleUrl}
+        canonical={articleUrl}
         type='article'
-      >
-        {structuredData && <script type='application/ld+json'>{JSON.stringify(structuredData)}</script>}
-      </Seo>
+        schema={structuredData}
+      />
       <PageContainer className='flex flex-col gap-8 py-6'>
         <Breadcrumbs items={breadcrumbItems} />
         {error && (

@@ -1,4 +1,4 @@
-export default function ResourceTable({ columns = [], data = [] }) {
+export default function ResourceTable({ columns = [], data = [], loading = false }) {
   return (
     <div className='overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800'>
       <table className='min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-800'>
@@ -15,6 +15,13 @@ export default function ResourceTable({ columns = [], data = [] }) {
           </tr>
         </thead>
         <tbody className='divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-900/50'>
+          {loading && (
+            <tr>
+              <td className='px-4 py-6 text-center text-slate-500 dark:text-slate-400' colSpan={columns.length || 1}>
+                Chargement...
+              </td>
+            </tr>
+          )}
           {data.map((row, rowIndex) => (
             <tr key={row.id || rowIndex} className='hover:bg-slate-50 dark:hover:bg-slate-800/70'>
               {columns.map((column) => (

@@ -35,6 +35,13 @@ export default function UpdatePost() {
     location: '',
     isPaid: false,
     price: 0,
+    status: 'draft',
+    publishedAt: '',
+    tags: '',
+    seoTitle: '',
+    seoDescription: '',
+    ogImage: '',
+    featured: false,
   });
 
   useEffect(() => {
@@ -59,6 +66,8 @@ export default function UpdatePost() {
             location: fetchedPost.location || '',
             isPaid: Boolean(fetchedPost.isPaid),
             price: fetchedPost.price || 0,
+            tags: (fetchedPost.tags || []).join(', '),
+            publishedAt: fetchedPost.publishedAt || '',
           }));
         }
       } catch (error) {
@@ -154,9 +163,10 @@ export default function UpdatePost() {
     []
   );
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e, nextStatus) => {
     e.preventDefault();
     setPublishError('');
+    const targetStatus = nextStatus || formData.status;
     if (formData.category === 'TrustEvent') {
       if (!formData.eventDate || !formData.location) {
         setPublishError("Merci d'indiquer la date et le lieu de l'événement.");
@@ -177,6 +187,7 @@ export default function UpdatePost() {
         body: {
           ...formData,
           subCategory: normalizeSubCategory(formData.subCategory),
+          status: targetStatus,
         },
       });
 
@@ -193,7 +204,7 @@ export default function UpdatePost() {
   return (
     <div className='p-3 max-w-3xl mx-auto min-h-screen'>
       <h1 className='text-center text-3xl my-7 font-semibold'>Modifier l’article</h1>
-      <form className='flex flex-col gap-4' onSubmit={handleSubmit}>
+      <form className='flex flex-col gap-4' onSubmit={(e) => handleSubmit(e, formData.status)}>
         <div className='flex flex-col gap-4 sm:flex-row justify-between'>
           <TextInput
             type='text'
@@ -240,6 +251,24 @@ export default function UpdatePost() {
             ))}
           </Select>
         )}
+
+        <div className='grid gap-4 md:grid-cols-2'>
+          <Select
+            value={formData.status}
+            onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value }))}
+          >
+            <option value='draft'>Brouillon</option>
+            <option value='review'>En relecture</option>
+            <option value='scheduled'>Programmé</option>
+            <option value='published'>Publié</option>
+          </Select>
+          <TextInput
+            type='datetime-local'
+            value={(formData.publishedAt || '').toString().slice(0, 16)}
+            onChange={(e) => setFormData((prev) => ({ ...prev, publishedAt: e.target.value }))}
+            helperText='Date/heure de publication'
+          />
+        </div>
 
         {formData.category === 'TrustEvent' && (
           <div className='space-y-4 rounded-xl border border-dashed border-slate-200 p-4 dark:border-slate-700'>
@@ -294,6 +323,41 @@ export default function UpdatePost() {
           </div>
         )}
 
+        <div className='grid gap-3 md:grid-cols-2'>
+          <TextInput
+            placeholder='Tags (séparés par des virgules)'
+            value={formData.tags}
+            onChange={(e) => setFormData((prev) => ({ ...prev, tags: e.target.value }))}
+          />
+          <label className='flex items-center gap-2 text-sm font-semibold'>
+            <input
+              type='checkbox'
+              checked={formData.featured}
+              onChange={(e) => setFormData((prev) => ({ ...prev, featured: e.target.checked }))}
+            />
+            Mettre en avant
+          </label>
+        </div>
+
+        <div className='flex flex-col gap-3 rounded-xl border border-slate-200 p-4 dark:border-slate-700'>
+          <p className='text-sm font-semibold text-slate-700 dark:text-slate-200'>SEO & partage</p>
+          <TextInput
+            placeholder='Titre SEO (optionnel)'
+            value={formData.seoTitle}
+            onChange={(e) => setFormData((prev) => ({ ...prev, seoTitle: e.target.value }))}
+          />
+          <TextInput
+            placeholder='Description SEO (160 caractères)'
+            value={formData.seoDescription}
+            onChange={(e) => setFormData((prev) => ({ ...prev, seoDescription: e.target.value }))}
+          />
+          <TextInput
+            placeholder="Image Open Graph (URL)"
+            value={formData.ogImage}
+            onChange={(e) => setFormData((prev) => ({ ...prev, ogImage: e.target.value }))}
+          />
+        </div>
+
         <div className='flex gap-4 items-center justify-between border-4 border-teal-500 border-dotted p-3'>
           <FileInput type='file' accept='image/*' onChange={(e) => setFile(e.target.files[0])} />
           <Button
@@ -320,9 +384,33 @@ export default function UpdatePost() {
           modules={quillModules}
           formats={quillFormats}
         />
-        <Button type='submit' gradientDuoTone='purpleToPink'>
-          Mettre à jour
-        </Button>
+        <div className='flex flex-wrap gap-3'>
+          <Button type='submit' gradientDuoTone='purpleToPink'>
+            Mettre à jour
+          </Button>
+          <Button color='light' type='button' onClick={(e) => handleSubmit(e, 'draft')}>
+            Repasse en brouillon
+          </Button>
+          <Button color='warning' type='button' onClick={(e) => handleSubmit(e, 'review')}>
+            Envoyer en relecture
+          </Button>
+          <Button color='success' type='button' onClick={(e) => handleSubmit(e, 'published')}>
+            Publier
+          </Button>
+        </div>
+
+        <div className='rounded-2xl border border-slate-200 p-4 shadow-sm dark:border-slate-700'>
+          <p className='mb-2 text-sm font-semibold text-slate-600 dark:text-slate-200'>Preview éditorial</p>
+          <h2 className='text-xl font-bold text-primary'>{formData.title || 'Titre de votre article'}</h2>
+          <p className='text-sm text-slate-600 dark:text-slate-300'>
+            Statut : <span className='font-semibold capitalize'>{formData.status}</span> · Tags :{' '}
+            {formData.tags || 'aucun tag'}
+          </p>
+          <p className='mt-2 line-clamp-3 text-slate-700 dark:text-slate-200'>
+            {formData.seoDescription || formData.content.replace(/<[^>]+>/g, '').slice(0, 220) ||
+              'Votre résumé apparaîtra ici pour vérification SEO.'}
+          </p>
+        </div>
         {publishError && <Alert className='mt-5' color='failure'>
           {publishError}
         </Alert>}

@@ -103,7 +103,7 @@ export default function App() {
             <Route path='/notifications-preferences' element={<NotificationsPreferences />} />
             <Route path='/news' element={<NewsPage />} />
             <Route path='/politique' element={<PoliticsPage />} />
-            <Route path='/science' element={<SciencePage />} />
+            <Route path='/science-tech' element={<SciencePage />} />
             <Route path='/sport' element={<SportPage />} />
             <Route path='/cinema' element={<CinemaPage />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
