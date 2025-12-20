@@ -36,12 +36,12 @@ Variables utilisées par le code :
 - `CORS_ORIGIN` : origines autorisées (CSV, ex. `http://localhost:5173,http://localhost:3000`)
 - `FRONTEND_URL` : URL publique du frontend (utilisée pour construire les liens de reset password)
 - `UPLOAD_DIR` : répertoire pour stocker les fichiers uploadés (servi via `/uploads`)
-- Resend (email reset) : `RESEND_API_KEY` et `MAIL_FROM` (ex. `"Trust Media <onboarding@resend.dev>"`). Si `RESEND_API_KEY` est absent, le lien de réinitialisation est simplement loggé en console (mode dev), sans erreur.
+- SMTP Gmail (email reset) : `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` (mot de passe d'application Gmail) et `MAIL_FROM` (ex. `"Trust Media <your_email@gmail.com>"`). Si SMTP est absent, le lien de réinitialisation est simplement loggé en console (mode dev), sans erreur.
 
-### Emails de réinitialisation (Resend)
-- Configurer `RESEND_API_KEY` pour activer l'envoi réel des emails via l'API Resend.
-- `MAIL_FROM` est optionnel ; si absent, la valeur par défaut `Trust Media <onboarding@resend.dev>` est utilisée.
-- En développement sans clé, le serveur affiche dans les logs la ligne `[MAILER] RESEND_API_KEY not set. Password reset URL: <lien>` et retourne toujours un 200 pour l'endpoint `forgot-password`.
+### Emails de réinitialisation (SMTP)
+- Configurer un mot de passe d'application Gmail (`SMTP_PASS`) et le couple `SMTP_USER`/`MAIL_FROM` pour activer l'envoi réel via Gmail SMTP.
+- `SMTP_HOST` par défaut : `smtp.gmail.com`, `SMTP_PORT` par défaut : `587` (STARTTLS).
+- En développement sans configuration SMTP, le serveur affiche simplement dans les logs la ligne `[MAILER] SMTP not configured. Password reset URL: <lien>` et retourne toujours un 200 pour l'endpoint `forgot-password`.
 
 ## Architecture
 - `api/index.js` : bootstrap serveur, CORS, statiques, routage et gestion d'erreurs
@@ -127,7 +127,7 @@ Résumé (voir le détail complet dans `API_CONTRACT.md`). Les routes sont préf
      -H 'Content-Type: application/json' \
      -d '{"email":"demo@example.com"}'
 
-   # En mode dev sans RESEND_API_KEY, l'URL de reset est affichée dans les logs serveur
+  # En mode dev sans config SMTP, l'URL de reset est affichée dans les logs serveur
 
    # Depuis le lien reçu (ou loggé), soumettre le nouveau mot de passe
    curl -X POST "$NEXT_PUBLIC_API_URL/api/auth/reset-password" \
