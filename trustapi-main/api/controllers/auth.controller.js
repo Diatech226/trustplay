@@ -5,6 +5,23 @@ import jwt from 'jsonwebtoken';
 import { generatePasswordResetToken, hashResetToken } from '../utils/passwordReset.js';
 import { sendResetPasswordEmail } from '../utils/mailer.js';
 
+const authCookieOptions = {
+  httpOnly: true,
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  secure: process.env.NODE_ENV === 'production',
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+  path: '/',
+};
+
+const persistSessionCookie = (res, token) => {
+  if (!token) return;
+  res.cookie('access_token', token, authCookieOptions);
+};
+
+const clearSessionCookie = (res) => {
+  res.clearCookie('access_token', authCookieOptions);
+};
+
 const sanitizeUser = (userDoc = {}) => {
   const userObj = userDoc.toObject ? userDoc.toObject() : { ...userDoc };
   delete userObj.password;
@@ -95,6 +112,7 @@ export const signin = async (req, res) => {
     );
 
     const userProfile = sanitizeUser(validUser);
+    persistSessionCookie(res, token);
 
     return res.status(200).json({
       success: true,
@@ -108,6 +126,7 @@ export const signin = async (req, res) => {
 
 export const signout = (_req, res, next) => {
   try {
+    clearSessionCookie(res);
     res.status(200).json({ success: true, message: 'User has been signed out' });
   } catch (error) {
     next(error);
@@ -212,6 +231,7 @@ export const resetPassword = async (req, res) => {
     );
 
     const userProfile = sanitizeUser(user);
+    persistSessionCookie(res, authToken);
 
     return res.status(200).json({
       success: true,

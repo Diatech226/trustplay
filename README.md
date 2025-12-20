@@ -86,3 +86,17 @@ La roadmap détaillée par itérations (objectifs, modules, changements techniqu
 - Contrat API backend : [`trustapi-main/API_CONTRACT.md`](./trustapi-main/API_CONTRACT.md).
 - Analyse détaillée : [`ANALYSIS.md`](./ANALYSIS.md).
 - Roadmap : [`ROADMAP.md`](./ROADMAP.md).
+
+## Stabilisation (Itération 1)
+- Stratégie d’authentification unifiée : jeton JWT accepté en `Authorization: Bearer` **et** via le cookie `access_token` (secure/httpOnly). Le client inclut automatiquement le Bearer quand un token est présent et envoie les cookies pour les actions protégées.
+- Gardes de routes (front) revues pour éviter les redirections en boucle : attente explicite du rafraîchissement de session avant d’autoriser/relire les routes privées et admin.
+- Endpoints critiques fiabilisés : `/api/user/me` renvoie un 401 cohérent si le token est manquant/expiré, upload Multer retourne des erreurs contrôlées (MIME/taille) et expose l’URL publique.
+- Navigation : le lien Dashboard réapparaît automatiquement pour les rôles autorisés.
+
+## QA Checklist
+- [ ] Connexion admin → accès dashboard sans demande de reconnexion.
+- [ ] Création d’un post avec upload image → URL servie depuis `/uploads/...` et affichée dans l’article.
+- [ ] Mise à jour / suppression d’un post → pas d’erreur 401/500.
+- [ ] Commentaires : utilisateur et admin peuvent créer/supprimer selon leurs droits.
+- [ ] Rafraîchissement /api/user/me fonctionne après reload, aucune déconnexion intempestive.
+- [ ] Upload invalide (MIME/taille) retourne une erreur lisible côté client.

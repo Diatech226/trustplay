@@ -1,13 +1,26 @@
 import jwt from "jsonwebtoken";
 import { errorHandler } from "./error.js";
 
+const extractBearer = (value = "") => {
+  if (typeof value !== "string") return null;
+  if (!value.toLowerCase().startsWith("bearer")) return null;
+  return value.replace(/bearer\s+/i, "").trim();
+};
+
+const getTokenFromRequest = (req) => {
+  const authorization = req.headers.authorization || req.headers.Authorization;
+  const headerToken = extractBearer(authorization);
+  if (headerToken) return headerToken;
+
+  const cookieToken = req.cookies?.access_token;
+  if (cookieToken && typeof cookieToken === "string") return cookieToken;
+
+  return null;
+};
+
 export const verifyToken = (req, res, next) => {
   try {
-    const authorization = req.headers.authorization || req.headers.Authorization;
-    const token =
-      typeof authorization === "string" && authorization.startsWith("Bearer ")
-        ? authorization.replace("Bearer ", "")
-        : null;
+    const token = getTokenFromRequest(req);
 
     if (!token) {
       return res
@@ -26,6 +39,7 @@ export const verifyToken = (req, res, next) => {
         email: decodedUser.email,
         role: decodedUser.role,
       };
+      req.token = token;
       next();
     });
   } catch (error) {
