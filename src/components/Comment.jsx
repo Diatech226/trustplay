@@ -16,6 +16,10 @@ export default function Comment({ comment, onDelete }) {
           className='w-10 h-10 rounded-full bg-gray-200'
           src={avatar}
           alt={displayName}
+          loading='lazy'
+          decoding='async'
+          width='40'
+          height='40'
         />
       </div>
       <div className='flex-1'>

@@ -95,7 +95,15 @@ export default function DashPosts({ filters = { category: 'all', subCategory: 'a
                   <Table.Cell>{new Date(post.updatedAt).toLocaleDateString()}</Table.Cell>
                   <Table.Cell>
                     <Link to={`/post/${post.slug}`}>
-                      <img src={post.image} alt={post.title} className='w-20 h-10 object-cover' />
+                      <img
+                        src={post.image}
+                        alt={post.title}
+                        className='w-20 h-10 object-cover'
+                        loading='lazy'
+                        decoding='async'
+                        width='160'
+                        height='80'
+                      />
                     </Link>
                   </Table.Cell>
                   <Table.Cell>

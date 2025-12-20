@@ -15,6 +15,9 @@ import path from 'path';
 import fs from 'fs';
 import { absoluteUploadPath } from './controllers/upload.controller.js';
 import cors from 'cors';
+import compression from 'compression';
+import analyticsRoutes from './routes/analytics.route.js';
+import seoRoutes from './routes/seo.route.js';
 
 // Connexion à MongoDB
 if (!process.env.DATABASE_URL) {
@@ -32,10 +35,22 @@ mongoose
 
 const __dirname = path.resolve();
 const app = express();
+app.set('trust proxy', true);
 
 // Middlewares
 app.use(express.json());
 app.use(cookieParser());
+app.use(
+  compression({
+    level: 6,
+    filter: (req, res) => {
+      if (req.headers['x-no-compress']) {
+        return false;
+      }
+      return compression.filter(req, res);
+    },
+  })
+);
 
 const allowedOrigins = (process.env.CORS_ORIGIN || '').split(',').filter(Boolean);
 const corsOptions = {
@@ -58,6 +73,15 @@ app.use((req, res, next) => {
   next();
 });
 
+// Light caching for public GET endpoints
+app.use((req, res, next) => {
+  if (req.method === 'GET' && req.path.startsWith('/api/')) {
+    const maxAge = req.path.startsWith('/api/uploads') ? 60 * 60 * 24 * 30 : 120;
+    res.setHeader('Cache-Control', `public, max-age=${maxAge}, stale-while-revalidate=${maxAge * 2}`);
+  }
+  next();
+});
+
 // Routes
 app.use('/api/user', userRoutes);
 app.use('/api/auth', authRoutes);
@@ -71,13 +95,22 @@ app.use('/api/campaigns', campaignRoutes);
 app.get('/api/health', (_req, res) => {
   res.json({ success: true });
 });
+app.use('/', seoRoutes);
 
 // Serve uploaded assets
 if (!fs.existsSync(absoluteUploadPath)) {
   fs.mkdirSync(absoluteUploadPath, { recursive: true });
 }
 
-app.use('/uploads', express.static(absoluteUploadPath));
+app.use(
+  '/uploads',
+  express.static(absoluteUploadPath, {
+    maxAge: '30d',
+    setHeaders: (res) => {
+      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+    },
+  })
+);
 
 // Servir le frontend
 app.use(express.static(path.join(__dirname, 'client', 'dist')));

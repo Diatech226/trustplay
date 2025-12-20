@@ -3,6 +3,7 @@ export const navSections = [
     label: 'Aperçu',
     items: [
       { to: '/dashboard', label: 'Dashboard', icon: 'HiViewGrid', roles: ['ADMIN', 'MANAGER', 'EDITOR', 'VIEWER'] },
+      { to: '/dashboard/analytics', label: 'Analytics', icon: 'HiChartSquareBar', roles: ['ADMIN', 'MANAGER', 'EDITOR'] },
     ],
   },
   {

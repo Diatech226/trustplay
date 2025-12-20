@@ -78,7 +78,15 @@ export default function CommentSection({ postId }) {
       {currentUser ? (
         <div className="flex items-center gap-1 my-5 text-gray-500 text-sm">
           <p>Connecté en tant que</p>
-          <img className="h-5 w-5 object-cover rounded-full" src={currentUser.profilePicture} alt="" />
+          <img
+            className="h-5 w-5 object-cover rounded-full"
+            src={currentUser.profilePicture}
+            alt=""
+            loading='lazy'
+            decoding='async'
+            width='20'
+            height='20'
+          />
           <Link to="/dashboard/profile" className="text-xs text-cyan-600 hover:underline">
             @{currentUser.username}
           </Link>

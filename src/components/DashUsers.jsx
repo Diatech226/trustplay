@@ -79,6 +79,10 @@ export default function DashUsers() {
                       src={user.profilePicture}
                       alt={user.username}
                       className='w-10 h-10 object-cover bg-gray-500 rounded-full'
+                      loading='lazy'
+                      decoding='async'
+                      width='40'
+                      height='40'
                     />
                   </Table.Cell>
                   <Table.Cell>{user.username}</Table.Cell>

@@ -10,20 +10,29 @@ export default function PostCard({ post }) {
     cinema: 'Cinéma',
   }[post.subCategory] || post.subCategory || post.category;
   const readingTime = Math.max(1, Math.round((post?.content?.length || 0) / 800));
+  const withFormatParam = (format) => {
+    if (!post?.image) return '';
+    const separator = post.image.includes('?') ? '&' : '?';
+    return `${post.image}${separator}format=${format}`;
+  };
 
   return (
     <article className='group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-subtle transition hover:-translate-y-1 hover:shadow-card dark:border-slate-700 dark:bg-slate-900'>
       {/* UI improvement: media forward layout */}
       <Link to={`/post/${post.slug}`} className='relative h-56 w-full overflow-hidden sm:h-64'>
-        <img
-          src={post.image}
-          alt={post.title}
-          loading='lazy'
-          decoding='async'
-          width='640'
-          height='384'
-          className='h-full w-full object-cover transition duration-500 group-hover:scale-105'
-        />
+        <picture>
+          <source srcSet={withFormatParam('avif')} type='image/avif' />
+          <source srcSet={withFormatParam('webp')} type='image/webp' />
+          <img
+            src={post.image}
+            alt={post.title}
+            loading='lazy'
+            decoding='async'
+            width='640'
+            height='384'
+            className='h-full w-full object-cover transition duration-500 group-hover:scale-105'
+          />
+        </picture>
         {subCategoryLabel && (
           <span className='absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-primary shadow-subtle dark:bg-slate-800/90'>
             {subCategoryLabel}

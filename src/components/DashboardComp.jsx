@@ -135,6 +135,10 @@ export default function DashboardComp() {
                         src={user.profilePicture}
                         alt='user'
                         className='w-10 h-10 rounded-full bg-gray-500'
+                        loading='lazy'
+                        decoding='async'
+                        width='40'
+                        height='40'
                       />
                     </Table.Cell>
                     <Table.Cell>{user.username}</Table.Cell>
@@ -190,6 +194,10 @@ export default function DashboardComp() {
                         src={post.image}
                         alt='user'
                         className='w-14 h-10 rounded-md bg-gray-500'
+                        loading='lazy'
+                        decoding='async'
+                        width='160'
+                        height='100'
                       />
                     </Table.Cell>
                     <Table.Cell className='w-96'>{post.title}</Table.Cell>

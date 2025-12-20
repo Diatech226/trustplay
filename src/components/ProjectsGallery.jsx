@@ -11,7 +11,15 @@ const projects = [
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {projects.map((project) => (
             <div key={project.id} className="relative group">
-              <img src={project.image} alt={project.title} className="w-full h-60 object-cover rounded-lg shadow-lg"/>
+              <img
+                src={project.image}
+                alt={project.title}
+                className="w-full h-60 object-cover rounded-lg shadow-lg"
+                loading='lazy'
+                decoding='async'
+                width='640'
+                height='240'
+              />
               <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
                 <h3 className="text-white text-xl font-semibold">{project.title}</h3>
               </div>
