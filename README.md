@@ -46,11 +46,6 @@ Une analyse détaillée (architecture, benchmark, risques) est disponible dans [
 - **Médias liés** : attachement direct des assets uploadés aux projets/campagnes (champ `attachments`/`assets`), réutilisable depuis la Media Library.
 - **Documentation & seed** : README/API contract enrichis + seed JSON mis à jour pour injecter des clients/projets/campagnes (`trustapi-main/scripts/cms-seed.json`).
 
-## Itération 4 – Performance, SEO & analytics
-- **Performance front** : lazy loading généralisé sur les visuels, balises `<picture>` pour négocier AVIF/WebP quand c'est possible et compression côté serveur. Les assets `/uploads` sont servis avec cache immutable (30j) et les endpoints GET exposent des en-têtes `Cache-Control`.
-- **SEO** : sitemap dynamique (`/sitemap.xml`) et `robots.txt` aligné, balises canonical basées sur `VITE_SITE_URL`/host et métadonnées OG structurées (schema.org Article). Les routes statiques et les articles publiés sont inclus dans le sitemap.
-- **Analytics** : nouvelle collection Mongo `EventLog` + endpoints `/api/analytics/events` (collecte) et `/api/analytics/summary` (admin). Les vues d'article, partages et inscriptions événements sont loguées côté front, avec un dashboard Analytics dédié dans l'admin (`/dashboard/analytics`).
-
 ### Exemples JSON rapides
 ```json
 {

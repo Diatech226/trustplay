@@ -92,7 +92,6 @@ app.use('/api/uploads', uploadRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/campaigns', campaignRoutes);
-app.use('/api/analytics', analyticsRoutes);
 app.get('/api/health', (_req, res) => {
   res.json({ success: true });
 });

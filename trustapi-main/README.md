@@ -109,11 +109,6 @@ Résumé (voir le détail complet dans `API_CONTRACT.md`). Les routes sont préf
 - `POST /api/uploads` — `multipart/form-data` avec champ `file` (recommandé) ou `image` (compat)
 - `GET /uploads/<filename>` — fichiers statiques servis depuis `UPLOAD_DIR`
 
-### SEO / Analytics
-- `GET /sitemap.xml` et `GET /robots.txt` — sitemap dynamique (pages statiques + articles publiés) et robots aligné.
-- `POST /api/analytics/events` — collecte des événements front (`page_view`, `share`, `event_signup`, etc.).
-- `GET /api/analytics/summary` (ADMIN/MANAGER/EDITOR) — KPIs 30/7 jours (vues, partages, inscriptions, top articles, derniers événements).
-
 ### Agence (clients / projets / campagnes)
 - `GET /api/clients` — liste paginée + recherche plein texte, filtre par statut ; `POST` pour créer un client avec contacts/notes.
 - `GET /api/clients/:id` — détail + projets rattachés ; `PUT`/`DELETE` pour mettre à jour ou supprimer (cascade sur projets/campagnes).

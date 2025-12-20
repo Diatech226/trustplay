@@ -77,14 +77,6 @@ Toutes les routes sont protégées `verifyToken` + rôle `ADMIN`/`MANAGER`/`EDIT
 | PUT | `/api/campaigns/:id` | Oui | Champs partiels | `{ success, data: { campaign } }` |
 | DELETE | `/api/campaigns/:id` | Oui | – | `200 { success, message }` |
 
-## Analytics & SEO
-- **Sitemap / Robots** : `GET /sitemap.xml` (liste pages statiques + articles publiés) et `GET /robots.txt` (inclut l’URL du sitemap).
-
-| Méthode | Route | Auth | Détails | Réponse |
-| --- | --- | --- | --- | --- |
-| POST | `/api/analytics/events` | Non | `{ type*, page?, slug?, label?, metadata? }` ; types : `page_view`, `share`, `event_signup`, `interaction`, `custom` | `201 { success, data: { eventLog } }` |
-| GET | `/api/analytics/summary` | Oui (ADMIN/MANAGER/EDITOR) | KPIs sur 30/7 jours : vues, partages, inscriptions, top articles, événements récents | `{ success, data: { pageViews, shares, eventSignups, uniquePages, topArticles[], dailyViews[], latestEvents[] } }` |
-
 ## Modèles de données
 - **User** : `username`, `email`, `password`, `profilePicture`, `isAdmin`, timestamps.
 - **Post** : `userId`, `title`, `slug` (slugify lowercase/strict), `content`, `image`, `category`, `subCategory`, `eventDate?`, `location?`, timestamps.
