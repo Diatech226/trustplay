@@ -71,8 +71,11 @@ export default function App() {
           dispatch(setUser({ user: profile, token: storedToken }));
         }
       } catch (error) {
-        console.error('Unable to refresh session', error.message);
-        dispatch(signoutSuccess());
+        if (error?.status === 401) {
+          dispatch(signoutSuccess());
+        } else {
+          console.error('Unable to refresh session', error.message);
+        }
       }
     };
 

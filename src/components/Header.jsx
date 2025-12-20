@@ -5,7 +5,7 @@ import { FaMoon, FaSun } from 'react-icons/fa';
 import { useSelector, useDispatch } from 'react-redux';
 import { toggleTheme } from '../redux/theme/themeSlice';
 import { signoutSuccess } from '../redux/user/userSlice';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { apiRequest } from '../lib/apiClient';
 
 export default function Header() {
@@ -17,20 +17,29 @@ export default function Header() {
   const { theme } = useSelector((state) => state.theme);
   const { unread } = useSelector((state) => state.notifications);
   const [searchTerm, setSearchTerm] = useState('');
-  const navItems = [
-    { path: '/', label: 'Accueil' },
-    { path: '/news', label: 'News' },
-    { path: '/politique', label: 'Politique' },
-    { path: '/science-tech', label: 'Science & Tech' },
-    { path: '/sport', label: 'Sport' },
-    { path: '/cinema', label: 'Cinéma' },
-    { path: '/event', label: 'Trust Events' },
-    { path: '/production', label: 'Trust Prod' },
-    { path: '/favorites', label: 'Favoris' },
-    { path: '/history', label: 'Historique' },
-    { path: '/notifications-preferences', label: 'Notifications' },
-    { path: '/about', label: 'À propos' },
-  ];
+  const navItems = useMemo(() => {
+    const baseNav = [
+      { path: '/', label: 'Accueil' },
+      { path: '/news', label: 'News' },
+      { path: '/politique', label: 'Politique' },
+      { path: '/science', label: 'Science & Tech' },
+      { path: '/sport', label: 'Sport' },
+      { path: '/cinema', label: 'Cinéma' },
+      { path: '/event', label: 'Trust Events' },
+      { path: '/production', label: 'Trust Prod' },
+      { path: '/favorites', label: 'Favoris' },
+      { path: '/history', label: 'Historique' },
+      { path: '/notifications-preferences', label: 'Notifications' },
+      { path: '/about', label: 'À propos' },
+    ];
+
+    const canAccessDashboard = currentUser && ['ADMIN', 'MANAGER', 'EDITOR', 'VIEWER'].includes(currentUser.role);
+    if (canAccessDashboard) {
+      baseNav.push({ path: '/dashboard', label: 'Dashboard' });
+    }
+
+    return baseNav;
+  }, [currentUser]);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);

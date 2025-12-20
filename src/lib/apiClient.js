@@ -69,9 +69,11 @@ const request = async (method, path, { body, headers = {}, auth = true, ...rest 
   const config = {
     method,
     headers: { ...headers },
-    credentials: 'include',
     ...rest,
   };
+
+  const needsAuth = auth !== false;
+  config.credentials = rest.credentials || (needsAuth ? 'include' : 'same-origin');
 
   const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
   if (body !== undefined) {
@@ -81,7 +83,7 @@ const request = async (method, path, { body, headers = {}, auth = true, ...rest 
     config.headers['Content-Type'] = config.headers['Content-Type'] || 'application/json';
   }
 
-  if (auth) {
+  if (needsAuth) {
     const token = await getStoredToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
