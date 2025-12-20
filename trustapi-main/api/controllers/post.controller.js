@@ -29,15 +29,51 @@ const normalizeSubCategory = (value = '') => {
   return normalized || undefined;
 };
 
+const parseTags = (value) => {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.map((tag) => tag?.toString().trim()).filter(Boolean);
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+  }
+  return [];
+};
+
+const resolveStatusAndSchedule = (status, publishedAt) => {
+  const nextStatus = status || 'draft';
+  const parsedDate = publishedAt ? new Date(publishedAt) : undefined;
+  if (nextStatus === 'published') {
+    return { status: 'published', publishedAt: parsedDate || new Date() };
+  }
+  if (nextStatus === 'scheduled') {
+    return { status: 'scheduled', publishedAt: parsedDate || new Date() };
+  }
+  return { status: nextStatus, publishedAt: parsedDate };
+};
+
+const removeUndefined = (payload) => {
+  const cleaned = { ...payload };
+  Object.keys(cleaned).forEach((key) => {
+    if (cleaned[key] === undefined) {
+      delete cleaned[key];
+    }
+  });
+  return cleaned;
+};
+
 export const create = async (req, res, next) => {
   try {
-    const { title, content, category, subCategory, eventDate, location, image } = req.body;
+    const { title, content, category, subCategory, eventDate, location, image, status, publishedAt, tags } = req.body;
     if (!title || !content || !category) {
       return next(errorHandler(400, 'Missing required fields'));
     }
 
     const slug = slugify(title, { lower: true, strict: true });
     const normalizedSubCategory = normalizeSubCategory(subCategory);
+    const tagList = parseTags(tags);
+    const { status: finalStatus, publishedAt: finalPublishedAt } = resolveStatusAndSchedule(status, publishedAt);
 
     const newPost = new Post({
       userId: req.user.id || req.user._id,
@@ -48,6 +84,13 @@ export const create = async (req, res, next) => {
       subCategory: normalizedSubCategory,
       image:
         image || 'https://www.hostinger.com/tutorials/wp-content/uploads/sites/2/2021/09/how-to-write-a-blog-post.png',
+      status: finalStatus,
+      publishedAt: finalPublishedAt,
+      tags: tagList,
+      seoTitle: req.body.seoTitle,
+      seoDescription: req.body.seoDescription,
+      ogImage: req.body.ogImage,
+      featured: Boolean(req.body.featured),
       ...(category === 'TrustEvent' && { eventDate, location }),
     });
 
@@ -81,18 +124,35 @@ export const updatepost = async (req, res, next) => {
 
     const normalizedSubCategory = normalizeSubCategory(req.body.subCategory);
 
+    const tagList = parseTags(req.body.tags);
+    const { status: finalStatus, publishedAt: finalPublishedAt } = resolveStatusAndSchedule(
+      req.body.status,
+      req.body.publishedAt
+    );
+
+    const updatePayload = removeUndefined({
+      title: req.body.title,
+      content: req.body.content,
+      category: req.body.category,
+      subCategory: normalizedSubCategory,
+      image:
+        req.body.image ||
+        'https://www.hostinger.com/tutorials/wp-content/uploads/sites/2/2021/09/how-to-write-a-blog-post.png',
+      status: finalStatus,
+      publishedAt: finalPublishedAt,
+      tags: tagList,
+      seoTitle: req.body.seoTitle,
+      seoDescription: req.body.seoDescription,
+      ogImage: req.body.ogImage,
+      featured: req.body.featured !== undefined ? Boolean(req.body.featured) : undefined,
+      eventDate: req.body.eventDate,
+      location: req.body.location,
+    });
+
     const updatedPost = await Post.findByIdAndUpdate(
       req.params.postId,
       {
-        $set: {
-          title: req.body.title,
-          content: req.body.content,
-          category: req.body.category,
-          subCategory: normalizedSubCategory,
-          image:
-            req.body.image ||
-            'https://www.hostinger.com/tutorials/wp-content/uploads/sites/2/2021/09/how-to-write-a-blog-post.png',
-        },
+        $set: updatePayload,
       },
       { new: true }
     );
@@ -105,9 +165,26 @@ export const updatepost = async (req, res, next) => {
 
 export const getposts = async (req, res, next) => {
   try {
-    const { userId, category, subCategory, slug, postId, searchTerm, startIndex, limit, order } = req.query;
+    const {
+      userId,
+      category,
+      subCategory,
+      slug,
+      postId,
+      searchTerm,
+      startIndex,
+      limit,
+      order,
+      status,
+      tags,
+      publishedFrom,
+      publishedTo,
+      sortBy,
+    } = req.query;
 
     const normalizedSubCategory = normalizeSubCategory(subCategory);
+    const requestedTags = parseTags(tags);
+    const statusList = status ? status.split(',').map((value) => value.trim()).filter(Boolean) : [];
 
     const query = {
       ...(userId && { userId }),
@@ -115,16 +192,30 @@ export const getposts = async (req, res, next) => {
       ...(normalizedSubCategory && { subCategory: normalizedSubCategory }),
       ...(slug && { slug }),
       ...(postId && { _id: postId }),
+      ...(statusList.length
+        ? { status: { $in: statusList } }
+        : !userId && { status: { $in: ['published'] } }),
+      ...(requestedTags.length ? { tags: { $all: requestedTags } } : {}),
+      ...(publishedFrom || publishedTo
+        ? {
+            publishedAt: {
+              ...(publishedFrom && { $gte: new Date(publishedFrom) }),
+              ...(publishedTo && { $lte: new Date(publishedTo) }),
+            },
+          }
+        : {}),
       ...(searchTerm && {
         $or: [
           { title: { $regex: searchTerm, $options: 'i' } },
           { content: { $regex: searchTerm, $options: 'i' } },
+          { tags: { $regex: searchTerm, $options: 'i' } },
         ],
       }),
     };
 
+    const sortField = sortBy || (query.status ? 'publishedAt' : 'updatedAt');
     const posts = await Post.find(query)
-      .sort({ updatedAt: order === 'asc' ? 1 : -1 })
+      .sort({ [sortField]: order === 'asc' ? 1 : -1 })
       .skip(parseInt(startIndex) || 0)
       .limit(parseInt(limit) || 9);
 

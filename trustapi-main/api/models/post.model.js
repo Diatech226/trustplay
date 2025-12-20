@@ -51,6 +51,25 @@ const PostSchema = new mongoose.Schema(
       type: String,
       trim: true, // ✅ Optional field for event posts
     },
+    status: {
+      type: String,
+      enum: ["draft", "review", "published", "scheduled"],
+      default: "draft",
+      index: true,
+    },
+    publishedAt: {
+      type: Date,
+      index: true,
+    },
+    tags: {
+      type: [String],
+      default: [],
+      index: true,
+    },
+    seoTitle: { type: String, trim: true },
+    seoDescription: { type: String, trim: true },
+    ogImage: { type: String, trim: true },
+    featured: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
@@ -60,7 +79,13 @@ PostSchema.pre("save", function (next) {
   if (!this.slug) {
     this.slug = slugify(this.title, { lower: true, strict: true });
   }
+  if (!this.publishedAt && this.status === "published") {
+    this.publishedAt = new Date();
+  }
   next();
 });
+
+PostSchema.index({ title: "text", content: "text", tags: "text" });
+PostSchema.index({ slug: 1, status: 1, publishedAt: -1 });
 
 export default mongoose.model("Post", PostSchema);

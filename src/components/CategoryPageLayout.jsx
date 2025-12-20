@@ -17,6 +17,12 @@ const sortOptions = [
   { value: 'popular', label: 'Populaires' },
 ];
 
+const dateFilters = [
+  { value: 'all', label: 'Toutes les dates' },
+  { value: '30d', label: '30 derniers jours' },
+  { value: '7d', label: '7 derniers jours' },
+];
+
 const popularityFields = ['views', 'reads', 'readCount', 'likes'];
 const getTimestamp = (item) => new Date(item?.createdAt || item?.updatedAt || 0).getTime();
 
@@ -25,6 +31,9 @@ export default function CategoryPageLayout({ title, subCategory, description = '
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [sort, setSort] = useState('recent');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [dateFilter, setDateFilter] = useState('all');
 
   const breadcrumbs = useMemo(
     () => [
@@ -41,18 +50,27 @@ export default function CategoryPageLayout({ title, subCategory, description = '
       try {
         const params = new URLSearchParams();
         params.set('limit', DEFAULT_LIMIT);
+        params.set('startIndex', (page - 1) * DEFAULT_LIMIT);
+        params.set('status', 'published');
         const normalizedSub = normalizeSubCategory(subCategory);
         if (normalizedSub) {
           params.set('subCategory', normalizedSub);
         }
 
         if (sort === 'asc') {
-          params.set('sort', 'asc');
+          params.set('order', 'asc');
         } else if (sort === 'recent') {
-          params.set('sort', 'desc');
+          params.set('order', 'desc');
         } else if (sort === 'popular') {
-          params.set('sort', 'desc');
+          params.set('order', 'desc');
           params.set('sortBy', 'views');
+        }
+
+        if (dateFilter !== 'all') {
+          const days = dateFilter === '30d' ? 30 : 7;
+          const from = new Date();
+          from.setDate(from.getDate() - days);
+          params.set('publishedFrom', from.toISOString());
         }
 
         const data = await apiRequest(`/api/posts?${params.toString()}`);
@@ -77,6 +95,7 @@ export default function CategoryPageLayout({ title, subCategory, description = '
           );
         }
         setPosts(fetchedPosts);
+        setTotal(data.totalPosts || data.data?.totalPosts || fetchedPosts.length);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -85,11 +104,22 @@ export default function CategoryPageLayout({ title, subCategory, description = '
     };
 
     fetchPosts();
-  }, [sort, subCategory]);
+  }, [sort, subCategory, page, dateFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(total / DEFAULT_LIMIT));
+
+  const canonicalUrl = useMemo(() => {
+    if (typeof window === 'undefined') return path;
+    return `${window.location.origin}${path}`;
+  }, [path]);
 
   return (
     <main className='min-h-screen bg-mist/60 py-8 dark:bg-slate-950'>
-      <Seo title={`${title} | Trust Media`} description={description || `Retrouvez les derniers articles ${title}.`} />
+      <Seo
+        title={`${title} | Trust Media`}
+        description={description || `Retrouvez les derniers articles ${title}.`}
+        canonical={canonicalUrl}
+      />
       <PageContainer className='space-y-6'>
         <Breadcrumbs items={breadcrumbs} />
         <PageHeader
@@ -101,6 +131,13 @@ export default function CategoryPageLayout({ title, subCategory, description = '
               <label className='font-semibold text-sm'>Trier par</label>
               <Select value={sort} onChange={(e) => setSort(e.target.value)}>
                 {sortOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </Select>
+              <Select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)}>
+                {dateFilters.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
@@ -122,11 +159,34 @@ export default function CategoryPageLayout({ title, subCategory, description = '
             ))}
           </div>
         ) : posts.length ? (
-          <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
-            {posts.map((post) => (
-              <PostCard key={post._id} post={post} />
-            ))}
-          </div>
+          <>
+            <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+              {posts.map((post) => (
+                <PostCard key={post._id} post={post} />
+              ))}
+            </div>
+            {totalPages > 1 && (
+              <div className='flex items-center justify-center gap-3 pt-6 text-sm text-slate-700 dark:text-slate-200'>
+                <button
+                  className='rounded-lg border px-3 py-2 disabled:opacity-50'
+                  onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                  disabled={page === 1}
+                >
+                  Précédent
+                </button>
+                <span>
+                  Page {page} / {totalPages}
+                </span>
+                <button
+                  className='rounded-lg border px-3 py-2 disabled:opacity-50'
+                  onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={page === totalPages}
+                >
+                  Suivant
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <p className='text-center text-gray-500 dark:text-slate-300'>Aucun article dans cette rubrique pour le moment.</p>
         )}

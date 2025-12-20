@@ -21,7 +21,7 @@ export default function Header() {
     { path: '/', label: 'Accueil' },
     { path: '/news', label: 'News' },
     { path: '/politique', label: 'Politique' },
-    { path: '/science', label: 'Science & Tech' },
+    { path: '/science-tech', label: 'Science & Tech' },
     { path: '/sport', label: 'Sport' },
     { path: '/cinema', label: 'Cinéma' },
     { path: '/event', label: 'Trust Events' },

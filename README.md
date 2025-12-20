@@ -33,6 +33,18 @@ Une analyse détaillée (architecture, benchmark, risques) est disponible dans [
 - **Médias** : upload image/vidéo via API, stockage dans `UPLOAD_DIR` exposé en statique.
 - **Thème & personnalisation** : mode clair/sombre, favoris/lecture, historique et préférences de notification côté client.
 
+## Itération 2 – CMS éditorial pro
+- **Workflow éditorial** : statuts `draft` → `review` → `published` (+ `scheduled`) avec date de publication, tags, SEO (title/description/OG) et indicateur « featured ».
+- **API Mongo** : nouveaux indexes (texte sur titre/contenu/tags, index slug/status/publishedAt) et filtres avancés (status, tags, date, tri) sans casser les endpoints existants.
+- **Content Studio** : liste des posts avec filtres (statut, rubrique, tags), recherche, tri/pagination et actions rapides (publish/unpublish/review). Éditeur avec prévisualisation, autosave de brouillon et réglages SEO/OG.
+- **Rubriques publiques** : pages `/politique`, `/science-tech`, `/sport`, `/cinema` avec tri date/popularité, filtres de période et pagination, breadcrumbs cohérents.
+- **SEO & partage** : `react-helmet-async` enrichi (canonical, OG/Twitter) + schéma Article sur la page article.
+
+### Guide SEO rapide
+- Renseigner **seoTitle** et **seoDescription** dans les formulaires de création/édition pour contrôler les balises `<title>`/meta description (160 caractères). L'image OG peut être surchargée via `ogImage`.
+- Utiliser les **tags** pour enrichir le référencement interne et les filtres front ; ils sont aussi inclus dans le schéma Article et l'index texte Mongo.
+- Les pages rubriques et articles exposent un lien canonical et les balises OpenGraph/Twitter. Vérifier la date de publication (champ `publishedAt`) pour les contenus planifiés ou backdatés.
+
 ## Démarrage rapide
 ### Prérequis
 - Node.js 18+

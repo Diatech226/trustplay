@@ -1,7 +1,7 @@
 import { Alert, Button, FileInput, Select, TextInput } from 'flowbite-react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { uploadImageFile, uploadMediaFile } from '../utils/uploadImage';
 import { apiRequest } from '../lib/apiClient';
@@ -31,7 +31,30 @@ export default function CreatePost() {
     location: '',
     isPaid: false,
     price: 0,
+    status: 'draft',
+    publishedAt: '',
+    tags: '',
+    seoTitle: '',
+    seoDescription: '',
+    ogImage: '',
+    featured: false,
   });
+
+  useEffect(() => {
+    const savedDraft = localStorage.getItem('cms:createPostDraft');
+    if (savedDraft) {
+      try {
+        setFormData({ ...formData, ...JSON.parse(savedDraft) });
+      } catch (error) {
+        console.warn('Impossible de restaurer le brouillon', error);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('cms:createPostDraft', JSON.stringify(formData));
+  }, [formData]);
 
   const handleUploadImage = async () => {
     if (!file) {
@@ -118,9 +141,10 @@ export default function CreatePost() {
     []
   );
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e, nextStatus) => {
     e.preventDefault();
     setPublishError('');
+    const targetStatus = nextStatus || formData.status || 'draft';
     if (formData.category === 'TrustMedia' && !formData.subCategory) {
       setPublishError('Merci de sélectionner une rubrique éditoriale.');
       return;
@@ -146,6 +170,9 @@ export default function CreatePost() {
         body: {
           ...formData,
           subCategory: normalizeSubCategory(formData.subCategory),
+          status: targetStatus,
+          tags: formData.tags,
+          publishedAt: formData.publishedAt || undefined,
         },
       });
 
@@ -161,7 +188,7 @@ export default function CreatePost() {
   return (
     <div className='p-3 max-w-3xl mx-auto min-h-screen'>
       <h1 className='text-center text-3xl my-7 font-semibold'>Créer un article</h1>
-      <form className='flex flex-col gap-4' onSubmit={handleSubmit}>
+      <form className='flex flex-col gap-4' onSubmit={(e) => handleSubmit(e, formData.status)}>
         <div className='flex flex-col gap-4 sm:flex-row justify-between'>
           <TextInput
             type='text'
@@ -201,9 +228,27 @@ export default function CreatePost() {
             <option key={option.value} value={option.value}>
               {option.label}
             </option>
-            ))}
+          ))}
           </Select>
         )}
+
+        <div className='grid gap-4 md:grid-cols-2'>
+          <Select
+            value={formData.status}
+            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+          >
+            <option value='draft'>Brouillon</option>
+            <option value='review'>En relecture</option>
+            <option value='scheduled'>Programmé</option>
+            <option value='published'>Publié</option>
+          </Select>
+          <TextInput
+            type='datetime-local'
+            value={formData.publishedAt}
+            onChange={(e) => setFormData({ ...formData, publishedAt: e.target.value })}
+            helperText='Date/heure de publication (optionnel)'
+          />
+        </div>
 
         {formData.category === 'TrustEvent' && (
           <div className='space-y-4 rounded-xl border border-dashed border-slate-200 p-4 dark:border-slate-700'>
@@ -250,6 +295,41 @@ export default function CreatePost() {
           </div>
         )}
 
+        <div className='grid gap-3 md:grid-cols-2'>
+          <TextInput
+            placeholder='Tags (séparés par des virgules)'
+            value={formData.tags}
+            onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+          />
+          <label className='flex items-center gap-2 text-sm font-semibold'>
+            <input
+              type='checkbox'
+              checked={formData.featured}
+              onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
+            />
+            Mettre en avant
+          </label>
+        </div>
+
+        <div className='flex flex-col gap-3 rounded-xl border border-slate-200 p-4 dark:border-slate-700'>
+          <p className='text-sm font-semibold text-slate-700 dark:text-slate-200'>SEO & partage</p>
+          <TextInput
+            placeholder='Titre SEO (optionnel)'
+            value={formData.seoTitle}
+            onChange={(e) => setFormData({ ...formData, seoTitle: e.target.value })}
+          />
+          <TextInput
+            placeholder='Description SEO (160 caractères)'
+            value={formData.seoDescription}
+            onChange={(e) => setFormData({ ...formData, seoDescription: e.target.value })}
+          />
+          <TextInput
+            placeholder="Image Open Graph (URL)"
+            value={formData.ogImage}
+            onChange={(e) => setFormData({ ...formData, ogImage: e.target.value })}
+          />
+        </div>
+
         <div className='flex gap-4 items-center justify-between border-4 border-teal-500 border-dotted p-3'>
           <FileInput type='file' accept='image/*' onChange={(e) => setFile(e.target.files[0])} />
           <Button
@@ -279,9 +359,33 @@ export default function CreatePost() {
         formats={quillFormats}
       />
 
-        <Button type='submit' gradientDuoTone='purpleToPink' disabled={submitting || uploading}>
-          {submitting ? 'Publication...' : 'Publier'}
-        </Button>
+        <div className='flex flex-wrap gap-3'>
+          <Button type='submit' gradientDuoTone='purpleToPink' disabled={submitting || uploading}>
+            {submitting ? 'Publication...' : 'Enregistrer'}
+          </Button>
+          <Button color='light' type='button' onClick={(e) => handleSubmit(e, 'draft')} disabled={submitting}>
+            Sauvegarder en brouillon
+          </Button>
+          <Button color='warning' type='button' onClick={(e) => handleSubmit(e, 'review')} disabled={submitting}>
+            Envoyer en relecture
+          </Button>
+          <Button color='success' type='button' onClick={(e) => handleSubmit(e, 'published')} disabled={submitting}>
+            Publier
+          </Button>
+        </div>
+
+        <div className='rounded-2xl border border-slate-200 p-4 shadow-sm dark:border-slate-700'>
+          <p className='mb-2 text-sm font-semibold text-slate-600 dark:text-slate-200'>Preview éditorial</p>
+          <h2 className='text-xl font-bold text-primary'>{formData.title || 'Titre de votre article'}</h2>
+          <p className='text-sm text-slate-600 dark:text-slate-300'>
+            Statut : <span className='font-semibold capitalize'>{formData.status}</span> · Tags :{' '}
+            {formData.tags || 'aucun tag'}
+          </p>
+          <p className='mt-2 line-clamp-3 text-slate-700 dark:text-slate-200'>
+            {formData.seoDescription || formData.content.replace(/<[^>]+>/g, '').slice(0, 220) ||
+              'Votre résumé apparaîtra ici pour vérification SEO.'}
+          </p>
+        </div>
 
         {publishError && <Alert className='mt-5' color='failure'>{publishError}</Alert>}
       </form>

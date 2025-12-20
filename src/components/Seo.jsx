@@ -9,14 +9,18 @@ export default function Seo({
   type = 'website',
   image,
   url,
+  canonical,
+  schema,
   children,
 }) {
   const sanitizedDescription = description?.slice(0, 160);
+  const canonicalUrl = canonical || url;
 
   return (
     <Helmet>
       <title>{title}</title>
       <meta name='description' content={sanitizedDescription} />
+      {canonicalUrl && <link rel='canonical' href={canonicalUrl} />}
       <meta property='og:title' content={title} />
       <meta property='og:description' content={sanitizedDescription} />
       <meta property='og:type' content={type} />
@@ -26,6 +30,7 @@ export default function Seo({
       <meta name='twitter:title' content={title} />
       <meta name='twitter:description' content={sanitizedDescription} />
       {image && <meta name='twitter:image' content={image} />}
+      {schema && <script type='application/ld+json'>{JSON.stringify(schema)}</script>}
       {children}
     </Helmet>
   );
