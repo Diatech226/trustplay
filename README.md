@@ -1,134 +1,88 @@
-# Trust Media
+# Trust Media — CMS éditorial & agence
 
-Site web de média en ligne construit avec React et Vite. L'application propose des rubriques éditoriales (News, Politique, Science/Technologie, Sport, Cinéma via sous-catégories) avec pages d'accueil, de recherche, de détail d'article et un espace d'administration pour gérer les contenus.
+Trust Media combine un site média grand public et un backoffice orienté agence. La vision produit est d'offrir un CMS complet pour des équipes éditoriales et marketing : publication multi-rubriques, gestion d'événements, stockage média, suivi de projets/campagnes et outils d'engagement (newsletter, formulaires, commentaires).
 
-## Fonctionnalités principales
-- Page d'accueil affichant les derniers articles et un filtrage par sous-catégorie (News, Politique, Économie, Culture, Technologie, Sport, Portraits). Les cartes renvoient vers les pages de détail.
-- Navigation complète via `react-router-dom` : accueil `/`, page article `/post/:postSlug`, recherche `/search`, pages institutionnelles (à propos, politique de confidentialité, conditions), sections événementiels et production.
-- Page de détail d'article avec image, métadonnées, contenu HTML et suggestions d'articles récents.
-- Recherche et filtrage des posts avec critères (terme, ordre chronologique, catégorie) et pagination par chargement incrémental.
-- Authentification locale email/mot de passe via API JWT, session persistée côté navigateur (storage asynchrone) ; redirections protégées (dashboard, création/mise à jour d'article).
-- Création et modification d'articles avec éditeur riche (ReactQuill), upload d'image envoyé au backend (`/api/uploads`) et gestion des catégories/sous-catégories (TrustMedia, TrustEvent, TrustProduction + News/Politique/…).
-- Gestion des commentaires avec création authentifiée et affichage de la liste des commentaires d’un article.
-- Thème clair/sombre mémorisé via Redux Persist.
+Ce dépôt contient :
+- **Frontend Vite/React** pour le site public et l'admin (Redux Toolkit + Flowbite/Tailwind, routes clientes, upload via API).
+- **Backend Express/MongoDB** (`trustapi-main`) exposant l'API REST (auth JWT, posts, commentaires, upload, utilisateurs) et servant les fichiers médias.
+- **Données mock** pour prévisualiser le backoffice sans API et un seed JSON pour l'API.
 
-## CMS agence (dashboard)
-- Layout pro : sidebar collapsible, header avec recherche globale, notifications, switch thème et breadcrumbs automatiques.
-- Navigation élargie : Dashboard, Articles, Pages, Médias, Événements, Campagnes, Clients, Projets, Newsletter, Formulaires, Commentaires, Utilisateurs, Paramètres et journal d’activité.
-- Composants réutilisables : `AdminSidebar`, `AdminHeader`, `PageShell`, `ResourceTable`, `KpiCard` pour structurer les modules.
-- Données démo prêtes (`src/admin/config/mockData.js`) pour visualiser le CMS sans backend.
-- Seed d’exemple pour l’API (`trustapi-main/scripts/cms-seed.json`) afin de pré-remplir posts/pages/events/campagnes.
-- RBAC côté UI : affichage conditionnel des entrées selon le rôle (ADMIN/MANAGER/EDITOR/VIEWER) et redirection sécurisée.
+Une analyse détaillée (architecture, benchmark, risques) est disponible dans [`ANALYSIS.md`](./ANALYSIS.md). La roadmap produit/technique détaillée est suivie dans [`ROADMAP.md`](./ROADMAP.md).
 
-## Architecture technique
-- **Frontend** : React 18 + Vite 5, routage `react-router-dom`, composants UI `flowbite-react`, icônes `react-icons`, éditeur riche `react-quill`.
-- **État global** : Redux Toolkit (`@reduxjs/toolkit`) avec persistance (`redux-persist`) pour l'utilisateur et le thème.
-- **Auth & médias** : Auth locale JWT (backend Express/MongoDB) ; les images/vidéos sont envoyées au backend (`/api/uploads`).
-- **Appel API** : toutes les données métiers (posts, commentaires, utilisateurs) proviennent d’un backend REST configuré via `VITE_API_URL` (non inclus dans ce dépôt).
-- **Styles** : Tailwind CSS + plugins (`@tailwindcss/line-clamp`, `tailwind-scrollbar`).
+## Architecture actuelle
+### Frontend (Vite/React)
+- **Routage** : routes publiques (home, recherche, rubriques, article) et protégées (dashboard, création/mise à jour) déclarées dans `src/App.jsx`. Les routes admin sont regroupées sous `/dashboard` avec garde `PrivateRoute` + `OnlyAdminPrivateRoute`. 
+- **État & session** : Redux Toolkit avec persistance asynchrone pour l'utilisateur, thème, favoris/historique et préférences de notifications. Le profil est rafraîchi via `/api/user/me` si un token est disponible.
+- **UI admin** : layout avec sidebar, header, breadcrumbs et dark mode ; navigation role-based (ADMIN/MANAGER/EDITOR/VIEWER) et redirections vers le profil en cas de section non autorisée. Composants réutilisables et données mock pour chaque module (posts, pages, événements, campagnes, etc.).
+- **Librairies clés** : `react-router-dom`, `redux-persist`, `flowbite-react`, `react-quill`, `react-helmet-async`, Tailwind CSS.
 
-### Structure des dossiers
-```
-src/
-  main.jsx            # Point d'entrée Vite/React + Redux + ThemeProvider
-  App.jsx             # Définition des routes principales
-  components/         # Header/Footer, cartes d’articles, sections dashboard, commentaires, etc.
-  pages/              # Pages routées : Home, Search, PostPage, Dashboard, Auth, etc.
-  redux/              # Store, slices user & theme
-  lib/                # apiClient (gestion bearer/401) et asyncStorage (wrapper localStorage)
-  index.css           # Styles globaux (Tailwind)
-```
+### Backend (Express/MongoDB)
+- **Entrée** : `trustapi-main/api/index.js` démarre Express, MongoDB, CORS, routes REST et sert le dossier `/uploads`.
+- **Routes principales** :
+  - `POST /api/auth/*` pour signup/signin/signout et flux reset password.
+  - `GET /api/user/me`, `PUT /api/user/update/:userId`, `GET /api/user/getusers` (admin), `DELETE /api/user/delete/:userId`.
+  - `POST /api/post/create`, `GET /api/post/getposts`, `PUT /api/post/updatepost/:postId/:userId`, `DELETE /api/post/deletepost/:postId/:userId`.
+  - `POST /api/comment/create`, likes/édition/suppression et listing admin.
+  - `POST /api/uploads` (Multer) avec filtrage MIME et quotas (10 Mo image, 100 Mo vidéo).
+- **Auth & permissions** : middleware JWT `verifyToken` + contrôle `requireAdmin` sur les routes critiques (liste users, commentaires). Les autres permissions (ownership) sont gérées dans les contrôleurs.
 
-## Installation & démarrage
-Prérequis : Node.js (>=18 recommandé) et npm.
+## Fonctionnalités actuelles
+- **Site média** : pages éditoriales par rubrique, page article avec commentaires, recherche multi-critères et pagination incrémentale, pages événement/production/projets.
+- **Authentification & rôles** : email/mot de passe JWT, persistance locale, gardes de routes, rôle ADMIN pour l'admin ; rôles supplémentaires gérés côté UI.
+- **Backoffice CMS** : dashboard multi-modules (articles, pages, médias, événements, campagnes, clients, projets, newsletter, formulaires, commentaires, utilisateurs, paramètres, activité) avec maquettes de données et actions rapides.
+- **Médias** : upload image/vidéo via API, stockage dans `UPLOAD_DIR` exposé en statique.
+- **Thème & personnalisation** : mode clair/sombre, favoris/lecture, historique et préférences de notification côté client.
 
+## Démarrage rapide
+### Prérequis
+- Node.js 18+
+- MongoDB accessible (local ou Atlas) si vous utilisez l'API Express.
+
+### Installation frontend
 ```bash
 npm install
-npm run dev       # démarre le serveur de développement Vite
+npm run dev       # démarre Vite en développement
 npm run build     # build de production
 npm run preview   # prévisualisation du build
 npm run lint      # linting ESLint
 ```
 
-### Démarrage de l’admin CMS
-- Front : `npm run dev` puis ouvrir `/dashboard` (connexion requise ; le rôle ADMIN débloque tous les modules).
-- Backend : utiliser l’API Express/MongoDB (répertoire `trustapi-main`) pointée par `VITE_API_URL`.
-- Démo sans backend : les pages Admin utilisent des données mock pour illustrer le layout ; branchez vos endpoints REST pour rendre les tables interactives.
+### Installation backend (`trustapi-main`)
+```bash
+cd trustapi-main
+npm install
+npm run dev   # nodemon api/index.js
+npm start     # node api/index.js
+```
 
-## Configuration & variables d'environnement
-Créer un fichier `.env` à la racine du projet (ou équivalent Vite) avec au minimum :
+### Configuration
+Créer un fichier `.env` à la racine frontend avec :
+- `VITE_API_URL` : URL de base de l'API REST.
 
-- `VITE_API_URL` (obligatoire) : base URL du backend REST (ex. https://api.example.com). Utilisé pour la récupération et la création de posts, commentaires, utilisateurs, etc.
+Créer `.env` dans `trustapi-main` (voir `.env.example`) avec :
+- `PORT`, `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN`, `FRONTEND_URL`, `UPLOAD_DIR`.
+- (Optionnel) `RESEND_API_KEY`, `MAIL_FROM` pour l'e-mail reset password.
 
-## Modèle de données (côté frontend)
-Les types sont consommés depuis l’API, mais les champs utilisés permettent d’identifier :
-- **Post** : `_id`, `title`, `slug`, `category` (TrustMedia/TrustEvent/TrustProduction), `subCategory` (news, politique, economie, culture, technologie, sport, portraits), `content` (HTML), `image`, `createdAt`, `eventDate`, `location` (pour les événements).
-- **User** : `id`/`_id`, `username`, `email`, `profilePicture`, `token`, `role` (`ADMIN` pour les routes protégées admin).
-- **Comment** : `_id`, `postId`, `userId`, `content`, `userName`, `profilePicture`, timestamps.
+## Modules clés (actuels / cibles)
+- **Site public** : home, recherche, rubriques, pages légales, détail article + commentaires.
+- **CMS & studio éditorial** : articles/pages/événements avec éditeur riche, filtres, upload médias, suggestions.
+- **Agence & delivery** : campagnes, clients, projets, formulaires, newsletter (mock côté UI, à brancher sur l'API).
+- **Gouvernance** : rôles ADMIN/MANAGER/EDITOR/VIEWER en UI, journal d’activité et paramètres.
 
-## Routage & contenu éditorial
-- **Point d’entrée** : `src/main.jsx` monte `<App />` dans `#root` avec Redux et PersistGate.
-- **Routes principales (src/App.jsx)** :
-  - `/` (Home) : liste des posts avec filtrage par sous-catégorie.
-  - `/post/:postSlug` : détail d’article + commentaires + articles récents.
-  - `/search` : recherche/filtrage des posts avec pagination via `startIndex`.
-  - `/event`, `/production`, `/projects`, `/about`, `/privacy-policy`, `/Terms` : pages éditoriales.
-  - Auth : `/sign-in`, `/sign-up`.
-  - Dashboard & admin : `/dashboard` (privé), `/create-post`, `/update-post/:postId` (admins).
+## Roadmap produit & technique
+La roadmap détaillée par itérations (objectifs, modules, changements techniques, valeur métier) est décrite dans [`ROADMAP.md`](./ROADMAP.md). Synthèse :
+1. **Stabilisation & cohérence** : fiabiliser auth/CRUD/upload, harmoniser conventions, sécuriser l’admin.
+2. **CMS éditorial professionnel** : workflow de publication, médias et SEO renforcés.
+3. **Agence & gestion clients/projets** : pipeline clients/projets/campagnes, formulaires et reporting.
+4. **Performance, SEO & analytics** : optimisation front, métadonnées, instrumentation produit.
+5. **Scalabilité & industrialisation** : CI/CD, observabilité, multitenant et plans d’hébergement.
 
-### Gestion des rubriques et catégories
-- Les posts portent un champ `category` (TrustMedia/TrustEvent/TrustProduction) et, pour la partie média, un `subCategory` explicitant la rubrique éditoriale (news, politique, economie, culture, technologie, sport, portraits). La navigation et les filtres (home, search) s’appuient sur ces champs.
-- URLs : les slugs d’articles alimentent `/post/:postSlug`; la recherche ajoute `?category=` et `?searchTerm=`.
+## Évolutions prévues & priorités
+- **Quick wins** : revue des erreurs API, tests sur flux login/CRUD/upload, audit UX des filtres/recherche, sécurisation des routes admin.
+- **Moyen terme** : workflow éditorial (brouillon → revue → publication), bibliothèques médias avec conversions, configuration RBAC centralisée.
+- **Long terme** : automatisation CI/CD, analytics temps réel, support multi-marques et marketplace partenaires.
 
-### Pagination & recherche
-- `Search.jsx` construit les requêtes via `URLSearchParams` et supporte `searchTerm`, `sort` (asc/desc), `category` et `startIndex` pour charger la suite des résultats (infinite scroll bouton « Voir plus »).
-- La page d’accueil filtre côté client sur `subCategory` une fois les posts chargés.
-
-### Médias
-- Upload d’images/vidéos via `/api/uploads` (Multer côté backend) depuis la page de création/mise à jour d’article ou l’éditeur.
-- Les URLs retournées par l’API sont stockées sur les posts/contenus.
-
-### Authentification & autorisations
-- Auth email/mot de passe contre l’API (`/api/auth/signin`, `/api/auth/signup`), stockage du token dans un wrapper asynchrone autour de `localStorage`.
-- Routes protégées (`PrivateRoute`, `OnlyAdminPrivateRoute`) contrôlent l’accès au dashboard et aux pages d’édition (rôle `ADMIN`).
-
-### Workflow éditorial (front)
-- Création/édition : formulaires `CreatePost.jsx` et `UpdatePost.jsx` envoient les données au backend (token JWT requis). Les sous-catégories sont obligatoires pour TrustMedia.
-- Consultation : `Home` et `Search` affichent les listes; `PostPage` charge un article par slug et propose les articles récents.
-- Commentaires : `CommentSection` récupère les commentaires d’un post et permet aux utilisateurs connectés d’en ajouter ou supprimer localement.
-
-## Tests & qualité
-- Linting : `npm run lint` (ESLint avec plugins React, React Hooks, React Refresh).
-- Aucun test unitaire ou e2e n’est défini dans ce dépôt.
-
-### Checklist QA admin (extrait)
-- Connexion / déconnexion et redirection 401 vers `/sign-in`.
-- Accès role-based : ADMIN voit tous les modules, les rôles inférieurs restent cantonnés aux sections autorisées.
-- Navigation sidebar (collapsible) + breadcrumbs cohérents.
-- CRUD basiques sur Articles, Pages, Événements via vos endpoints REST ; upload média via `/api/uploads`.
-- Journal d’activité lisible et pages vides avec états empty/loading à compléter côté API.
-
-## Déploiement
-- Build frontend Vite (`npm run build`), prévisualisation via `npm run preview`.
-- Architecture CSR (client-side rendering). L’API distante doit être accessible via `VITE_API_URL`.
-
-## 🛣️ Roadmap & pistes d’amélioration
-### Itération 1 – Structuration éditoriale
-- Uniformiser les catégories (News, Politique, Science/Tech, Sport, Cinéma) via `category/subCategory` et aligner les options de création/recherche.
-- Créer des pages dédiées par rubrique (`/politique`, `/science`, `/sport`, `/cinema`) avec filtres par date/popularité.
-- Ajouter un menu/breadcrumbs clair reliant chaque rubrique et des liens vers les sous-catégories depuis les cartes.
-
-### Itération 2 – UX & UI du média
-- Repenser la page d’accueil pour mettre en avant les rubriques principales et les articles récents par section.
-- Améliorer la mise en page des articles (typo, marges, contrastes) et ajouter des blocs « Articles similaires » basés sur la sous-catégorie.
-- Optimiser le responsive et la lisibilité mobile (cartes, filtres, formulaires).
-
-### Itération 3 – Fonctionnalités avancées
-- Recherche avancée combinant mots-clés, rubriques, dates et tags éventuels ; ajout d’un nuage de mots-clés.
-- Comptes utilisateurs enrichis : favoris, historique de lecture, notifications par rubrique.
-- Flux RSS/newsletter par rubrique (Politique, Science/Tech, Sport, Cinéma) et intégration de partages sociaux.
-
-### Itération 4 – Technique & performance
-- Optimiser les images (lazy loading, formats modernes) et mettre en cache les listes de posts.
-- Améliorer le SEO : métadonnées dynamiques, balises Open Graph/Twitter, schémas `Article`/`BreadcrumbList`.
-- Ajouter des tests automatisés (lint en CI, tests de pages critiques) et du monitoring (erreurs/perfs) adapté à l’infra d’hébergement.
+## Ressources
+- Contrat API backend : [`trustapi-main/API_CONTRACT.md`](./trustapi-main/API_CONTRACT.md).
+- Analyse détaillée : [`ANALYSIS.md`](./ANALYSIS.md).
+- Roadmap : [`ROADMAP.md`](./ROADMAP.md).
