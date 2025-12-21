@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 import {
   HiAnnotation,
   HiBriefcase,
+  HiChartSquareBar,
   HiCalendar,
   HiClipboardList,
   HiDocumentText,
@@ -21,6 +22,7 @@ import { navSections } from '../config/navigation';
 const iconMap = {
   HiAnnotation,
   HiBriefcase,
+  HiChartSquareBar,
   HiCalendar,
   HiClipboardList,
   HiDocumentText,

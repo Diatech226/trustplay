@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Comment from "../models/comment.model.js";
 import Post from "../models/post.model.js";
 import { errorHandler } from "../utils/error.js";
@@ -13,6 +14,10 @@ export const createComment = async (req, res, next) => {
 
     if (!postId || !content) {
       return res.status(400).json({ success: false, message: "postId and content are required" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+      return res.status(400).json({ success: false, message: "Invalid postId" });
     }
 
     const postExists = await Post.findById(postId);
@@ -48,6 +53,10 @@ export const createComment = async (req, res, next) => {
 export const getPostComments = async (req, res) => {
   try {
     const { postId } = req.params;
+    if (!postId || postId === "undefined" || !mongoose.Types.ObjectId.isValid(postId)) {
+      return res.status(400).json({ success: false, message: "Invalid postId" });
+    }
+
     const comments = await Comment.find({ postId })
       .populate("userId", "username profilePicture") // 👈 Peuple le champ userId avec username et profilePicture
       .sort({ createdAt: -1 }); // Trie les commentaires du plus récent au plus ancien
