@@ -1,18 +1,27 @@
+import { Alert, Button } from 'flowbite-react';
+import { useState } from 'react';
 import PageShell from '../../admin/components/PageShell';
 import ResourceTable from '../../admin/components/ResourceTable';
 import { demoEvents } from '../../admin/config/mockData';
 
 export default function AdminEvents() {
+  const [showNotice, setShowNotice] = useState(false);
+
   return (
     <PageShell
       title='Événements'
       description='Gérez dates, lieux, inscriptions et exports CSV.'
       actions={
-        <button className='rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow hover:bg-primary/90'>
+        <Button size='sm' onClick={() => setShowNotice(true)}>
           Nouvel événement
-        </button>
+        </Button>
       }
     >
+      {showNotice && (
+        <Alert className='mb-4' color='info' onDismiss={() => setShowNotice(false)}>
+          La gestion d’événements est en cours de raccordement API. Utilisez les articles TrustEvent en attendant.
+        </Alert>
+      )}
       <ResourceTable
         columns={[
           { header: 'Nom', accessor: 'name' },

@@ -60,10 +60,21 @@ const getStoredToken = async () => {
   if (tokenFromState) return tokenFromState;
 
   const rawAuth = await asyncStorage.getItem('auth');
-  if (!rawAuth) return null;
+  if (rawAuth) {
+    try {
+      const parsed = JSON.parse(rawAuth);
+      return parsed?.token || parsed?.currentUser?.token || parsed?.user?.token || null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  const rawPersist = await asyncStorage.getItem('persist:root');
+  if (!rawPersist) return null;
   try {
-    const parsed = JSON.parse(rawAuth);
-    return parsed?.token || parsed?.currentUser?.token;
+    const parsed = JSON.parse(rawPersist);
+    const userState = typeof parsed.user === 'string' ? JSON.parse(parsed.user) : parsed.user;
+    return userState?.token || userState?.currentUser?.token || null;
   } catch (error) {
     return null;
   }

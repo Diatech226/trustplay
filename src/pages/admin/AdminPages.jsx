@@ -1,18 +1,27 @@
+import { Alert, Button } from 'flowbite-react';
+import { useState } from 'react';
 import PageShell from '../../admin/components/PageShell';
 import ResourceTable from '../../admin/components/ResourceTable';
 import { demoPages } from '../../admin/config/mockData';
 
 export default function AdminPages() {
+  const [showNotice, setShowNotice] = useState(false);
+
   return (
     <PageShell
       title='Pages & landing'
       description='Construisez des pages modulaires (hero, services, témoignages, CTA) avec ordre des sections.'
       actions={
-        <button className='rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow hover:bg-primary/90'>
+        <Button size='sm' onClick={() => setShowNotice(true)}>
           Nouvelle page
-        </button>
+        </Button>
       }
     >
+      {showNotice && (
+        <Alert className='mb-4' color='info' onDismiss={() => setShowNotice(false)}>
+          Le module Pages est en préparation. Ajoutez une page via la roadmap ou connectez un endpoint dédié.
+        </Alert>
+      )}
       <ResourceTable
         columns={[
           { header: 'Titre', accessor: 'title' },
