@@ -8,6 +8,10 @@ Chaque itération combine objectifs métier et chantiers techniques pour rapproc
 - **Modules concernés** : API auth/user/post/comment/upload, routage front, middleware Redux/API client.
 - **Changements techniques** : validation schémas (joi/zod), normalisation des réponses `{ success, data, error }`, rate limiting + CORS whitelist, logs structurés et healthchecks.
 - **Valeur métier** : fiabilité accrue des opérations quotidiennes (login, publication, upload) et base saine pour brancher l’admin sur l’API.
+  - **Chantiers remaster** :
+    - A) Auth & API client unifiés (Bearer + session refresh).
+    - B) Router CMS + UI pro (sidebar/topbar, boutons actifs).
+    - C) Modules CMS branchés sur l’API + QA.
 
 ## Itération 2 – CMS éditorial professionnel
 - **Objectif** : fournir un workflow éditorial complet et un backoffice utilisable en prod.
