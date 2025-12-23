@@ -150,10 +150,8 @@ La roadmap détaillée par itérations (objectifs, modules, changements techniqu
 ## Bugs corrigés
 - Stabilisation de l’injection du token JWT sur toutes les requêtes du CMS (fallback Redux Persist/localStorage) avec gestion contrôlée des 401.
 - Navigation du dashboard fiabilisée : sidebar en `NavLink` alignée sur les routes `/dashboard/*` et icônes complètes.
-- Redirection post-login fiabilisée : retour automatique vers la page protégée d’origine ou `/dashboard` pour les admins.
 - Flux commentaires sécurisé : validation stricte de `postId` côté front pour éviter les appels avec un identifiant indéfini et suppression via confirmation.
 - Remplacement des écrans mockés (dashboard, articles, médias, commentaires, utilisateurs) par des appels API réels avec états de chargement/erreur.
-- Suppression des boutons “morts” : modules en préparation affichent un message explicite au clic.
 
 ## Stabilisation (Itération 1)
 - Stratégie d’authentification unifiée : jeton JWT accepté en `Authorization: Bearer` **et** via le cookie `access_token` (secure/httpOnly). Le client inclut automatiquement le Bearer quand un token est présent et envoie les cookies pour les actions protégées.
@@ -170,7 +168,6 @@ La roadmap détaillée par itérations (objectifs, modules, changements techniqu
 
 ## QA Checklist
 - [ ] Connexion admin puis navigation `/dashboard` → `/dashboard/posts` → `/dashboard/media` → `/dashboard/comments` → `/dashboard/users` sans perte de session.
-- [ ] Login depuis une page protégée renvoie vers la page initiale (ou `/dashboard` pour un admin).
 - [ ] Dashboard overview affiche les KPIs et les listes récentes (posts, commentaires, utilisateurs) ; bouton « Rafraîchir » fonctionne.
 - [ ] Content Manager : recherche/filtre/pagination fonctionnent ; publier/dépublier/envoyer en revue puis supprimer un post met bien à jour la liste.
 - [ ] Formulaire de création de post : création réussie, redirection vers l’article.
