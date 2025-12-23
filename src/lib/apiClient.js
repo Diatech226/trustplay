@@ -13,6 +13,24 @@ const buildUrl = (path) => {
   return `${API_BASE_URL}${path}`;
 };
 
+const INVALID_TOKEN_PATTERNS = [
+  'invalid token',
+  'jwt expired',
+  'token expired',
+  'expired token',
+];
+
+const isInvalidTokenResponse = (data) => {
+  const message = `${data?.message || ''}`.toLowerCase();
+  return INVALID_TOKEN_PATTERNS.some((pattern) => message.includes(pattern));
+};
+
+const buildReturnTo = () => {
+  if (typeof window === 'undefined') return '';
+  const { pathname, search, hash } = window.location;
+  return `${pathname}${search}${hash}`;
+};
+
 const handleUnauthorized = async () => {
   await asyncStorage.removeItem('auth');
   try {
@@ -21,11 +39,23 @@ const handleUnauthorized = async () => {
     // store not ready
   }
   if (typeof window !== 'undefined' && window.location.pathname !== '/sign-in') {
-    window.location.href = '/sign-in';
+    const returnTo = encodeURIComponent(buildReturnTo());
+    window.location.href = `/sign-in${returnTo ? `?returnTo=${returnTo}` : ''}`;
   }
 };
 
-const parseResponse = async (response, { hadToken = false, needsAuth = false } = {}) => {
+const safeJson = async (response) => {
+  try {
+    return await response.json();
+  } catch (error) {
+    return null;
+  }
+};
+
+const parseResponse = async (
+  response,
+  { hadToken = false, needsAuth = false, allowLogout = true } = {}
+) => {
   let data = null;
   try {
     data = await response.json();
@@ -36,9 +66,12 @@ const parseResponse = async (response, { hadToken = false, needsAuth = false } =
   if (!response.ok) {
     const isUnauthorized = response.status === 401;
     const errorMessage =
-      data?.message || (isUnauthorized && hadToken ? 'Session expirée, merci de vous reconnecter.' : `Requête échouée (${response.status})`);
+      data?.message ||
+      (isUnauthorized && hadToken
+        ? 'Session expirée, merci de vous reconnecter.'
+        : `Requête échouée (${response.status})`);
 
-    if (isUnauthorized && needsAuth && hadToken) {
+    if (allowLogout && isUnauthorized && needsAuth && hadToken && isInvalidTokenResponse(data)) {
       await handleUnauthorized();
     }
 
@@ -80,6 +113,33 @@ const getStoredToken = async () => {
   }
 };
 
+const validateSession = async (token) => {
+  if (!token) return { status: 'unknown' };
+  try {
+    const response = await fetch(buildUrl('/api/user/me'), {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      credentials: 'include',
+    });
+    if (response.status === 401) {
+      const data = await safeJson(response);
+      if (isInvalidTokenResponse(data)) {
+        return { status: 'invalid' };
+      }
+      return { status: 'unauthorized' };
+    }
+    if (!response.ok) {
+      return { status: 'unknown' };
+    }
+    const data = await safeJson(response);
+    return { status: 'valid', data };
+  } catch (error) {
+    return { status: 'unknown' };
+  }
+};
+
 const request = async (method, path, { body, headers = {}, auth = true, ...rest } = {}) => {
   const config = {
     method,
@@ -104,6 +164,25 @@ const request = async (method, path, { body, headers = {}, auth = true, ...rest 
   }
 
   const response = await fetch(buildUrl(path), config);
+
+  if (response.status === 401 && needsAuth && token && !rest.__retry) {
+    const clone = response.clone();
+    const responseData = await safeJson(clone);
+    if (isInvalidTokenResponse(responseData)) {
+      await handleUnauthorized();
+      return parseResponse(response, { hadToken: Boolean(token), needsAuth, allowLogout: false });
+    }
+
+    const validation = await validateSession(token);
+    if (validation.status === 'valid') {
+      return request(method, path, { body, headers, auth, ...rest, __retry: true });
+    }
+    if (validation.status === 'invalid') {
+      await handleUnauthorized();
+      return parseResponse(response, { hadToken: Boolean(token), needsAuth, allowLogout: false });
+    }
+  }
+
   return parseResponse(response, { hadToken: Boolean(token), needsAuth });
 };
 
@@ -154,6 +233,10 @@ export async function fetchJson(url, options) {
 export async function getAuthToken() {
   return getStoredToken();
 }
+
+export const authUtils = {
+  isInvalidTokenResponse,
+};
 
 export const forgotPassword = (email) =>
   post('/api/auth/forgot-password', {

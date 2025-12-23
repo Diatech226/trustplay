@@ -11,5 +11,16 @@ export default function PrivateRoute() {
     return <LoadingScreen label='Vérification de la session...' />;
   }
 
-  return currentUser ? <Outlet /> : <Navigate to='/sign-in' state={{ from: location }} replace />;
+  if (currentUser) {
+    return <Outlet />;
+  }
+
+  const returnTo = encodeURIComponent(`${location.pathname}${location.search}${location.hash}`);
+  return (
+    <Navigate
+      to={`/sign-in${returnTo ? `?returnTo=${returnTo}` : ''}`}
+      state={{ from: location }}
+      replace
+    />
+  );
 }

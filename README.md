@@ -147,6 +147,9 @@ La roadmap détaillée par itérations (objectifs, modules, changements techniqu
 - Analyse détaillée : [`ANALYSIS.md`](./ANALYSIS.md).
 - Roadmap : [`ROADMAP.md`](./ROADMAP.md).
 
+## QA checklist (admin)
+La checklist QA détaillée pour la remasterisation du CMS est disponible dans [`QA_CHECKLIST.md`](./QA_CHECKLIST.md).
+
 ## Bugs corrigés
 - Stabilisation de l’injection du token JWT sur toutes les requêtes du CMS (fallback Redux Persist/localStorage) avec gestion contrôlée des 401.
 - Navigation du dashboard fiabilisée : sidebar en `NavLink` alignée sur les routes `/dashboard/*` et icônes complètes.
@@ -164,7 +167,7 @@ La roadmap détaillée par itérations (objectifs, modules, changements techniqu
 - **Stockage front** : le token est conservé dans Redux + redux-persist (fallback localStorage `auth`).
 - **API client** : chaque appel protégé ajoute `Authorization: Bearer <token>` si disponible et envoie les cookies (`credentials: include`).
 - **Restauration de session** : au chargement, le front hydrate l’utilisateur depuis la persistance, puis rafraîchit le profil via `/api/user/me`.
-- **401** : si un token valide manque ou expire, un message est affiché ; la déconnexion n’est déclenchée que lorsqu’un token existait.
+- **401** : la déconnexion automatique n’est déclenchée que lorsqu’un token est explicitement invalidé/expiré (validation via `/api/user/me` si besoin).
 
 ## QA Checklist
 - [ ] Connexion admin puis navigation `/dashboard` → `/dashboard/posts` → `/dashboard/media` → `/dashboard/comments` → `/dashboard/users` sans perte de session.

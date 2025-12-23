@@ -11,6 +11,8 @@ export default function SignIn() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const returnToParam = searchParams.get('returnTo');
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value.trim() });
@@ -45,14 +47,16 @@ export default function SignIn() {
       dispatch(signInSuccess({ user: profile, token }));
 
       const fromState = location.state?.from;
+      const fromQuery = returnToParam && returnToParam !== '/sign-in' ? returnToParam : null;
       const redirectTarget =
-        typeof fromState === 'string'
+        fromQuery ||
+        (typeof fromState === 'string'
           ? fromState
           : fromState?.pathname && fromState?.pathname !== '/sign-in'
           ? `${fromState.pathname}${fromState.search || ''}${fromState.hash || ''}`
           : profile?.role && ['ADMIN', 'MANAGER', 'EDITOR', 'VIEWER'].includes(profile.role)
           ? '/dashboard'
-          : '/';
+          : '/');
 
       navigate(redirectTarget, { replace: true });
     } catch (error) {
