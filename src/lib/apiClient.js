@@ -25,7 +25,7 @@ const handleUnauthorized = async () => {
   }
 };
 
-const parseResponse = async (response) => {
+const parseResponse = async (response, { hadToken = false, needsAuth = false } = {}) => {
   let data = null;
   try {
     data = await response.json();
@@ -34,10 +34,14 @@ const parseResponse = async (response) => {
   }
 
   if (!response.ok) {
-    const errorMessage = data?.message || `Requête échouée (${response.status})`;
-    if (response.status === 401) {
+    const isUnauthorized = response.status === 401;
+    const errorMessage =
+      data?.message || (isUnauthorized && hadToken ? 'Session expirée, merci de vous reconnecter.' : `Requête échouée (${response.status})`);
+
+    if (isUnauthorized && needsAuth && hadToken) {
       await handleUnauthorized();
     }
+
     const error = new Error(errorMessage);
     error.status = response.status;
     error.data = data;
@@ -83,15 +87,13 @@ const request = async (method, path, { body, headers = {}, auth = true, ...rest 
     config.headers['Content-Type'] = config.headers['Content-Type'] || 'application/json';
   }
 
-  if (needsAuth) {
-    const token = await getStoredToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+  const token = needsAuth ? await getStoredToken() : null;
+  if (needsAuth && token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
 
   const response = await fetch(buildUrl(path), config);
-  return parseResponse(response);
+  return parseResponse(response, { hadToken: Boolean(token), needsAuth });
 };
 
 export const get = (path, options) => request('GET', path, options);

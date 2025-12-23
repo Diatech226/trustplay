@@ -133,6 +133,11 @@ La roadmap détaillée par itérations (objectifs, modules, changements techniqu
 - Analyse détaillée : [`ANALYSIS.md`](./ANALYSIS.md).
 - Roadmap : [`ROADMAP.md`](./ROADMAP.md).
 
+## Bugs corrigés
+- Stabilisation de l’injection du token JWT sur toutes les requêtes du CMS avec gestion contrôlée des 401 (déconnexion uniquement si un token était présent et réellement invalide).
+- Navigation du dashboard fiabilisée : sidebar en `NavLink` alignée sur les routes `/dashboard/*` et icônes complètes.
+- Flux commentaires sécurisé : validation stricte de `postId` côté API et garde côté front pour éviter les appels avec un identifiant indéfini.
+
 ## Stabilisation (Itération 1)
 - Stratégie d’authentification unifiée : jeton JWT accepté en `Authorization: Bearer` **et** via le cookie `access_token` (secure/httpOnly). Le client inclut automatiquement le Bearer quand un token est présent et envoie les cookies pour les actions protégées.
 - Gardes de routes (front) revues pour éviter les redirections en boucle : attente explicite du rafraîchissement de session avant d’autoriser/relire les routes privées et admin.
@@ -140,9 +145,6 @@ La roadmap détaillée par itérations (objectifs, modules, changements techniqu
 - Navigation : le lien Dashboard réapparaît automatiquement pour les rôles autorisés.
 
 ## QA Checklist
-- [ ] Connexion admin → accès dashboard sans demande de reconnexion.
-- [ ] Création d’un post avec upload image → URL servie depuis `/uploads/...` et affichée dans l’article.
-- [ ] Mise à jour / suppression d’un post → pas d’erreur 401/500.
-- [ ] Commentaires : utilisateur et admin peuvent créer/supprimer selon leurs droits.
-- [ ] Rafraîchissement /api/user/me fonctionne après reload, aucune déconnexion intempestive.
-- [ ] Upload invalide (MIME/taille) retourne une erreur lisible côté client.
+- [ ] Connexion admin puis actions CMS (création/mise à jour/suppression de posts, upload, gestion commentaires/utilisateurs) sans demande de reconnexion tant que le token est valide.
+- [ ] Sidebar du dashboard : chaque entrée `/dashboard/*` change bien de page via `NavLink` avec état actif visible.
+- [ ] Page article : chargement des commentaires uniquement avec un `postId` valide, aucun CastError côté API ; création/suppression de commentaire fonctionne pour un admin connecté.

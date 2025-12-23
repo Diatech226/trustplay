@@ -24,6 +24,11 @@ export default function CommentSection({ postId }) {
   });
   useEffect(() => {
     const fetchComments = async () => {
+      if (!postId) {
+        setComments([]);
+        setLoading(false);
+        return;
+      }
       try {
         setLoading(true);
         const data = await apiRequest(`/api/comment/getPostComments/${postId}`);
@@ -43,6 +48,11 @@ export default function CommentSection({ postId }) {
     e.preventDefault();
     if (!currentUser || !(currentUser?.id || currentUser?._id)) {
       setCommentError("Vous devez être connecté pour commenter.");
+      return;
+    }
+
+    if (!postId) {
+      setCommentError("Impossible d'associer le commentaire à l'article.");
       return;
     }
     
