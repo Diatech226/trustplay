@@ -1,5 +1,6 @@
 import { Badge, Button, Pagination, Select, TextInput } from 'flowbite-react';
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import PageShell from '../../admin/components/PageShell';
 import ResourceTable from '../../admin/components/ResourceTable';
 import { apiRequest } from '../../lib/apiClient';
@@ -17,6 +18,7 @@ export default function AdminPosts() {
   const [posts, setPosts] = useState([]);
   const [totalPosts, setTotalPosts] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [filters, setFilters] = useState({
     search: '',
     status: 'all',
@@ -29,9 +31,9 @@ export default function AdminPosts() {
   });
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(totalPosts / filters.limit)), [filters.limit, totalPosts]);
-
   const fetchPosts = async () => {
     setLoading(true);
+    setError('');
     const params = new URLSearchParams();
     params.set('startIndex', (filters.page - 1) * filters.limit);
     params.set('limit', filters.limit);
@@ -42,14 +44,19 @@ export default function AdminPosts() {
     if (filters.tags) params.set('tags', filters.tags);
     if (filters.status && filters.status !== 'all') params.set('status', filters.status);
 
-    const data = await apiRequest(`/api/posts?${params.toString()}`, { auth: true });
-    const normalized = (data.posts || data.data?.posts || []).map((post) => ({
-      ...post,
-      subCategory: normalizeSubCategory(post.subCategory),
-    }));
-    setPosts(normalized);
-    setTotalPosts(data.totalPosts || data.data?.totalPosts || normalized.length);
-    setLoading(false);
+    try {
+      const data = await apiRequest(`/api/posts?${params.toString()}`, { auth: true });
+      const normalized = (data.posts || data.data?.posts || []).map((post) => ({
+        ...post,
+        subCategory: normalizeSubCategory(post.subCategory),
+      }));
+      setPosts(normalized);
+      setTotalPosts(data.totalPosts || data.data?.totalPosts || normalized.length);
+    } catch (err) {
+      setError(err.message || 'Impossible de charger les articles');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -58,12 +65,28 @@ export default function AdminPosts() {
   }, [filters.page, filters.status, filters.order, filters.sortBy, filters.search, filters.subCategory, filters.tags]);
 
   const updateStatus = async (post, status) => {
-    await apiRequest(`/api/posts/${post._id}`, {
-      method: 'PUT',
-      auth: true,
-      body: { status, publishedAt: post.publishedAt },
-    });
-    fetchPosts();
+    try {
+      await apiRequest(`/api/posts/${post._id}`, {
+        method: 'PUT',
+        auth: true,
+        body: { status, publishedAt: post.publishedAt },
+      });
+      fetchPosts();
+    } catch (err) {
+      setError(err.message || 'Impossible de mettre à jour le statut');
+    }
+  };
+
+  const deletePost = async (postId) => {
+    const confirmed = window.confirm('Confirmer la suppression ?');
+    if (!confirmed) return;
+    try {
+      await apiRequest(`/api/posts/${postId}`, { method: 'DELETE', auth: true });
+      setPosts((prev) => prev.filter((p) => p._id !== postId));
+      setTotalPosts((prev) => Math.max(0, prev - 1));
+    } catch (err) {
+      setError(err.message || 'Suppression impossible');
+    }
   };
 
   const columns = [
@@ -96,7 +119,10 @@ export default function AdminPosts() {
       accessor: 'actions',
       cell: (row) => (
         <div className='flex flex-wrap gap-2'>
-          <Button size='xs' color='gray' href={`/dashboard/posts/${row._id}/edit`}>
+          <Button size='xs' color='light' as={Link} to={`/post/${row.slug}`}>
+            Voir
+          </Button>
+          <Button size='xs' color='gray' as={Link} to={`/dashboard/posts/${row._id}/edit`}>
             Éditer
           </Button>
           <Button size='xs' color='warning' onClick={() => updateStatus(row, 'review')}>
@@ -111,6 +137,9 @@ export default function AdminPosts() {
               Dépublier
             </Button>
           )}
+          <Button size='xs' color='failure' onClick={() => deletePost(row._id)}>
+            Supprimer
+          </Button>
         </div>
       ),
     },
@@ -121,14 +150,18 @@ export default function AdminPosts() {
       title='Articles'
       description='Workflow complet : brouillon, relecture, publication et SEO.'
       actions={
-        <a
-          href='/dashboard/posts/create'
-          className='rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow hover:bg-primary/90'
-        >
+        <Button as={Link} to='/dashboard/posts/create' size='sm'>
           Nouvel article
-        </a>
+        </Button>
       }
     >
+      {error && (
+        <div className='mb-4 rounded-lg border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800 dark:border-orange-800 dar\
+k:bg-orange-900/30 dark:text-orange-100'>
+          {error}
+        </div>
+      )}
+
       <div className='mb-4 grid gap-3 md:grid-cols-4'>
         <TextInput
           placeholder='Recherche par titre ou contenu'

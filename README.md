@@ -115,6 +115,20 @@ Créer `.env` dans `trustapi-main` (voir `.env.example`) avec :
 - **Agence & delivery** : campagnes, clients, projets, formulaires, newsletter (mock côté UI, à brancher sur l'API).
 - **Gouvernance** : rôles ADMIN/MANAGER/EDITOR/VIEWER en UI, journal d’activité et paramètres.
 
+### Dashboard CMS (MVP pro)
+- **Routes clés** : `/dashboard` (overview), `/dashboard/posts`, `/dashboard/posts/create`, `/dashboard/posts/:postId/edit`, `/dashboard/media`, `/dashboard/comments`, `/dashboard/users`.
+- **Endoints utilisés** :
+  - Articles : `GET /api/posts`, `PUT /api/posts/:postId`, `DELETE /api/posts/:postId`.
+  - Commentaires : `GET /api/comment/getcomments`, `GET /api/comment/getPostComments/:postId`, `DELETE /api/comment/deleteComment/:commentId`.
+  - Utilisateurs : `GET /api/user/getusers`.
+  - Upload : `POST /api/uploads` (FormData, champ `file`).
+- **Comportements** :
+  - Tableau de bord affiche KPIs (posts, utilisateurs, commentaires) + listes récentes et actions contextuelles.
+  - Content Manager : filtre/recherche/pagination sur les articles, actions voir/éditer/publier/dépublier/supprimer.
+  - Media upload : formulaire contrôlé avec prévisualisation (images) et historique local des derniers uploads.
+  - Comments moderation : filtres (article, recherche texte), suppression sécurisée, liens vers les articles.
+  - Users : listing admin avec recherche rapide, rafraîchissement en un clic.
+
 ## Roadmap produit & technique
 La roadmap détaillée par itérations (objectifs, modules, changements techniques, valeur métier) est décrite dans [`ROADMAP.md`](./ROADMAP.md). Synthèse :
 1. **Stabilisation & cohérence** : fiabiliser auth/CRUD/upload, harmoniser conventions, sécuriser l’admin.
@@ -136,7 +150,8 @@ La roadmap détaillée par itérations (objectifs, modules, changements techniqu
 ## Bugs corrigés
 - Stabilisation de l’injection du token JWT sur toutes les requêtes du CMS avec gestion contrôlée des 401 (déconnexion uniquement si un token était présent et réellement invalide).
 - Navigation du dashboard fiabilisée : sidebar en `NavLink` alignée sur les routes `/dashboard/*` et icônes complètes.
-- Flux commentaires sécurisé : validation stricte de `postId` côté API et garde côté front pour éviter les appels avec un identifiant indéfini.
+- Flux commentaires sécurisé : validation stricte de `postId` côté front pour éviter les appels avec un identifiant indéfini et suppression via confirmation.
+- Remplacement des écrans mockés (dashboard, articles, médias, commentaires, utilisateurs) par des appels API réels avec états de chargement/erreur.
 
 ## Stabilisation (Itération 1)
 - Stratégie d’authentification unifiée : jeton JWT accepté en `Authorization: Bearer` **et** via le cookie `access_token` (secure/httpOnly). Le client inclut automatiquement le Bearer quand un token est présent et envoie les cookies pour les actions protégées.
@@ -145,6 +160,10 @@ La roadmap détaillée par itérations (objectifs, modules, changements techniqu
 - Navigation : le lien Dashboard réapparaît automatiquement pour les rôles autorisés.
 
 ## QA Checklist
-- [ ] Connexion admin puis actions CMS (création/mise à jour/suppression de posts, upload, gestion commentaires/utilisateurs) sans demande de reconnexion tant que le token est valide.
-- [ ] Sidebar du dashboard : chaque entrée `/dashboard/*` change bien de page via `NavLink` avec état actif visible.
-- [ ] Page article : chargement des commentaires uniquement avec un `postId` valide, aucun CastError côté API ; création/suppression de commentaire fonctionne pour un admin connecté.
+- [ ] Connexion admin puis navigation `/dashboard` → `/dashboard/posts` → `/dashboard/media` → `/dashboard/comments` → `/dashboard/users` sans perte de session.
+- [ ] Dashboard overview affiche les KPIs et les listes récentes (posts, commentaires, utilisateurs) ; bouton « Rafraîchir » fonctionne.
+- [ ] Content Manager : recherche/filtre/pagination fonctionnent ; publier/dépublier/envoyer en revue puis supprimer un post met bien à jour la liste.
+- [ ] Formulaire de création de post : création réussie, redirection vers l’article.
+- [ ] Media upload : sélection d’un fichier image/vidéo, upload via `/api/uploads`, URL affichée et prévisualisation image visible.
+- [ ] Comments moderation : filtrage par article et recherche texte, suppression confirmée met à jour le tableau sans erreur `postId`.
+- [ ] Users admin : liste chargée depuis `/api/user/getusers`, recherche par nom/email, rafraîchissement manuel OK.
