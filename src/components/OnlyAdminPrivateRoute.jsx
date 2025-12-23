@@ -1,9 +1,10 @@
 import { useSelector } from 'react-redux';
-import { Outlet, Navigate } from 'react-router-dom';
+import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import LoadingScreen from './LoadingScreen';
 
 export default function OnlyAdminPrivateRoute() {
   const { currentUser, initialized, token, loading } = useSelector((state) => state.user);
+  const location = useLocation();
   const allowedRoles = ['ADMIN', 'MANAGER', 'EDITOR', 'VIEWER'];
   const isCheckingSession = !initialized || loading || (!!token && !currentUser);
 
@@ -13,6 +14,6 @@ export default function OnlyAdminPrivateRoute() {
   return currentUser && allowedRoles.includes(currentUser.role) ? (
     <Outlet />
   ) : (
-    <Navigate to='/sign-in' />
+    <Navigate to='/sign-in' state={{ from: location }} replace />
   );
 }

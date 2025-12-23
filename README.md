@@ -148,7 +148,7 @@ La roadmap détaillée par itérations (objectifs, modules, changements techniqu
 - Roadmap : [`ROADMAP.md`](./ROADMAP.md).
 
 ## Bugs corrigés
-- Stabilisation de l’injection du token JWT sur toutes les requêtes du CMS avec gestion contrôlée des 401 (déconnexion uniquement si un token était présent et réellement invalide).
+- Stabilisation de l’injection du token JWT sur toutes les requêtes du CMS (fallback Redux Persist/localStorage) avec gestion contrôlée des 401.
 - Navigation du dashboard fiabilisée : sidebar en `NavLink` alignée sur les routes `/dashboard/*` et icônes complètes.
 - Flux commentaires sécurisé : validation stricte de `postId` côté front pour éviter les appels avec un identifiant indéfini et suppression via confirmation.
 - Remplacement des écrans mockés (dashboard, articles, médias, commentaires, utilisateurs) par des appels API réels avec états de chargement/erreur.
@@ -158,6 +158,13 @@ La roadmap détaillée par itérations (objectifs, modules, changements techniqu
 - Gardes de routes (front) revues pour éviter les redirections en boucle : attente explicite du rafraîchissement de session avant d’autoriser/relire les routes privées et admin.
 - Endpoints critiques fiabilisés : `/api/user/me` renvoie un 401 cohérent si le token est manquant/expiré, upload Multer retourne des erreurs contrôlées (MIME/taille) et expose l’URL publique.
 - Navigation : le lien Dashboard réapparaît automatiquement pour les rôles autorisés.
+
+## Comment fonctionne l’auth (token/cookie)
+- **Connexion** : `/api/auth/signin` renvoie un token JWT + pose un cookie `access_token` (httpOnly).
+- **Stockage front** : le token est conservé dans Redux + redux-persist (fallback localStorage `auth`).
+- **API client** : chaque appel protégé ajoute `Authorization: Bearer <token>` si disponible et envoie les cookies (`credentials: include`).
+- **Restauration de session** : au chargement, le front hydrate l’utilisateur depuis la persistance, puis rafraîchit le profil via `/api/user/me`.
+- **401** : si un token valide manque ou expire, un message est affiché ; la déconnexion n’est déclenchée que lorsqu’un token existait.
 
 ## QA Checklist
 - [ ] Connexion admin puis navigation `/dashboard` → `/dashboard/posts` → `/dashboard/media` → `/dashboard/comments` → `/dashboard/users` sans perte de session.

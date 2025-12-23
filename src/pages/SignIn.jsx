@@ -1,6 +1,6 @@
 import { Alert, Button, Label, Spinner, TextInput } from 'flowbite-react';
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { signInStart, signInSuccess, signInFailure } from '../redux/user/userSlice';
 import { apiRequest } from '../lib/apiClient';
@@ -10,6 +10,7 @@ export default function SignIn() {
   const { loading, error: errorMessage } = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value.trim() });
@@ -42,7 +43,18 @@ export default function SignIn() {
       }
 
       dispatch(signInSuccess({ user: profile, token }));
-      navigate('/');
+
+      const fromState = location.state?.from;
+      const redirectTarget =
+        typeof fromState === 'string'
+          ? fromState
+          : fromState?.pathname && fromState?.pathname !== '/sign-in'
+          ? `${fromState.pathname}${fromState.search || ''}${fromState.hash || ''}`
+          : profile?.role && ['ADMIN', 'MANAGER', 'EDITOR', 'VIEWER'].includes(profile.role)
+          ? '/dashboard'
+          : '/';
+
+      navigate(redirectTarget, { replace: true });
     } catch (error) {
       dispatch(signInFailure(error?.message || 'Impossible de se connecter'));
     }
