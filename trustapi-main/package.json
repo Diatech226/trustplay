@@ -9,7 +9,8 @@
     "start": "node api/index.js",
     "build": "npm install",
     "test": "echo \"No tests specified\" && exit 0",
-    "migrate:roles": "node scripts/migrateRoles.js"
+    "migrate:roles": "node scripts/migrateRoles.js",
+    "make-admin": "node scripts/makeAdmin.js"
   },
   "keywords": [],
   "author": "",

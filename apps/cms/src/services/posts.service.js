@@ -2,7 +2,7 @@ import { apiClient } from '../lib/apiClient';
 
 const normalizePostsResponse = (response) => {
   const posts = response?.posts || response?.data?.posts || [];
-  const totalPosts = response?.totalPosts ?? response?.data?.totalPosts ?? posts.length;
+  const totalPosts = response?.totalPosts ?? response?.data?.totalPosts ?? 0;
   return { posts, totalPosts };
 };
 

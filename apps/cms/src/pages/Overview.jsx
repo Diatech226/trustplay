@@ -4,6 +4,7 @@ import { fetchPosts } from '../services/posts.service';
 import { fetchUsers } from '../services/users.service';
 import { formatDate } from '../lib/format';
 import { useToast } from '../components/ToastProvider';
+import { useAuth } from '../context/AuthContext';
 
 const initialState = {
   loading: true,
@@ -19,22 +20,58 @@ const initialState = {
     lastMonthComments: 0,
     lastMonthUsers: 0,
   },
+  adminRestricted: false,
+  adminError: null,
 };
 
 export const Overview = () => {
   const [state, setState] = useState(initialState);
   const { addToast } = useToast();
+  const { user: currentUser } = useAuth();
+  const isAdmin = Boolean(currentUser?.isAdmin);
 
   const loadData = useCallback(async () => {
-    setState((prev) => ({ ...prev, loading: true, error: null }));
+    setState((prev) => ({ ...prev, loading: true, error: null, adminError: null }));
     try {
       const statusFilter = 'draft,review,published,scheduled';
-      const [postsResponse, eventsResponse, commentsResponse, usersResponse] = await Promise.all([
+      const [postsResponse, eventsResponse] = await Promise.all([
         fetchPosts({ limit: 5, order: 'desc', status: statusFilter }),
         fetchPosts({ limit: 5, order: 'desc', category: 'TrustEvent', status: statusFilter }),
-        fetchComments({ limit: 5 }),
-        fetchUsers({ limit: 5 }),
       ]);
+
+      let commentsResponse = { comments: [], totalComments: 0, lastMonthComments: 0 };
+      let usersResponse = { users: [], totalUsers: 0, lastMonthUsers: 0 };
+      let adminRestricted = !isAdmin;
+      let adminError = null;
+
+      if (isAdmin) {
+        const [commentsResult, usersResult] = await Promise.allSettled([
+          fetchComments({ limit: 5 }),
+          fetchUsers({ limit: 5 }),
+        ]);
+
+        if (commentsResult.status === 'fulfilled') {
+          commentsResponse = commentsResult.value;
+        } else if (commentsResult.reason?.status === 403) {
+          adminRestricted = true;
+          adminError = 'Accès admin requis.';
+        } else {
+          adminError = commentsResult.reason?.message || 'Impossible de charger les commentaires.';
+        }
+
+        if (usersResult.status === 'fulfilled') {
+          usersResponse = usersResult.value;
+        } else if (usersResult.reason?.status === 403) {
+          adminRestricted = true;
+          adminError = adminError || 'Accès admin requis.';
+        } else {
+          adminError = adminError || usersResult.reason?.message || 'Impossible de charger les utilisateurs.';
+        }
+
+        if (adminError && !adminRestricted) {
+          addToast(adminError, { type: 'error' });
+        }
+      }
 
       setState({
         loading: false,
@@ -50,12 +87,14 @@ export const Overview = () => {
           lastMonthComments: commentsResponse.lastMonthComments,
           lastMonthUsers: usersResponse.lastMonthUsers,
         },
+        adminRestricted,
+        adminError,
       });
     } catch (error) {
       setState((prev) => ({ ...prev, loading: false, error: error.message }));
       addToast(`Impossible de charger le dashboard : ${error.message}`, { type: 'error' });
     }
-  }, [addToast]);
+  }, [addToast, isAdmin]);
 
   useEffect(() => {
     loadData();
@@ -76,16 +115,24 @@ export const Overview = () => {
         </div>
         <div className="card">
           <h3>Commentaires</h3>
-          <div className="metric">{state.metrics.totalComments}</div>
+          <div className="metric">{state.adminRestricted ? '—' : state.metrics.totalComments}</div>
           <p className="helper">
-            {state.metrics.lastMonthComments ? `${state.metrics.lastMonthComments} sur les 30 derniers jours.` : 'Total modéré.'}
+            {state.adminRestricted
+              ? 'Accès admin requis.'
+              : state.metrics.lastMonthComments
+              ? `${state.metrics.lastMonthComments} sur les 30 derniers jours.`
+              : 'Total modéré.'}
           </p>
         </div>
         <div className="card">
           <h3>Utilisateurs</h3>
-          <div className="metric">{state.metrics.totalUsers}</div>
+          <div className="metric">{state.adminRestricted ? '—' : state.metrics.totalUsers}</div>
           <p className="helper">
-            {state.metrics.lastMonthUsers ? `${state.metrics.lastMonthUsers} inscriptions ce mois-ci.` : 'Total des comptes.'}
+            {state.adminRestricted
+              ? 'Accès admin requis.'
+              : state.metrics.lastMonthUsers
+              ? `${state.metrics.lastMonthUsers} inscriptions ce mois-ci.`
+              : 'Total des comptes.'}
           </p>
         </div>
       </div>
@@ -133,6 +180,10 @@ export const Overview = () => {
         </div>
         {state.loading ? (
           <div className="loader">Chargement des commentaires…</div>
+        ) : state.adminRestricted ? (
+          <div className="empty-state">Accès admin requis.</div>
+        ) : state.adminError ? (
+          <div className="notice">{state.adminError}</div>
         ) : state.comments.length === 0 ? (
           <div className="empty-state">Aucun commentaire pour le moment.</div>
         ) : (

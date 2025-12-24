@@ -33,6 +33,10 @@ const userSchema = new mongoose.Schema(
       enum: ["USER", "ADMIN", "MANAGER", "EDITOR", "VIEWER", "client"],
       default: "USER",
     },
+    isAdmin: {
+      type: Boolean,
+      default: false,
+    },
     profilePicture: {
       type: String,
       default:

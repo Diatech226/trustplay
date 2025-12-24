@@ -4,7 +4,7 @@ const normalizeUsersResponse = (response) => {
   const users = response?.users || response?.data?.users || [];
   return {
     users,
-    totalUsers: response?.totalUsers ?? response?.data?.totalUsers ?? users.length,
+    totalUsers: response?.totalUsers ?? response?.data?.totalUsers ?? 0,
     lastMonthUsers: response?.lastMonthUsers ?? response?.data?.lastMonthUsers ?? 0,
   };
 };
