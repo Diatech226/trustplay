@@ -8,6 +8,7 @@ Ce dépôt contient :
 - **Données mock** pour prévisualiser le backoffice sans API et un seed JSON pour l'API.
 
 Une analyse détaillée (architecture, benchmark, risques) est disponible dans [`ANALYSIS.md`](./ANALYSIS.md). La roadmap produit/technique détaillée est suivie dans [`ROADMAP.md`](./ROADMAP.md).
+Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 
 ## Architecture actuelle
 ### Frontend (Vite/React)
@@ -108,6 +109,19 @@ Créer un fichier `.env` à la racine frontend avec :
 Créer `.env` dans `trustapi-main` (voir `.env.example`) avec :
 - `PORT`, `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN`, `FRONTEND_URL`, `UPLOAD_DIR`.
 - (Optionnel) `RESEND_API_KEY`, `MAIL_FROM` pour l'e-mail reset password.
+
+## CMS v2 — Routes dashboard
+- `/dashboard` : Overview
+- `/dashboard/posts` : liste + filtres
+- `/dashboard/posts/new` : création
+- `/dashboard/posts/:postId/edit` : édition
+- `/dashboard/events` : liste événements
+- `/dashboard/events/new`
+- `/dashboard/events/:eventId/edit`
+- `/dashboard/media` : bibliothèque médias
+- `/dashboard/comments` : modération commentaires
+- `/dashboard/users` : admin users + stats
+- `/dashboard/settings` : paramètres
 
 ## Modules clés (actuels / cibles)
 - **Site public** : home, recherche, rubriques, pages légales, détail article + commentaires.
