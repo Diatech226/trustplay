@@ -2,20 +2,26 @@
 
 Trust Media combine un site média grand public et un backoffice orienté agence. La vision produit est d'offrir un CMS complet pour des équipes éditoriales et marketing : publication multi-rubriques, gestion d'événements, stockage média, suivi de projets/campagnes et outils d'engagement (newsletter, formulaires, commentaires).
 
-Ce dépôt contient :
-- **Frontend Vite/React** pour le site public et l'admin (Redux Toolkit + Flowbite/Tailwind, routes clientes, upload via API).
-- **Backend Express/MongoDB** (`trustapi-main`) exposant l'API REST (auth JWT, posts, commentaires, upload, utilisateurs) et servant les fichiers médias.
+Ce dépôt contient désormais un **monorepo** :
+- **apps/site** : site public Vite/React (Redux Toolkit + Flowbite/Tailwind, routes clientes, upload via API).
+- **apps/cms** : CMS v2 Vite/React dédié (layout pro + modules branchés sur l'API).
+- **trustapi-main** : backend Express/MongoDB exposant l'API REST (auth JWT, posts, commentaires, upload, utilisateurs) et servant les fichiers médias.
 - **Données mock** pour prévisualiser le backoffice sans API et un seed JSON pour l'API.
 
 Une analyse détaillée (architecture, benchmark, risques) est disponible dans [`ANALYSIS.md`](./ANALYSIS.md). La roadmap produit/technique détaillée est suivie dans [`ROADMAP.md`](./ROADMAP.md).
 Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 
-## Architecture actuelle
-### Frontend (Vite/React)
-- **Routage** : routes publiques (home, recherche, rubriques, article) et protégées (dashboard, création/mise à jour) déclarées dans `src/App.jsx`. Les routes admin sont regroupées sous `/dashboard` avec garde `PrivateRoute` + `OnlyAdminPrivateRoute`. 
+## Architecture monorepo
+### apps/site (Vite/React)
+- **Routage** : routes publiques (home, recherche, rubriques, article) et routes protégées (dashboard historique) déclarées dans `apps/site/src/App.jsx`.
 - **État & session** : Redux Toolkit avec persistance asynchrone pour l'utilisateur, thème, favoris/historique et préférences de notifications. Le profil est rafraîchi via `/api/user/me` si un token est disponible.
-- **UI admin** : layout avec sidebar, header, breadcrumbs et dark mode ; navigation role-based (ADMIN/MANAGER/EDITOR/VIEWER) et redirections vers le profil en cas de section non autorisée. Composants réutilisables et données mock pour chaque module (posts, pages, événements, campagnes, etc.).
+- **UI** : composants réutilisables + Flowbite/Tailwind.
 - **Librairies clés** : `react-router-dom`, `redux-persist`, `flowbite-react`, `react-quill`, `react-helmet-async`, Tailwind CSS.
+
+### apps/cms (Vite/React)
+- **Routage** : CMS v2 standalone (Overview, Posts, Events, Media, Comments, Users, Settings) avec layout pro et breadcrumbs.
+- **Auth** : client API unifié + Bearer token, validation `/api/user/me` au boot, redirection `returnTo` sur login.
+- **Modules branchés** : CRUD posts, upload via `/api/uploads`, modération commentaires, listing utilisateurs.
 
 ### Backend (Express/MongoDB)
 - **Entrée** : `trustapi-main/api/index.js` démarre Express, MongoDB, CORS, routes REST et sert le dossier `/uploads`.
@@ -80,21 +86,21 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 - Utiliser les **tags** pour enrichir le référencement interne et les filtres front ; ils sont aussi inclus dans le schéma Article et l'index texte Mongo.
 - Les pages rubriques et articles exposent un lien canonical et les balises OpenGraph/Twitter. Vérifier la date de publication (champ `publishedAt`) pour les contenus planifiés ou backdatés.
 
-## Démarrage rapide
+## Démarrage rapide (monorepo)
 ### Prérequis
 - Node.js 18+
 - MongoDB accessible (local ou Atlas) si vous utilisez l'API Express.
 
-### Installation frontend
+### Installation (root)
 ```bash
 npm install
-npm run dev       # démarre Vite en développement
-npm run build     # build de production
-npm run preview   # prévisualisation du build
-npm run lint      # linting ESLint
+npm run dev       # lance site + CMS + API (concurrently)
+npm run dev:site  # Vite site public (apps/site)
+npm run dev:cms   # Vite CMS v2 (apps/cms)
+npm run dev:api   # API Express (trustapi-main)
 ```
 
-### Installation backend (`trustapi-main`)
+### Installation backend (`trustapi-main`) si nécessaire
 ```bash
 cd trustapi-main
 npm install
@@ -103,25 +109,34 @@ npm start     # node api/index.js
 ```
 
 ### Configuration
-Créer un fichier `.env` à la racine frontend avec :
-- `VITE_API_URL` : URL de base de l'API REST.
+Créer un fichier `.env` dans `apps/site` avec :
+- `VITE_API_URL` : URL de base de l'API REST (ex: `http://localhost:3000`).
+
+Créer un fichier `.env` dans `apps/cms` avec :
+- `VITE_API_URL` : URL de base de l'API REST (ex: `http://localhost:3000`).
 
 Créer `.env` dans `trustapi-main` (voir `.env.example`) avec :
 - `PORT`, `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN`, `FRONTEND_URL`, `UPLOAD_DIR`.
 - (Optionnel) `RESEND_API_KEY`, `MAIL_FROM` pour l'e-mail reset password.
 
+### URLs de développement
+- Site public : `http://localhost:5173`
+- CMS v2 : `http://localhost:5174`
+- API : `http://localhost:3000`
+
 ## CMS v2 — Routes dashboard
-- `/dashboard` : Overview
-- `/dashboard/posts` : liste + filtres
-- `/dashboard/posts/new` : création
-- `/dashboard/posts/:postId/edit` : édition
-- `/dashboard/events` : liste événements
-- `/dashboard/events/new`
-- `/dashboard/events/:eventId/edit`
-- `/dashboard/media` : bibliothèque médias
-- `/dashboard/comments` : modération commentaires
-- `/dashboard/users` : admin users + stats
-- `/dashboard/settings` : paramètres
+- `/login` : authentification CMS
+- `/` : Overview
+- `/posts` : liste + filtres
+- `/posts/new` : création
+- `/posts/:postId` : édition
+- `/events` : liste événements
+- `/events/new`
+- `/events/:postId`
+- `/media` : bibliothèque médias
+- `/comments` : modération commentaires
+- `/users` : admin users + stats
+- `/settings` : paramètres
 
 ## Modules clés (actuels / cibles)
 - **Site public** : home, recherche, rubriques, pages légales, détail article + commentaires.
@@ -130,18 +145,18 @@ Créer `.env` dans `trustapi-main` (voir `.env.example`) avec :
 - **Gouvernance** : rôles ADMIN/MANAGER/EDITOR/VIEWER en UI, journal d’activité et paramètres.
 
 ### Dashboard CMS (MVP pro)
-- **Routes clés** : `/dashboard` (overview), `/dashboard/posts`, `/dashboard/posts/create`, `/dashboard/posts/:postId/edit`, `/dashboard/media`, `/dashboard/comments`, `/dashboard/users`.
+- **Routes clés** : `/` (overview), `/posts`, `/posts/new`, `/posts/:postId`, `/media`, `/comments`, `/users`.
 - **Endoints utilisés** :
-  - Articles : `GET /api/posts`, `PUT /api/posts/:postId`, `DELETE /api/posts/:postId`.
-  - Commentaires : `GET /api/comment/getcomments`, `GET /api/comment/getPostComments/:postId`, `DELETE /api/comment/deleteComment/:commentId`.
+  - Articles : `GET /api/posts`, `POST /api/posts`, `PUT /api/posts/:postId`, `DELETE /api/posts/:postId`.
+  - Commentaires : `GET /api/comment/getcomments`, `DELETE /api/comment/deleteComment/:commentId`.
   - Utilisateurs : `GET /api/user/getusers`.
   - Upload : `POST /api/uploads` (FormData, champ `file`).
 - **Comportements** :
   - Tableau de bord affiche KPIs (posts, utilisateurs, commentaires) + listes récentes et actions contextuelles.
-  - Content Manager : filtre/recherche/pagination sur les articles, actions voir/éditer/publier/dépublier/supprimer.
-  - Media upload : formulaire contrôlé avec prévisualisation (images) et historique local des derniers uploads.
-  - Comments moderation : filtres (article, recherche texte), suppression sécurisée, liens vers les articles.
-  - Users : listing admin avec recherche rapide, rafraîchissement en un clic.
+  - Content Manager : recherche rapide, actions voir/éditer/supprimer.
+  - Media upload : formulaire contrôlé + historique local des derniers uploads.
+  - Comments moderation : suppression sécurisée avec confirmation.
+  - Users : listing admin avec rafraîchissement manuel.
 
 ## Roadmap produit & technique
 La roadmap détaillée par itérations (objectifs, modules, changements techniques, valeur métier) est décrite dans [`ROADMAP.md`](./ROADMAP.md). Synthèse :
