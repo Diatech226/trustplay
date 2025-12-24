@@ -9,7 +9,9 @@
     "dev:site": "npm --workspace apps/site run dev",
     "dev:cms": "npm --workspace apps/cms run dev",
     "dev:api": "npm --workspace trustapi-main run dev",
-    "dev": "concurrently -k -n site,cms,api \"npm:dev:site\" \"npm:dev:cms\" \"npm:dev:api\""
+    "dev": "concurrently -k -n site,cms,api \"npm:dev:site\" \"npm:dev:cms\" \"npm:dev:api\"",
+    "build": "npm --workspace apps/site run build && npm --workspace apps/cms run build",
+    "lint": "npm --workspace apps/site run lint && npm --workspace apps/cms run lint"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
