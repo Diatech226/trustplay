@@ -126,6 +126,28 @@ Créer `.env` dans `trustapi-main` (voir `.env.example`) avec :
 - CMS v2 : `http://localhost:5174`
 - API : `http://localhost:3000`
 
+## Admin setup
+Pour activer les droits admin, assurez-vous qu'un utilisateur a bien **`role: "ADMIN"`** (ou **`isAdmin: true`**) en base.
+
+### Rendre un utilisateur admin en base (MongoDB)
+```js
+db.users.updateOne(
+  { email: "admin@trustmedia.com" },
+  { $set: { role: "ADMIN", isAdmin: true } }
+)
+```
+
+> ℹ️ Le backend utilise `role: "ADMIN"` comme référence principale et expose aussi `isAdmin` dans le payload utilisateur/JWT.
+
+## QA checklist (admin)
+Checklist rapide avant validation :
+- Connexion admin (CMS) → `/api/user/me` retourne `role: "ADMIN"` et `isAdmin: true`.
+- CMS dashboard : `/api/user/getusers` et `/api/comment/getcomments` répondent **200**.
+- Création d’un post TrustMedia avec sous-catégorie valide : apparition immédiate dans `/posts` et sur le site (si `status=published`).
+- Commentaires : aucun appel à `/api/comment/getPostComments/undefined` et `postId` invalide renvoie **400**.
+
+Checklist détaillée : [`QA_CHECKLIST.md`](./QA_CHECKLIST.md).
+
 ## CMS v2 — Routes dashboard
 - `/login` : authentification CMS
 - `/` : Overview
@@ -177,9 +199,6 @@ La roadmap détaillée par itérations (objectifs, modules, changements techniqu
 - Contrat API backend : [`trustapi-main/API_CONTRACT.md`](./trustapi-main/API_CONTRACT.md).
 - Analyse détaillée : [`ANALYSIS.md`](./ANALYSIS.md).
 - Roadmap : [`ROADMAP.md`](./ROADMAP.md).
-
-## QA checklist (admin)
-La checklist QA détaillée pour la remasterisation du CMS est disponible dans [`QA_CHECKLIST.md`](./QA_CHECKLIST.md).
 
 ## Bugs corrigés
 - Stabilisation de l’injection du token JWT sur toutes les requêtes du CMS (fallback Redux Persist/localStorage) avec gestion contrôlée des 401.

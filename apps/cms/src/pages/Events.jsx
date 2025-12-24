@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { apiClient } from '../lib/apiClient';
 import { formatDate } from '../lib/format';
 import { useConfirm } from '../components/ConfirmDialog';
@@ -12,6 +12,7 @@ export const Events = () => {
   const [query, setQuery] = useState('');
   const { confirm } = useConfirm();
   const { addToast } = useToast();
+  const location = useLocation();
 
   const loadEvents = useCallback(async () => {
     setLoading(true);
@@ -29,7 +30,7 @@ export const Events = () => {
 
   useEffect(() => {
     loadEvents();
-  }, [loadEvents]);
+  }, [loadEvents, location.state?.refresh]);
 
   const filteredEvents = useMemo(() => {
     if (!query) return events;
