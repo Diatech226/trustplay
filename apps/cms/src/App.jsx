@@ -28,10 +28,10 @@ export const App = () => {
         <Route index element={<Overview />} />
         <Route path="posts" element={<Posts />} />
         <Route path="posts/new" element={<PostEditor />} />
-        <Route path="posts/:postId" element={<PostEditor />} />
+        <Route path="posts/:id/edit" element={<PostEditor />} />
         <Route path="events" element={<Events />} />
         <Route path="events/new" element={<EventEditor />} />
-        <Route path="events/:postId" element={<EventEditor />} />
+        <Route path="events/:id/edit" element={<EventEditor />} />
         <Route path="media" element={<MediaLibrary />} />
         <Route path="comments" element={<Comments />} />
         <Route path="users" element={<Users />} />

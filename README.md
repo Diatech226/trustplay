@@ -145,6 +145,9 @@ Checklist rapide avant validation :
 - CMS dashboard : `/api/user/getusers` et `/api/comment/getcomments` répondent **200**.
 - Création d’un post TrustMedia avec sous-catégorie valide : apparition immédiate dans `/posts` et sur le site (si `status=published`).
 - Commentaires : aucun appel à `/api/comment/getPostComments/undefined` et `postId` invalide renvoie **400**.
+- CMS Overview : compteurs totaux (posts/users/comments/events) alignés avec la base.
+- Media Library : upload réussi puis média visible dans la liste.
+- Navigation CMS : toutes les entrées sidebar ouvrent une route active.
 
 Checklist détaillée : [`QA_CHECKLIST.md`](./QA_CHECKLIST.md).
 
@@ -153,10 +156,10 @@ Checklist détaillée : [`QA_CHECKLIST.md`](./QA_CHECKLIST.md).
 - `/` : Overview
 - `/posts` : liste + filtres
 - `/posts/new` : création
-- `/posts/:postId` : édition
+- `/posts/:id/edit` : édition
 - `/events` : liste événements
 - `/events/new`
-- `/events/:postId`
+- `/events/:id/edit`
 - `/media` : bibliothèque médias
 - `/comments` : modération commentaires
 - `/users` : admin users + stats
@@ -169,16 +172,19 @@ Checklist détaillée : [`QA_CHECKLIST.md`](./QA_CHECKLIST.md).
 - **Gouvernance** : rôles ADMIN/MANAGER/EDITOR/VIEWER en UI, journal d’activité et paramètres.
 
 ### Dashboard CMS (MVP pro)
-- **Routes clés** : `/` (overview), `/posts`, `/posts/new`, `/posts/:postId`, `/media`, `/comments`, `/users`.
+- **Routes clés** : `/` (overview), `/posts`, `/posts/new`, `/posts/:id/edit`, `/media`, `/comments`, `/users`.
 - **Endoints utilisés** :
   - Articles : `GET /api/posts`, `POST /api/posts`, `PUT /api/posts/:postId`, `DELETE /api/posts/:postId`.
   - Commentaires : `GET /api/comment/getcomments`, `DELETE /api/comment/deleteComment/:commentId`.
   - Utilisateurs : `GET /api/user/getusers`.
-  - Upload : `POST /api/uploads` (FormData, champ `file`).
+  - Upload : `POST /api/uploads` (FormData, champ `file`) + `GET /api/uploads/list` (liste médias admin).
+- **Métriques** :
+  - Overview lit `totalPosts`, `totalUsers`, `totalComments` depuis les endpoints listants.
+  - Les événements utilisent `GET /api/posts?category=TrustEvent` pour le total.
 - **Comportements** :
   - Tableau de bord affiche KPIs (posts, utilisateurs, commentaires) + listes récentes et actions contextuelles.
   - Content Manager : recherche rapide, actions voir/éditer/supprimer.
-  - Media upload : formulaire contrôlé + historique local des derniers uploads.
+  - Media upload : formulaire contrôlé + listing depuis `/api/uploads/list` (rafraîchissement auto).
   - Comments moderation : suppression sécurisée avec confirmation.
   - Users : listing admin avec rafraîchissement manuel.
 

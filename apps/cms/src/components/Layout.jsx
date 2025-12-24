@@ -19,6 +19,7 @@ const labelMap = {
   users: 'Users',
   settings: 'Settings',
   new: 'Nouveau',
+  edit: 'Éditer',
 };
 
 const buildBreadcrumbs = (pathname) => {

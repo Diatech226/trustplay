@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { apiClient } from '../lib/apiClient';
+import { fetchComments } from '../services/comments.service';
+import { fetchPosts } from '../services/posts.service';
+import { fetchUsers } from '../services/users.service';
 import { formatDate } from '../lib/format';
 import { useToast } from '../components/ToastProvider';
 
@@ -9,6 +11,14 @@ const initialState = {
   posts: [],
   comments: [],
   users: [],
+  metrics: {
+    totalPosts: 0,
+    totalEvents: 0,
+    totalComments: 0,
+    totalUsers: 0,
+    lastMonthComments: 0,
+    lastMonthUsers: 0,
+  },
 };
 
 export const Overview = () => {
@@ -18,18 +28,28 @@ export const Overview = () => {
   const loadData = useCallback(async () => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
-      const [postsResponse, commentsResponse, usersResponse] = await Promise.all([
-        apiClient.get('/api/posts?limit=5&order=desc'),
-        apiClient.get('/api/comment/getcomments?limit=5'),
-        apiClient.get('/api/user/getusers?limit=5'),
+      const statusFilter = 'draft,review,published,scheduled';
+      const [postsResponse, eventsResponse, commentsResponse, usersResponse] = await Promise.all([
+        fetchPosts({ limit: 5, order: 'desc', status: statusFilter }),
+        fetchPosts({ limit: 5, order: 'desc', category: 'TrustEvent', status: statusFilter }),
+        fetchComments({ limit: 5 }),
+        fetchUsers({ limit: 5 }),
       ]);
 
       setState({
         loading: false,
         error: null,
-        posts: postsResponse?.posts || postsResponse?.data?.posts || [],
-        comments: commentsResponse?.comments || commentsResponse?.data?.comments || [],
-        users: usersResponse?.users || usersResponse?.data?.users || [],
+        posts: postsResponse.posts,
+        comments: commentsResponse.comments,
+        users: usersResponse.users,
+        metrics: {
+          totalPosts: postsResponse.totalPosts,
+          totalEvents: eventsResponse.totalPosts,
+          totalComments: commentsResponse.totalComments,
+          totalUsers: usersResponse.totalUsers,
+          lastMonthComments: commentsResponse.lastMonthComments,
+          lastMonthUsers: usersResponse.lastMonthUsers,
+        },
       });
     } catch (error) {
       setState((prev) => ({ ...prev, loading: false, error: error.message }));
@@ -45,19 +65,28 @@ export const Overview = () => {
     <div>
       <div className="card-grid">
         <div className="card">
-          <h3>Articles récents</h3>
-          <div className="metric">{state.posts.length}</div>
-          <p className="helper">Sur les 5 derniers contenus.</p>
+          <h3>Articles</h3>
+          <div className="metric">{state.metrics.totalPosts}</div>
+          <p className="helper">Total des articles publiés et brouillons.</p>
+        </div>
+        <div className="card">
+          <h3>Événements</h3>
+          <div className="metric">{state.metrics.totalEvents}</div>
+          <p className="helper">Total des événements Trust Event.</p>
         </div>
         <div className="card">
           <h3>Commentaires</h3>
-          <div className="metric">{state.comments.length}</div>
-          <p className="helper">Dernières réactions modérées.</p>
+          <div className="metric">{state.metrics.totalComments}</div>
+          <p className="helper">
+            {state.metrics.lastMonthComments ? `${state.metrics.lastMonthComments} sur les 30 derniers jours.` : 'Total modéré.'}
+          </p>
         </div>
         <div className="card">
           <h3>Utilisateurs</h3>
-          <div className="metric">{state.users.length}</div>
-          <p className="helper">Nouveaux comptes enregistrés.</p>
+          <div className="metric">{state.metrics.totalUsers}</div>
+          <p className="helper">
+            {state.metrics.lastMonthUsers ? `${state.metrics.lastMonthUsers} inscriptions ce mois-ci.` : 'Total des comptes.'}
+          </p>
         </div>
       </div>
 

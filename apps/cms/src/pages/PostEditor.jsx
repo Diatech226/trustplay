@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { apiClient, uploadFile } from '../lib/apiClient';
+import { uploadMedia } from '../services/media.service';
+import { createPost, fetchPostById, updatePost } from '../services/posts.service';
 import { useToast } from '../components/ToastProvider';
 
 const CATEGORY_OPTIONS = [
@@ -33,7 +34,7 @@ const emptyForm = {
 };
 
 export const PostEditor = () => {
-  const { postId } = useParams();
+  const { id: postId } = useParams();
   const navigate = useNavigate();
   const { addToast } = useToast();
   const [formData, setFormData] = useState(emptyForm);
@@ -48,8 +49,7 @@ export const PostEditor = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await apiClient.get(`/api/posts?postId=${postId}`);
-        const post = response?.posts?.[0] || response?.data?.posts?.[0] || response?.post || response?.data?.post;
+        const post = await fetchPostById(postId);
         if (!post) throw new Error('Post introuvable');
         const nextCategory = post.category || 'TrustMedia';
         setFormData({
@@ -102,7 +102,7 @@ export const PostEditor = () => {
     const file = event.target.files?.[0];
     if (!file) return;
     try {
-      const data = await uploadFile(file);
+      const data = await uploadMedia(file);
       setFormData((prev) => ({ ...prev, image: data.url || prev.image }));
       addToast('Fichier uploadé avec succès.', { type: 'success' });
     } catch (err) {
@@ -127,10 +127,10 @@ export const PostEditor = () => {
 
     try {
       if (isEditing) {
-        await apiClient.put(`/api/posts/${postId}`, { body: payload });
+        await updatePost(postId, payload);
         addToast('Post mis à jour.', { type: 'success' });
       } else {
-        await apiClient.post('/api/posts', { body: payload });
+        await createPost(payload);
         addToast('Post créé.', { type: 'success' });
       }
       navigate('/posts', { replace: true, state: { refresh: Date.now() } });
