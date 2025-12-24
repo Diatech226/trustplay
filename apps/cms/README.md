@@ -24,24 +24,24 @@ Créer un fichier `.env` dans `apps/cms` (voir `.env.example`) :
 - `/` : Overview
 - `/posts` : liste des articles
 - `/posts/new` : création
-- `/posts/:postId` : édition
+- `/posts/:id/edit` : édition
 - `/events` : liste événements
 - `/events/new`
-- `/events/:postId`
+- `/events/:id/edit`
 - `/media` : bibliothèque médias
 - `/comments` : modération commentaires
 - `/users` : admin utilisateurs
 - `/settings` : paramètres
 
 ## Endpoints utilisés
-- Posts : `GET /api/post/getposts`, `POST /api/post/create`, `PUT /api/post/updatepost/:postId/:userId`, `DELETE /api/post/deletepost/:postId/:userId`
-- Upload : `POST /api/uploads` (FormData, champ `file`)
+- Posts : `GET /api/posts`, `POST /api/posts`, `PUT /api/posts/:postId`, `DELETE /api/posts/:postId`
+- Upload : `POST /api/uploads` (FormData, champ `file`) + `GET /api/uploads/list`
 - Comments : `GET /api/comment/getcomments`, `DELETE /api/comment/deleteComment/:commentId`
 - Users : `GET /api/user/getusers`
 
 ## QA checklist
 - Login/Logout OK
 - Créer/éditer/supprimer un post
-- Upload média + prévisualisation
+- Upload média + visibilité immédiate dans la Media Library
 - Modération commentaires
 - Sidebar : chaque item mène à une route existante

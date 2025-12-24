@@ -1,7 +1,7 @@
 import express from 'express';
 import multer from 'multer';
-import { handleUpload, uploadMiddleware } from '../controllers/upload.controller.js';
-import { verifyToken } from '../utils/verifyUser.js';
+import { handleUpload, listUploads, uploadMiddleware } from '../controllers/upload.controller.js';
+import { requireAdmin, verifyToken } from '../utils/verifyUser.js';
 
 const router = express.Router();
 
@@ -20,5 +20,7 @@ router.post('/', verifyToken, (req, res, next) => {
     return handleUpload(req, res, next);
   });
 });
+
+router.get('/list', verifyToken, requireAdmin, listUploads);
 
 export default router;

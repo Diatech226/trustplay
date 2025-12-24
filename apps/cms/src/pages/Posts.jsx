@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { apiClient } from '../lib/apiClient';
+import { deletePost, fetchPosts } from '../services/posts.service';
 import { formatDate } from '../lib/format';
 import { useConfirm } from '../components/ConfirmDialog';
 import { useToast } from '../components/ToastProvider';
@@ -18,8 +18,12 @@ export const Posts = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.get('/api/posts?limit=100&order=desc&status=draft,review,published,scheduled');
-      setPosts(response?.posts || response?.data?.posts || []);
+      const response = await fetchPosts({
+        limit: 100,
+        order: 'desc',
+        status: 'draft,review,published,scheduled',
+      });
+      setPosts(response.posts);
     } catch (err) {
       setError(err.message);
       addToast(`Erreur lors du chargement : ${err.message}`, { type: 'error' });
@@ -47,7 +51,7 @@ export const Posts = () => {
     if (!accepted) return;
 
     try {
-      await apiClient.del(`/api/posts/${postId}`);
+      await deletePost(postId);
       setPosts((prev) => prev.filter((post) => post._id !== postId));
       addToast('Post supprimé avec succès.', { type: 'success' });
     } catch (error) {
@@ -99,7 +103,7 @@ export const Posts = () => {
                 <td>{formatDate(post.updatedAt)}</td>
                 <td>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <Link className="button secondary" to={`/posts/${post._id}`}>
+                    <Link className="button secondary" to={`/posts/${post._id}/edit`}>
                       Éditer
                     </Link>
                     <button className="button danger" onClick={() => handleDelete(post._id)}>

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { apiClient } from '../lib/apiClient';
+import { deletePost, fetchPosts } from '../services/posts.service';
 import { formatDate } from '../lib/format';
 import { useConfirm } from '../components/ConfirmDialog';
 import { useToast } from '../components/ToastProvider';
@@ -18,8 +18,8 @@ export const Events = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.get('/api/posts?limit=100&order=desc&category=TrustEvent');
-      setEvents(response?.posts || response?.data?.posts || []);
+      const response = await fetchPosts({ limit: 100, order: 'desc', category: 'TrustEvent' });
+      setEvents(response.posts);
     } catch (err) {
       setError(err.message);
       addToast(`Erreur lors du chargement : ${err.message}`, { type: 'error' });
@@ -47,7 +47,7 @@ export const Events = () => {
     if (!accepted) return;
 
     try {
-      await apiClient.del(`/api/posts/${eventId}`);
+      await deletePost(eventId);
       setEvents((prev) => prev.filter((eventItem) => eventItem._id !== eventId));
       addToast('Événement supprimé.', { type: 'success' });
     } catch (error) {
@@ -99,7 +99,7 @@ export const Events = () => {
                 </td>
                 <td>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <Link className="button secondary" to={`/events/${event._id}`}>
+                    <Link className="button secondary" to={`/events/${event._id}/edit`}>
                       Éditer
                     </Link>
                     <button className="button danger" onClick={() => handleDelete(event._id)}>

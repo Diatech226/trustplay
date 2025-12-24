@@ -19,6 +19,16 @@ const ALLOWED_MIME_TYPES = new Set([
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10 MB
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100 MB
 
+const EXTENSION_MIME_MAP = new Map([
+  ['.jpg', 'image/jpeg'],
+  ['.jpeg', 'image/jpeg'],
+  ['.png', 'image/png'],
+  ['.webp', 'image/webp'],
+  ['.gif', 'image/gif'],
+  ['.mp4', 'video/mp4'],
+  ['.webm', 'video/webm'],
+]);
+
 if (!fs.existsSync(absoluteUploadPath)) {
   fs.mkdirSync(absoluteUploadPath, { recursive: true });
 }
@@ -80,4 +90,59 @@ export const handleUpload = (req, res) => {
   }
 
   return res.status(201).json(buildResponsePayload(uploadedFile));
+};
+
+const resolveMimeType = (filename) => {
+  const extension = path.extname(filename).toLowerCase();
+  return EXTENSION_MIME_MAP.get(extension) || 'application/octet-stream';
+};
+
+const resolveAssetType = (mime) => {
+  if (mime.startsWith('image/')) return 'image';
+  if (mime.startsWith('video/')) return 'video';
+  return 'file';
+};
+
+export const listUploads = async (req, res, next) => {
+  try {
+    const limit = parseInt(req.query.limit) || 50;
+    const cursor = req.query.cursor ? Number(req.query.cursor) : null;
+
+    const entries = await fs.promises.readdir(absoluteUploadPath, { withFileTypes: true });
+    const files = await Promise.all(
+      entries
+        .filter((entry) => entry.isFile())
+        .map(async (entry) => {
+          const filePath = path.join(absoluteUploadPath, entry.name);
+          const stats = await fs.promises.stat(filePath);
+          const mime = resolveMimeType(entry.name);
+          return {
+            name: entry.name,
+            url: `/uploads/${entry.name}`,
+            mime,
+            size: stats.size,
+            createdAt: stats.birthtime?.toISOString() || stats.mtime.toISOString(),
+            updatedAt: stats.mtime.toISOString(),
+            type: resolveAssetType(mime),
+            mtimeMs: stats.mtimeMs,
+          };
+        })
+    );
+
+    const filtered = cursor ? files.filter((file) => file.mtimeMs < cursor) : files;
+    filtered.sort((a, b) => b.mtimeMs - a.mtimeMs);
+
+    const limited = filtered.slice(0, limit);
+    const nextCursor = filtered.length > limit ? limited[limited.length - 1]?.mtimeMs : null;
+    const payload = limited.map(({ mtimeMs, ...rest }) => rest);
+
+    res.status(200).json({
+      success: true,
+      files: payload,
+      nextCursor,
+      data: { files: payload, nextCursor },
+    });
+  } catch (error) {
+    next(error);
+  }
 };

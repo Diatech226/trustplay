@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { apiClient } from '../lib/apiClient';
+import { fetchUsers } from '../services/users.service';
 import { formatDate } from '../lib/format';
 import { useToast } from '../components/ToastProvider';
 
@@ -13,8 +13,8 @@ export const Users = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.get('/api/user/getusers?limit=50');
-      setUsers(response?.users || response?.data?.users || []);
+      const response = await fetchUsers({ limit: 50 });
+      setUsers(response.users);
     } catch (err) {
       setError(err.message);
       addToast(`Erreur lors du chargement : ${err.message}`, { type: 'error' });

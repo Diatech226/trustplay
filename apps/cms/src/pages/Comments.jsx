@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { apiClient } from '../lib/apiClient';
+import { deleteComment, fetchComments } from '../services/comments.service';
 import { formatDate } from '../lib/format';
 import { useConfirm } from '../components/ConfirmDialog';
 import { useToast } from '../components/ToastProvider';
@@ -15,8 +15,8 @@ export const Comments = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.get('/api/comment/getcomments?limit=50');
-      setComments(response?.comments || response?.data?.comments || []);
+      const response = await fetchComments({ limit: 50 });
+      setComments(response.comments);
     } catch (err) {
       setError(err.message);
       addToast(`Erreur lors du chargement : ${err.message}`, { type: 'error' });
@@ -38,7 +38,7 @@ export const Comments = () => {
     if (!accepted) return;
 
     try {
-      await apiClient.del(`/api/comment/deleteComment/${commentId}`);
+      await deleteComment(commentId);
       setComments((prev) => prev.filter((comment) => comment._id !== commentId));
       addToast('Commentaire supprimé.', { type: 'success' });
     } catch (error) {
