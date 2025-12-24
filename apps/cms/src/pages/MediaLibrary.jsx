@@ -2,26 +2,43 @@ import { useCallback, useEffect, useState } from 'react';
 import { formatDate } from '../lib/format';
 import { useToast } from '../components/ToastProvider';
 import { fetchUploads, uploadMedia } from '../services/media.service';
+import { useAuth } from '../context/AuthContext';
 
 export const MediaLibrary = () => {
   const [uploads, setUploads] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [accessDenied, setAccessDenied] = useState(false);
   const { addToast } = useToast();
+  const { user: currentUser } = useAuth();
+  const isAdmin = Boolean(currentUser?.isAdmin);
 
   const loadUploads = useCallback(async () => {
+    if (!isAdmin) {
+      setUploads([]);
+      setAccessDenied(true);
+      setError(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
+    setAccessDenied(false);
     try {
       const response = await fetchUploads({ limit: 50 });
       setUploads(response.uploads);
     } catch (err) {
-      setError(err.message);
-      addToast(`Impossible de récupérer la médiathèque : ${err.message}`, { type: 'error' });
+      if (err.status === 403) {
+        setAccessDenied(true);
+        setError(null);
+      } else {
+        setError(err.message);
+        addToast(`Impossible de récupérer la médiathèque : ${err.message}`, { type: 'error' });
+      }
     } finally {
       setLoading(false);
     }
-  }, [addToast]);
+  }, [addToast, isAdmin]);
 
   useEffect(() => {
     loadUploads();
@@ -30,6 +47,10 @@ export const MediaLibrary = () => {
   const handleUpload = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (!isAdmin) {
+      addToast('Accès admin requis pour uploader.', { type: 'error' });
+      return;
+    }
     setLoading(true);
     try {
       await uploadMedia(file);
@@ -63,10 +84,12 @@ export const MediaLibrary = () => {
         <div className="form-grid">
           <label>
             Sélectionner un fichier
-            <input type="file" onChange={handleUpload} />
+            <input type="file" onChange={handleUpload} disabled={!isAdmin} />
           </label>
           {loading ? <div className="loader">Upload en cours…</div> : null}
-          <p className="helper">Formats acceptés : images/vidéos via /api/uploads.</p>
+          <p className="helper">
+            {isAdmin ? 'Formats acceptés : images/vidéos via /api/uploads.' : 'Accès admin requis pour uploader.'}
+          </p>
         </div>
       </div>
 
@@ -79,6 +102,13 @@ export const MediaLibrary = () => {
         </div>
         {loading ? (
           <div className="loader">Chargement de la médiathèque…</div>
+        ) : accessDenied ? (
+          <div className="empty-state">
+            <p>Accès admin requis.</p>
+            <a className="button secondary" href="/login">
+              Connectez-vous en admin
+            </a>
+          </div>
         ) : error ? (
           <div className="notice">{error}</div>
         ) : uploads.length === 0 ? (

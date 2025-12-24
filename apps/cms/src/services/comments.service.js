@@ -4,7 +4,7 @@ const normalizeCommentsResponse = (response) => {
   const comments = response?.comments || response?.data?.comments || [];
   return {
     comments,
-    totalComments: response?.totalComments ?? response?.data?.totalComments ?? comments.length,
+    totalComments: response?.totalComments ?? response?.data?.totalComments ?? 0,
     lastMonthComments: response?.lastMonthComments ?? response?.data?.lastMonthComments ?? 0,
   };
 };

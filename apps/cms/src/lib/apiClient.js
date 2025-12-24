@@ -121,8 +121,8 @@ const request = async (
 
   config.credentials = rest.credentials || 'include';
 
-  const token = needsAuth ? getStoredToken() : null;
-  if (needsAuth && token) {
+  const token = getStoredToken();
+  if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
 

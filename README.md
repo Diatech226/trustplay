@@ -127,7 +127,7 @@ Créer `.env` dans `trustapi-main` (voir `.env.example`) avec :
 - API : `http://localhost:3000`
 
 ## Admin setup
-Pour activer les droits admin, assurez-vous qu'un utilisateur a bien **`role: "ADMIN"`** (ou **`isAdmin: true`**) en base.
+Pour activer les droits admin, assurez-vous qu'un utilisateur a bien **`role: "ADMIN"`** (champ de référence) et/ou **`isAdmin: true`** en base.
 
 ### Rendre un utilisateur admin en base (MongoDB)
 ```js
@@ -135,6 +135,12 @@ db.users.updateOne(
   { email: "admin@trustmedia.com" },
   { $set: { role: "ADMIN", isAdmin: true } }
 )
+```
+
+### Script rapide (dev)
+```bash
+cd trustapi-main
+npm run make-admin -- admin@trustmedia.com
 ```
 
 > ℹ️ Le backend utilise `role: "ADMIN"` comme référence principale et expose aussi `isAdmin` dans le payload utilisateur/JWT.
