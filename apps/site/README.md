@@ -14,6 +14,7 @@ npm run dev
 ## Configuration (.env)
 Créer un fichier `.env` dans `apps/site` (voir `.env.example`) :
 - `VITE_API_URL` : URL de base de l'API (ex. `http://localhost:3000`).
+- `VITE_CMS_URL` (optionnel) : URL du CMS pour le lien admin (ex. `http://localhost:5174`).
 
 ## Scripts
 Depuis la racine du monorepo :

@@ -17,6 +17,7 @@ export default function Header() {
   const { theme } = useSelector((state) => state.theme);
   const { unread } = useSelector((state) => state.notifications);
   const [searchTerm, setSearchTerm] = useState('');
+  const cmsUrl = import.meta.env?.VITE_CMS_URL || 'http://localhost:5174';
   const navItems = useMemo(() => {
     const baseNav = [
       { path: '/', label: 'Accueil' },
@@ -126,6 +127,11 @@ export default function Header() {
               <Link to={'/dashboard'}>
                 <Dropdown.Item>Dashboard</Dropdown.Item>
               </Link>
+            )}
+            {currentUser.role === 'ADMIN' && (
+              <Dropdown.Item as="a" href={cmsUrl} target="_blank" rel="noreferrer">
+                Accéder au CMS
+              </Dropdown.Item>
             )}
             <Link to={'/dashboard/profile'}>
               <Dropdown.Item>Profile</Dropdown.Item>

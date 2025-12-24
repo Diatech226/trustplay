@@ -53,9 +53,22 @@ app.use(
 );
 
 const allowedOrigins = (process.env.CORS_ORIGIN || '').split(',').filter(Boolean);
+const resolveCorsOrigin = (origin) => {
+  if (allowedOrigins.length === 0) {
+    return origin || '*';
+  }
+  if (!origin) {
+    return null;
+  }
+  return allowedOrigins.includes(origin) ? origin : null;
+};
 const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+    const resolved = resolveCorsOrigin(origin);
+    if (resolved) {
+      return callback(null, true);
+    }
+    if (!origin && allowedOrigins.length === 0) {
       return callback(null, true);
     }
     return callback(new Error('Not allowed by CORS'));
@@ -66,7 +79,20 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+app.options('*', (req, res) => {
+  const origin = resolveCorsOrigin(req.headers.origin);
+  if (req.headers.origin && !origin) {
+    return res.status(403).end();
+  }
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+  }
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  return res.sendStatus(204);
+});
 
 app.use((req, res, next) => {
   res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
