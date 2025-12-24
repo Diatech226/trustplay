@@ -16,7 +16,7 @@ Créer un fichier `.env` dans `apps/cms` (voir `.env.example`) :
 - `VITE_API_URL` : URL de base de l'API (ex. `http://localhost:3000`).
 
 ## Auth flow
-- Token stocké en local (`cms_token`).
+- Token stocké en local (`cms_token`) + profil (`cms_current_user`).
 - Au boot, si token présent : `GET /api/user/me`.
 - En cas de 401, redirection `/login?returnTo=...`.
 

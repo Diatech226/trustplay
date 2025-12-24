@@ -111,12 +111,14 @@ npm start     # node api/index.js
 ### Configuration
 Créer un fichier `.env` dans `apps/site` avec :
 - `VITE_API_URL` : URL de base de l'API REST (ex: `http://localhost:3000`).
+- `VITE_CMS_URL` (optionnel) : URL du CMS pour le lien admin (ex: `http://localhost:5174`).
 
 Créer un fichier `.env` dans `apps/cms` avec :
 - `VITE_API_URL` : URL de base de l'API REST (ex: `http://localhost:3000`).
 
 Créer `.env` dans `trustapi-main` (voir `.env.example`) avec :
 - `PORT`, `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN`, `FRONTEND_URL`, `UPLOAD_DIR`.
+- Exemple recommandé : `CORS_ORIGIN=http://localhost:5173,http://localhost:5174`.
 - (Optionnel) `RESEND_API_KEY`, `MAIL_FROM` pour l'e-mail reset password.
 
 ### URLs de développement

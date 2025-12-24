@@ -33,7 +33,7 @@ Variables utilisées par le code :
 - `PORT` : port HTTP (défaut 3000)
 - `DATABASE_URL` : URI MongoDB (ex. `mongodb+srv://user:pass@cluster/db`)
 - `JWT_SECRET` : clé de signature JWT
-- `CORS_ORIGIN` : origines autorisées (CSV, ex. `http://localhost:5173,http://localhost:3000`)
+- `CORS_ORIGIN` : origines autorisées (CSV, ex. `http://localhost:5173,http://localhost:5174`)
 - `FRONTEND_URL` : URL publique du frontend (utilisée pour construire les liens de reset password)
 - `UPLOAD_DIR` : répertoire pour stocker les fichiers uploadés (servi via `/uploads`)
 - SMTP Gmail (email reset) : `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` (mot de passe d'application Gmail) et `MAIL_FROM` (ex. `"Trust Media <your_email@gmail.com>"`). Si SMTP est absent, le lien de réinitialisation est simplement loggé en console (mode dev), sans erreur.

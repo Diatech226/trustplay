@@ -4,6 +4,7 @@ import User from '../models/user.model.js';
 
 const sanitizeUser = (userDoc = {}) => {
   const userObj = userDoc.toObject ? userDoc.toObject() : { ...userDoc };
+  userObj.isAdmin = userObj.role === 'ADMIN';
   delete userObj.password;
   delete userObj.passwordHash;
   return userObj;

@@ -1,5 +1,6 @@
 const API_BASE_URL = import.meta.env?.VITE_API_URL || 'http://localhost:3000';
 const TOKEN_KEY = 'cms_token';
+const USER_KEY = 'cms_current_user';
 
 const buildUrl = (path) => {
   if (path.startsWith('http')) return path;
@@ -19,6 +20,26 @@ const setStoredToken = (token) => {
     return;
   }
   window.localStorage.setItem(TOKEN_KEY, token);
+};
+
+const getStoredUser = () => {
+  if (typeof window === 'undefined') return null;
+  const raw = window.localStorage.getItem(USER_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch (error) {
+    return null;
+  }
+};
+
+const setStoredUser = (user) => {
+  if (typeof window === 'undefined') return;
+  if (!user) {
+    window.localStorage.removeItem(USER_KEY);
+    return;
+  }
+  window.localStorage.setItem(USER_KEY, JSON.stringify(user));
 };
 
 const safeJson = async (response) => {
@@ -98,7 +119,7 @@ const request = async (
     config.headers['Content-Type'] = config.headers['Content-Type'] || 'application/json';
   }
 
-  config.credentials = rest.credentials || (needsAuth ? 'include' : 'same-origin');
+  config.credentials = rest.credentials || 'include';
 
   const token = needsAuth ? getStoredToken() : null;
   if (needsAuth && token) {
@@ -127,6 +148,8 @@ export const apiClient = {
   del: (path, options) => request('DELETE', path, options),
   getToken: getStoredToken,
   setToken: setStoredToken,
+  getUser: getStoredUser,
+  setUser: setStoredUser,
 };
 
 export const uploadFile = async (file, fieldName = 'file') => {

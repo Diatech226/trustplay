@@ -6,11 +6,12 @@ const AuthContext = createContext(null);
 const parseUserResponse = (payload) => payload?.user || payload?.data?.user || payload?.data || payload;
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => apiClient.getUser());
   const [status, setStatus] = useState('loading');
 
   const logout = useCallback((options = {}) => {
     apiClient.setToken(null);
+    apiClient.setUser(null);
     setUser(null);
     setStatus('unauthenticated');
 
@@ -33,9 +34,11 @@ export const AuthProvider = ({ children }) => {
       const data = await apiClient.get('/api/user/me', { skipAuthRedirect: true });
       const nextUser = parseUserResponse(data);
       setUser(nextUser);
+      apiClient.setUser(nextUser);
       setStatus('authenticated');
     } catch (error) {
       apiClient.setToken(null);
+      apiClient.setUser(null);
       setUser(null);
       setStatus('unauthenticated');
     }
@@ -51,6 +54,7 @@ export const AuthProvider = ({ children }) => {
     if (token) {
       apiClient.setToken(token);
     }
+    apiClient.setUser(nextUser || null);
     setUser(nextUser || null);
     setStatus('authenticated');
     return nextUser;

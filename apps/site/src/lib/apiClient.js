@@ -148,7 +148,7 @@ const request = async (method, path, { body, headers = {}, auth = true, ...rest 
   };
 
   const needsAuth = auth !== false;
-  config.credentials = rest.credentials || (needsAuth ? 'include' : 'same-origin');
+  config.credentials = rest.credentials || 'include';
 
   const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
   if (body !== undefined) {
