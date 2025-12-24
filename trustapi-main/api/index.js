@@ -37,21 +37,6 @@ const __dirname = path.resolve();
 const app = express();
 app.set('trust proxy', true);
 
-// Middlewares
-app.use(express.json());
-app.use(cookieParser());
-app.use(
-  compression({
-    level: 6,
-    filter: (req, res) => {
-      if (req.headers['x-no-compress']) {
-        return false;
-      }
-      return compression.filter(req, res);
-    },
-  })
-);
-
 const allowedOrigins = (process.env.CORS_ORIGIN || '').split(',').filter(Boolean);
 const resolveCorsOrigin = (origin) => {
   if (allowedOrigins.length === 0) {
@@ -79,20 +64,22 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options('*', (req, res) => {
-  const origin = resolveCorsOrigin(req.headers.origin);
-  if (req.headers.origin && !origin) {
-    return res.status(403).end();
-  }
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Vary', 'Origin');
-  }
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  return res.sendStatus(204);
-});
+app.options('*', cors(corsOptions));
+
+// Middlewares
+app.use(express.json());
+app.use(cookieParser());
+app.use(
+  compression({
+    level: 6,
+    filter: (req, res) => {
+      if (req.headers['x-no-compress']) {
+        return false;
+      }
+      return compression.filter(req, res);
+    },
+  })
+);
 
 app.use((req, res, next) => {
   res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
