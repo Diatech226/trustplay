@@ -2,6 +2,9 @@ import Post from '../models/post.model.js';
 import { errorHandler } from '../utils/error.js';
 import slugify from 'slugify';
 
+const allowedCategories = new Set(['TrustMedia', 'TrustEvent', 'TrustProduction']);
+const trustMediaSubCategories = new Set(['news', 'politique', 'science-tech', 'sport', 'cinema']);
+
 const normalizeSubCategory = (value = '') => {
   const normalized = value.toString().trim().toLowerCase();
   const map = {
@@ -70,8 +73,20 @@ export const create = async (req, res, next) => {
       return next(errorHandler(400, 'Missing required fields'));
     }
 
+    if (!allowedCategories.has(category)) {
+      return next(errorHandler(400, 'Invalid category'));
+    }
+
     const slug = slugify(title, { lower: true, strict: true });
     const normalizedSubCategory = normalizeSubCategory(subCategory);
+    if (category === 'TrustMedia') {
+      if (!normalizedSubCategory) {
+        return next(errorHandler(400, 'Sub-category is required for TrustMedia'));
+      }
+      if (!trustMediaSubCategories.has(normalizedSubCategory)) {
+        return next(errorHandler(400, 'Invalid sub-category for TrustMedia'));
+      }
+    }
     const tagList = parseTags(tags);
     const { status: finalStatus, publishedAt: finalPublishedAt } = resolveStatusAndSchedule(status, publishedAt);
 
@@ -81,7 +96,7 @@ export const create = async (req, res, next) => {
       slug,
       content,
       category,
-      subCategory: normalizedSubCategory,
+      subCategory: category === 'TrustMedia' ? normalizedSubCategory : undefined,
       image:
         image || 'https://www.hostinger.com/tutorials/wp-content/uploads/sites/2/2021/09/how-to-write-a-blog-post.png',
       status: finalStatus,
@@ -111,18 +126,39 @@ export const updatepost = async (req, res, next) => {
   try {
     const postId = req.params.postId;
     const targetUserId = req.params.userId;
+    let existingPost;
     if (req.user?.role !== 'ADMIN') {
       let ownerId = targetUserId;
       if (!ownerId && postId) {
-        const existing = await Post.findById(postId).select('userId');
-        ownerId = existing?.userId?.toString();
+        existingPost = await Post.findById(postId).select('userId category subCategory');
+        ownerId = existingPost?.userId?.toString();
       }
       if (ownerId && ownerId !== req.user.id) {
         return next(errorHandler(403, 'You are not allowed to update this post'));
       }
     }
 
-    const normalizedSubCategory = normalizeSubCategory(req.body.subCategory);
+    if (!existingPost) {
+      existingPost = await Post.findById(postId).select('category subCategory');
+    }
+    if (!existingPost) {
+      return next(errorHandler(404, 'Post not found'));
+    }
+
+    const nextCategory = req.body.category || existingPost?.category;
+    if (nextCategory && !allowedCategories.has(nextCategory)) {
+      return next(errorHandler(400, 'Invalid category'));
+    }
+
+    const normalizedSubCategory = normalizeSubCategory(req.body.subCategory || existingPost?.subCategory);
+    if (nextCategory === 'TrustMedia') {
+      if (!normalizedSubCategory) {
+        return next(errorHandler(400, 'Sub-category is required for TrustMedia'));
+      }
+      if (!trustMediaSubCategories.has(normalizedSubCategory)) {
+        return next(errorHandler(400, 'Invalid sub-category for TrustMedia'));
+      }
+    }
 
     const tagList = parseTags(req.body.tags);
     const { status: finalStatus, publishedAt: finalPublishedAt } = resolveStatusAndSchedule(
@@ -134,7 +170,7 @@ export const updatepost = async (req, res, next) => {
       title: req.body.title,
       content: req.body.content,
       category: req.body.category,
-      subCategory: normalizedSubCategory,
+      subCategory: nextCategory === 'TrustMedia' ? normalizedSubCategory : undefined,
       image:
         req.body.image ||
         'https://www.hostinger.com/tutorials/wp-content/uploads/sites/2/2021/09/how-to-write-a-blog-post.png',
@@ -213,7 +249,11 @@ export const getposts = async (req, res, next) => {
       }),
     };
 
-    const sortField = sortBy || (query.status ? 'publishedAt' : 'updatedAt');
+    const hasStatusFilter = statusList.length > 0;
+    const usesPublishedAt =
+      (hasStatusFilter && statusList.every((value) => ['published', 'scheduled'].includes(value))) ||
+      (!hasStatusFilter && !userId);
+    const sortField = sortBy || (usesPublishedAt ? 'publishedAt' : 'updatedAt');
     const posts = await Post.find(query)
       .sort({ [sortField]: order === 'asc' ? 1 : -1 })
       .skip(parseInt(startIndex) || 0)

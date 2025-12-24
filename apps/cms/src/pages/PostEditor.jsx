@@ -3,11 +3,25 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { apiClient, uploadFile } from '../lib/apiClient';
 import { useToast } from '../components/ToastProvider';
 
+const CATEGORY_OPTIONS = [
+  { value: 'TrustMedia', label: 'Trust Media' },
+  { value: 'TrustEvent', label: 'Trust Event' },
+  { value: 'TrustProduction', label: 'Trust Production' },
+];
+
+const TRUST_MEDIA_SUBCATEGORIES = [
+  { value: 'news', label: 'News' },
+  { value: 'politique', label: 'Politique' },
+  { value: 'science-tech', label: 'Science & Tech' },
+  { value: 'sport', label: 'Sport' },
+  { value: 'cinema', label: 'Cinéma' },
+];
+
 const emptyForm = {
   title: '',
   content: '',
   category: 'TrustMedia',
-  subCategory: '',
+  subCategory: TRUST_MEDIA_SUBCATEGORIES[0].value,
   status: 'draft',
   tags: '',
   image: '',
@@ -37,11 +51,15 @@ export const PostEditor = () => {
         const response = await apiClient.get(`/api/posts?postId=${postId}`);
         const post = response?.posts?.[0] || response?.data?.posts?.[0] || response?.post || response?.data?.post;
         if (!post) throw new Error('Post introuvable');
+        const nextCategory = post.category || 'TrustMedia';
         setFormData({
           title: post.title || '',
           content: post.content || '',
-          category: post.category || 'TrustMedia',
-          subCategory: post.subCategory || '',
+          category: nextCategory,
+          subCategory:
+            nextCategory === 'TrustMedia'
+              ? post.subCategory || TRUST_MEDIA_SUBCATEGORIES[0].value
+              : post.subCategory || '',
           status: post.status || 'draft',
           tags: (post.tags || []).join(', '),
           image: post.image || '',
@@ -64,10 +82,20 @@ export const PostEditor = () => {
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
+    setFormData((prev) => {
+      const nextValue = type === 'checkbox' ? checked : value;
+      if (name === 'category') {
+        return {
+          ...prev,
+          category: nextValue,
+          subCategory: nextValue === 'TrustMedia' ? prev.subCategory || TRUST_MEDIA_SUBCATEGORIES[0].value : '',
+        };
+      }
+      return {
+        ...prev,
+        [name]: nextValue,
+      };
+    });
   };
 
   const handleUpload = async (event) => {
@@ -89,6 +117,7 @@ export const PostEditor = () => {
 
     const payload = {
       ...formData,
+      subCategory: formData.category === 'TrustMedia' ? formData.subCategory : '',
       tags: formData.tags
         .split(',')
         .map((tag) => tag.trim())
@@ -104,7 +133,7 @@ export const PostEditor = () => {
         await apiClient.post('/api/posts', { body: payload });
         addToast('Post créé.', { type: 'success' });
       }
-      navigate('/posts');
+      navigate('/posts', { replace: true, state: { refresh: Date.now() } });
     } catch (err) {
       setError(err.message);
       addToast(`Erreur : ${err.message}`, { type: 'error' });
@@ -133,16 +162,25 @@ export const PostEditor = () => {
         <label>
           Catégorie
           <select name="category" value={formData.category} onChange={handleChange} required>
-            <option value="TrustMedia">Trust Media</option>
-            <option value="TrustEvent">Trust Event</option>
-            <option value="TrustProd">Trust Prod</option>
-            <option value="uncategorized">Non classé</option>
+            {CATEGORY_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
         </label>
-        <label>
-          Sous-catégorie
-          <input name="subCategory" value={formData.subCategory} onChange={handleChange} />
-        </label>
+        {formData.category === 'TrustMedia' ? (
+          <label>
+            Sous-catégorie
+            <select name="subCategory" value={formData.subCategory} onChange={handleChange} required>
+              {TRUST_MEDIA_SUBCATEGORIES.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
         <label>
           Statut
           <select name="status" value={formData.status} onChange={handleChange}>

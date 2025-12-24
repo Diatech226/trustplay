@@ -4,7 +4,7 @@ import User from '../models/user.model.js';
 
 const sanitizeUser = (userDoc = {}) => {
   const userObj = userDoc.toObject ? userDoc.toObject() : { ...userDoc };
-  userObj.isAdmin = userObj.role === 'ADMIN';
+  userObj.isAdmin = Boolean(userObj.isAdmin || userObj.role === 'ADMIN');
   delete userObj.password;
   delete userObj.passwordHash;
   return userObj;
@@ -62,7 +62,7 @@ export const updateUser = async (req, res, next) => {
 };
 
 export const deleteUser = async (req, res, next) => {
-  if (req.user.role !== 'ADMIN' && req.user.id !== req.params.userId) {
+  if (!req.user?.isAdmin && req.user.id !== req.params.userId) {
     return next(errorHandler(403, 'You are not allowed to delete this user'));
   }
   try {
@@ -90,7 +90,7 @@ export const getMe = async (req, res, next) => {
 };
 
 export const getUsers = async (req, res, next) => {
-  if (req.user.role !== 'ADMIN') {
+  if (!req.user?.isAdmin) {
     return next(errorHandler(403, 'You are not allowed to see all users'));
   }
   try {

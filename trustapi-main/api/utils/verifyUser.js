@@ -38,6 +38,7 @@ export const verifyToken = (req, res, next) => {
         id: decodedUser.id,
         email: decodedUser.email,
         role: decodedUser.role,
+        isAdmin: decodedUser.isAdmin ?? decodedUser.role === "ADMIN",
       };
       req.token = token;
       next();
@@ -48,7 +49,7 @@ export const verifyToken = (req, res, next) => {
 };
 
 export const requireAdmin = (req, res, next) => {
-  if (req.user?.role !== "ADMIN") {
+  if (!req.user?.isAdmin) {
     return res
       .status(403)
       .json({ success: false, message: "Forbidden: Admin access required" });

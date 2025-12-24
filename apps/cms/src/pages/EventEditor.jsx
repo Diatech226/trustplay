@@ -98,7 +98,7 @@ export const EventEditor = () => {
         await apiClient.post('/api/posts', { body: payload });
         addToast('Événement créé.', { type: 'success' });
       }
-      navigate('/events');
+      navigate('/events', { replace: true, state: { refresh: Date.now() } });
     } catch (err) {
       setError(err.message);
       addToast(`Erreur : ${err.message}`, { type: 'error' });
