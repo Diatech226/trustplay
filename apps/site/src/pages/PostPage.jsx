@@ -13,8 +13,8 @@ import Seo from '../components/Seo';
 import ArticleHeroSkeleton from '../components/skeletons/ArticleHeroSkeleton';
 import PostCardSkeleton from '../components/skeletons/PostCardSkeleton';
 import { logReading } from '../redux/history/historySlice';
-import { fetchJson } from '../lib/apiClient';
-import { normalizeSubCategory } from '../utils/categories';
+import { getMediaPosts, getPostBySlug, normalizePosts } from '../services/posts.service';
+import { getSubCategoryMeta } from '../utils/categories';
 import { logPageView } from '../lib/analytics';
 
 export default function PostPage() {
@@ -31,12 +31,8 @@ export default function PostPage() {
       try {
         setLoading(true);
         setError(false);
-        const data = await fetchJson(`/api/posts?slug=${postSlug}`);
-        const foundPost = data.posts?.[0] || data.data?.posts?.[0];
-        const normalizedPost = foundPost
-          ? { ...foundPost, subCategory: normalizeSubCategory(foundPost.subCategory) }
-          : null;
-        setPost(normalizedPost);
+        const { post: foundPost } = await getPostBySlug(postSlug);
+        setPost(foundPost);
         if (!foundPost) {
           setError(true);
         }
@@ -52,11 +48,12 @@ export default function PostPage() {
     if (!post?.subCategory) return;
     const fetchRecentPosts = async () => {
       try {
-        const data = await fetchJson(`/api/posts?subCategory=${post.subCategory}&limit=4`);
-        const normalizedPosts = (data.posts || data.data?.posts || []).map((item) => ({
-          ...item,
-          subCategory: normalizeSubCategory(item.subCategory),
-        }));
+        const { posts: fetchedPosts } = await getMediaPosts({
+          subCategory: post.subCategory,
+          limit: 4,
+          order: 'desc',
+        });
+        const normalizedPosts = normalizePosts(fetchedPosts);
         const filtered = normalizedPosts.filter((p) => p.slug !== post.slug);
         setRecentPosts(filtered);
       } catch (error) {
@@ -124,22 +121,11 @@ export default function PostPage() {
       }
     : null;
 
-  const subCategoryPaths = {
-    news: { label: 'News', href: '/news' },
-    politique: { label: 'Politique', href: '/politique' },
-    economie: { label: 'Économie', href: '/search?subCategory=economie' },
-    culture: { label: 'Culture', href: '/search?subCategory=culture' },
-    portraits: { label: 'Portraits', href: '/search?subCategory=portraits' },
-    'science-tech': { label: 'Science & Tech', href: '/science-tech' },
-    sport: { label: 'Sport', href: '/sport' },
-    cinema: { label: 'Cinéma', href: '/cinema' },
-  };
+  const subCategoryMeta = post?.subCategory ? getSubCategoryMeta(post.subCategory) : null;
   const readingTime = Math.max(1, Math.round((post?.content?.length || 0) / 900));
   const breadcrumbItems = [
     { label: 'Accueil', href: '/' },
-    post?.subCategory && subCategoryPaths[post.subCategory]
-      ? subCategoryPaths[post.subCategory]
-      : { label: post?.category || 'Article' },
+    subCategoryMeta ? { label: subCategoryMeta.label, href: subCategoryMeta.path } : { label: post?.category || 'Article' },
     { label: post?.title || 'Article' },
   ].filter(Boolean);
 
@@ -198,12 +184,12 @@ export default function PostPage() {
                   className='h-full w-full object-cover'
                 />
               </picture>
-              {post?.subCategory && subCategoryPaths[post.subCategory] && (
+              {subCategoryMeta && (
                 <Link
-                  to={subCategoryPaths[post.subCategory].href}
+                  to={subCategoryMeta.path}
                   className='absolute left-6 top-6 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-primary shadow-subtle dark:bg-slate-800/80'
                 >
-                  {subCategoryPaths[post.subCategory].label}
+                  {subCategoryMeta.label}
                 </Link>
               )}
             </div>

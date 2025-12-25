@@ -6,7 +6,7 @@ import PageHeader from '../components/layout/PageHeader';
 import PostCard from '../components/PostCard';
 import PostCardSkeleton from '../components/skeletons/PostCardSkeleton';
 import Seo from '../components/Seo';
-import { fetchJson } from '../lib/apiClient';
+import { getMediaPosts, normalizePosts } from '../services/posts.service';
 import { normalizeSubCategory, PRIMARY_SUBCATEGORIES } from '../utils/categories';
 
 export default function Search() {
@@ -25,6 +25,7 @@ export default function Search() {
   const location = useLocation();
 
   const navigate = useNavigate();
+  const pageSize = 9;
 
 
   useEffect(() => {
@@ -47,21 +48,17 @@ export default function Search() {
     const fetchPosts = async () => {
       setLoading(true);
       setError('');
-      const queryParams = new URLSearchParams(location.search);
-      const searchQuery = queryParams.toString();
       try {
-        const data = await fetchJson(`/api/posts?${searchQuery}`);
-        const normalizedPosts = (data.posts || data.data?.posts || []).map((item) => ({
-          ...item,
-          subCategory: normalizeSubCategory(item.subCategory),
-        }));
+        const { posts: fetchedPosts } = await getMediaPosts({
+          searchTerm: searchTermFromUrl || undefined,
+          subCategory: subCategoryFromUrl === 'all' ? undefined : subCategoryFromUrl,
+          order: sortFromUrl === 'asc' ? 'asc' : 'desc',
+          limit: pageSize,
+        });
+        const normalizedPosts = normalizePosts(fetchedPosts);
         const filtered = applyAdvancedFilters(normalizedPosts, nextFilters);
         setPosts(filtered);
-        if ((data.posts || []).length === 9) {
-          setShowMore(true);
-        } else {
-          setShowMore(false);
-        }
+        setShowMore(fetchedPosts.length === pageSize);
       } catch (err) {
         setError('Impossible de récupérer les résultats.');
       } finally {
@@ -95,22 +92,18 @@ export default function Search() {
   const handleShowMore = async () => {
     const numberOfPosts = posts.length;
     const startIndex = numberOfPosts;
-    const urlParams = new URLSearchParams(location.search);
-    urlParams.set('startIndex', startIndex);
-    const searchQuery = urlParams.toString();
     try {
-      const data = await fetchJson(`/api/posts?${searchQuery}`);
-      const normalizedPosts = (data.posts || data.data?.posts || []).map((item) => ({
-        ...item,
-        subCategory: normalizeSubCategory(item.subCategory),
-      }));
+      const { posts: fetchedPosts } = await getMediaPosts({
+        searchTerm: sidebarData.searchTerm || undefined,
+        subCategory: sidebarData.subCategory === 'all' ? undefined : normalizeSubCategory(sidebarData.subCategory),
+        order: sidebarData.sort === 'asc' ? 'asc' : 'desc',
+        limit: pageSize,
+        startIndex,
+      });
+      const normalizedPosts = normalizePosts(fetchedPosts);
       const filtered = applyAdvancedFilters([...posts, ...normalizedPosts], sidebarData);
       setPosts(filtered);
-      if ((data.posts || []).length === 9) {
-        setShowMore(true);
-      } else {
-        setShowMore(false);
-      }
+      setShowMore(fetchedPosts.length === pageSize);
     } catch (err) {
       setError('Impossible de charger plus de résultats.');
     }

@@ -1,14 +1,9 @@
 import { Link } from 'react-router-dom';
 import FavoriteButton from './FavoriteButton';
+import { getSubCategoryLabel } from '../utils/categories';
 
 export default function PostCard({ post }) {
-  const subCategoryLabel = {
-    news: 'News',
-    politique: 'Politique',
-    science: 'Science/Tech',
-    sport: 'Sport',
-    cinema: 'Cinéma',
-  }[post.subCategory] || post.subCategory || post.category;
+  const subCategoryLabel = getSubCategoryLabel(post.subCategory) || post.subCategory || post.category;
   const readingTime = Math.max(1, Math.round((post?.content?.length || 0) / 800));
   const withFormatParam = (format) => {
     if (!post?.image) return '';

@@ -5,29 +5,39 @@ import PageContainer from '../components/layout/PageContainer';
 import PostCard from '../components/PostCard';
 import PostCardSkeleton from '../components/skeletons/PostCardSkeleton';
 import Seo from '../components/Seo';
-import { fetchJson } from '../lib/apiClient';
-import { normalizeSubCategory, PRIMARY_SUBCATEGORIES } from '../utils/categories';
+import { getMediaPosts, normalizePosts } from '../services/posts.service';
+import { MEDIA_CATEGORY, normalizeSubCategory, TRUST_MEDIA_SUBCATEGORIES } from '../utils/categories';
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
+  const [sectionPosts, setSectionPosts] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
   const categories = [
     { name: 'Tous', key: 'all' },
-    ...PRIMARY_SUBCATEGORIES.map((cat) => ({ name: cat.label, key: cat.value })),
+    ...TRUST_MEDIA_SUBCATEGORIES.map((cat) => ({ name: cat.label, key: cat.value })),
   ];
 
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const data = await fetchJson('/api/posts');
-        const normalizedPosts = (data.posts || data.data?.posts || []).map((post) => ({
-          ...post,
-          subCategory: normalizeSubCategory(post.subCategory),
-        }));
-        setPosts(normalizedPosts);
+        setLoading(true);
+        setError('');
+        const [latestResponse, ...sections] = await Promise.all([
+          getMediaPosts({ order: 'desc', limit: 20 }),
+          ...TRUST_MEDIA_SUBCATEGORIES.map((cat) =>
+            getMediaPosts({ order: 'desc', limit: 4, subCategory: cat.value })
+          ),
+        ]);
+        const latestPosts = normalizePosts(latestResponse.posts).filter((post) => post.category === MEDIA_CATEGORY);
+        const nextSections = TRUST_MEDIA_SUBCATEGORIES.reduce((acc, cat, index) => {
+          acc[cat.value] = normalizePosts(sections[index]?.posts || []);
+          return acc;
+        }, {});
+        setPosts(latestPosts);
+        setSectionPosts(nextSections);
       } catch (error) {
         setError('Erreur lors du chargement des posts.');
       } finally {
@@ -173,6 +183,42 @@ export default function Home() {
               </p>
             )}
             {!loading && !error && gridPosts.map((post) => <PostCard key={post._id} post={post} />)}
+          </div>
+        </section>
+
+        <section className='space-y-8'>
+          <div className='flex items-center justify-between'>
+            <h2 className='text-2xl font-bold text-primary'>Par rubrique</h2>
+            <Link to='/search' className='text-sm font-semibold text-ocean hover:underline'>Voir toutes les rubriques</Link>
+          </div>
+          <div className='grid gap-8'>
+            {TRUST_MEDIA_SUBCATEGORIES.map((category) => {
+              const items = sectionPosts[category.value] || [];
+              return (
+                <div key={category.value} className='rounded-3xl border border-subtle bg-white p-5 shadow-subtle dark:border-slate-800 dark:bg-slate-900'>
+                  <div className='flex flex-wrap items-center justify-between gap-3 pb-4'>
+                    <div>
+                      <p className='text-xs font-semibold uppercase tracking-[0.2em] text-primary'>Rubrique</p>
+                      <h3 className='text-xl font-bold text-primary'>{category.label}</h3>
+                    </div>
+                    <Link to={category.path} className='text-sm font-semibold text-ocean hover:underline'>
+                      Voir {category.label.toLowerCase()}
+                    </Link>
+                  </div>
+                  <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+                    {loading && Array.from({ length: 3 }).map((_, index) => (
+                      <PostCardSkeleton key={`${category.value}-skel-${index}`} />
+                    ))}
+                    {!loading && !error && items.length === 0 && (
+                      <p className='col-span-full text-sm text-slate-500 dark:text-slate-300'>
+                        Aucun article pour cette rubrique.
+                      </p>
+                    )}
+                    {!loading && !error && items.map((post) => <PostCard key={post._id} post={post} />)}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
       </PageContainer>

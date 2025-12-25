@@ -27,3 +27,27 @@ npm run lint
 ## Notes
 - L'UI actuelle est conservée : aucune modification visuelle n'est nécessaire pour démarrer.
 - Les appels API sont centralisés dans `apps/site/src/lib/apiClient.js`.
+
+## Routes publiques principales
+- `/` : Home
+- `/news`, `/politique`, `/science`, `/sport`, `/cinema` : rubriques Trust Media
+- `/search` : recherche/filtrage
+- `/post/:slug` : article
+- `/event` : Trust Event
+
+## Mapping rubriques → API
+- `MEDIA_CATEGORY` = `TrustMedia`
+- `EVENT_CATEGORY` = `TrustEvent`
+- Rubriques `TrustMedia` (`subCategory`) :
+  - News → `news`
+  - Politique → `politique`
+  - Science/Tech → `science-tech`
+  - Sport → `sport`
+  - Cinéma → `cinema`
+
+## Queries API (site public)
+Les pages publiques consomment `GET /api/post/getposts` avec les paramètres supportés :
+- `category`, `subCategory`
+- `searchTerm`
+- `startIndex` (pagination), `limit`
+- `order` (`asc`/`desc`)
