@@ -95,13 +95,20 @@ Résumé (voir le détail complet dans `API_CONTRACT.md`). Les routes sont préf
 - `GET /api/admin/users/:id` (admin) — détail user
 - `PUT /api/admin/users/:id` (admin) — update profil + rôle + reset password
 - `PUT /api/admin/users/:id/role` (admin) — mise à jour rapide du rôle
+- `PUT /api/admin/users/:id/toggle-admin` (admin) — promotion/rétrogradation admin
 - `DELETE /api/admin/users/:id` (admin) — suppression
+
+Alias admin (compat CMS) :
+- `POST /api/user/create` (admin) — création user
+- `PUT /api/user/:id` (admin) — update user
+- `PUT /api/user/:id/toggle-admin` (admin) — toggle admin
 
 > ⚙️ **Promotion admin** : utilisez le script `npm run make-admin -- --email someone@mail.com` pour attribuer le rôle `ADMIN` si aucun admin n’existe.
 
 ### Posts / Events
 - `POST /api/post/create` (auth) — crée un article/événement (`title`, `content`, `category`, `subCategory`, `image`, `eventDate`, `location`)
 - `GET /api/post/getposts` — filtre par `userId`, `category`, `subCategory`, `slug`, `postId`, `searchTerm`, `startIndex`, `limit`, `order`
+- `GET /api/posts/:postId` et `GET /api/post/:postId` — lecture d'un post par `_id` (admin voit tous les statuts)
 - `PUT /api/post/updatepost/:postId/:userId` (auth proprio/admin)
 - `DELETE /api/post/deletepost/:postId/:userId` (auth proprio/admin)
 - Un événement est un post avec `category=TrustEvent`; filtrer `category=TrustEvent` pour la vue Events.

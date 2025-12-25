@@ -3,8 +3,8 @@ import {
   createUser,
   deleteUser,
   fetchUsers,
+  toggleAdminUser,
   updateUser,
-  updateUserRole,
 } from '../services/users.service';
 import { formatDate } from '../lib/format';
 import { useToast } from '../components/ToastProvider';
@@ -154,7 +154,7 @@ export const Users = () => {
   const handleToggleAdmin = async (user) => {
     const nextRole = user.role === 'ADMIN' ? 'USER' : 'ADMIN';
     try {
-      await updateUserRole(user._id, nextRole);
+      await toggleAdminUser(user._id);
       addToast(
         nextRole === 'ADMIN'
           ? 'Utilisateur promu en admin.'
