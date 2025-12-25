@@ -47,13 +47,13 @@ export default function TrustEvent() {
       // Backend does not expose a registration endpoint yet
       setSignupSuccess('Merci ! Votre intérêt a été enregistré. Nous reviendrons vers vous prochainement.');
       setSignupForm({ name: '', email: '', eventId: '' });
-      const eventInfo = events.find((evt) => evt._id === signupForm.eventId);
-      logEventSignup({
-        eventId: signupForm.eventId,
-        eventName: eventInfo?.title,
-        page: '/event',
-        metadata: { email: signupForm.email },
-      });
+        const eventInfo = events.find((evt) => evt._id === signupForm.eventId);
+        logEventSignup({
+          eventId: signupForm.eventId,
+          eventName: eventInfo?.title,
+          page: '/events',
+          metadata: { email: signupForm.email },
+        });
     } catch (err) {
       setSignupError(err.message || "Impossible de soumettre votre participation.");
     } finally {
@@ -142,7 +142,7 @@ export default function TrustEvent() {
                 <option value=''>Choisir un événement</option>
                 {events.map((event) => (
                   <option key={event._id} value={event._id}>
-                    {event.title} · {new Date(event.eventDate).toLocaleDateString()}
+                    {event.title} · {event.eventDate ? new Date(event.eventDate).toLocaleDateString() : 'Date à confirmer'}
                   </option>
                 ))}
               </select>
