@@ -31,7 +31,7 @@ export const Overview = () => {
   const [state, setState] = useState(initialState);
   const { addToast } = useToast();
   const { user: currentUser } = useAuth();
-  const isAdmin = Boolean(currentUser?.isAdmin);
+  const isAdmin = currentUser?.role === 'ADMIN';
 
   const loadData = useCallback(async () => {
     setState((prev) => ({ ...prev, loading: true, error: null, adminError: null }));

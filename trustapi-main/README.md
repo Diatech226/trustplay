@@ -57,7 +57,7 @@ Variables utilisées par le code :
 - Front : utiliser `NEXT_PUBLIC_API_URL` (ou `VITE_API_URL` en fallback) et appeler `fetch(..., { credentials: 'include' })`. Les requêtes authentifiées ajoutent automatiquement le bearer.
 
 ## Modèles de données
-- **User** : `username`, `email`, `passwordHash` (obligatoire uniquement pour `authProvider=local`), `authProvider` (`local` par défaut, compat `google`/`firebase`), `role` (`USER` par défaut, `ADMIN`, `MANAGER`, `EDITOR`, `VIEWER`, `client`), `profilePicture`, timestamps.
+- **User** : `username`, `email`, `passwordHash` (obligatoire uniquement pour `authProvider=local`), `authProvider` (`local` par défaut, compat `google`/`firebase`), `role` (`USER` par défaut, `ADMIN`, `EDITOR`, `AUTHOR`), `profilePicture`, timestamps.
 - **Post** : `userId`, `title`, `slug` (slugify lowercase/strict), `content`, `image`, `category` (`TrustMedia`, `TrustEvent`, `TrustProd`, `uncategorized`), `subCategory`, `eventDate?`, `location?`, timestamps.
 - **Comment** : `userId`, `postId`, `content`, `likes[]`, `numberOfLikes`, timestamps.
 - **Client** : `name`, `contacts[]` (`name/email/phone/role`), `notes`, `status` (`prospect/onboarding/active/paused/archived`), `tags`, timestamps.
@@ -89,7 +89,15 @@ Résumé (voir le détail complet dans `API_CONTRACT.md`). Les routes sont préf
 - `DELETE /api/user/delete/:userId` (auth proprio/admin)
 - `GET /api/user/:userId` — public
 
-> ⚙️ **Promotion admin** : pour donner le rôle administrateur à un utilisateur, changer son champ `role` à `ADMIN` directement dans MongoDB (aucune whitelist côté serveur).
+### Admin users (CMS)
+- `POST /api/admin/users` (admin) — créer un user `{ username, email, password, role }`
+- `GET /api/admin/users` (admin) — liste paginée + `totalUsers`
+- `GET /api/admin/users/:id` (admin) — détail user
+- `PUT /api/admin/users/:id` (admin) — update profil + rôle + reset password
+- `PUT /api/admin/users/:id/role` (admin) — mise à jour rapide du rôle
+- `DELETE /api/admin/users/:id` (admin) — suppression
+
+> ⚙️ **Promotion admin** : utilisez le script `npm run make-admin -- --email someone@mail.com` pour attribuer le rôle `ADMIN` si aucun admin n’existe.
 
 ### Posts / Events
 - `POST /api/post/create` (auth) — crée un article/événement (`title`, `content`, `category`, `subCategory`, `image`, `eventDate`, `location`)
@@ -122,7 +130,7 @@ Résumé (voir le détail complet dans `API_CONTRACT.md`). Les routes sont préf
 - `GET /api/campaigns` — filtre par projet/canal/statut ; `POST` pour créer une campagne (objectif, budget, KPIs, planning, assets médias).
 - `GET /api/campaigns/:id` — détail (avec projet + client) ; `PUT`/`DELETE` pour modifier/supprimer.
 
-Toutes ces routes exigent un rôle `ADMIN`/`MANAGER`/`EDITOR` + Bearer JWT.
+Toutes ces routes exigent un rôle `ADMIN`/`EDITOR`/`AUTHOR` + Bearer JWT.
 
 ### Flux Auth (JWT)
 1. **Signin** :

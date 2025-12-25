@@ -38,7 +38,7 @@ const iconMap = {
   HiViewGrid,
 };
 
-export default function AdminSidebar({ collapsed, onToggle, role = 'VIEWER' }) {
+export default function AdminSidebar({ collapsed, onToggle, role = 'USER' }) {
   const isAllowed = (roles = []) => roles.length === 0 || roles.includes(role);
 
   return (

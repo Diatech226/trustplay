@@ -34,7 +34,7 @@ export const MediaLibrary = () => {
   const [uploadCategory, setUploadCategory] = useState('gallery');
   const { addToast } = useToast();
   const { user: currentUser } = useAuth();
-  const isAdmin = Boolean(currentUser?.isAdmin);
+  const isAdmin = currentUser?.role === 'ADMIN';
 
   const MediaPreview = ({ item }) => {
     const [failed, setFailed] = useState(false);

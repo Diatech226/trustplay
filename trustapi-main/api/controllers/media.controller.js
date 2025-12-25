@@ -86,7 +86,7 @@ export const deleteMedia = async (req, res, next) => {
     }
 
     const isOwner = media.uploadedBy?.toString() === req.user?.id;
-    if (!req.user?.isAdmin && !isOwner) {
+    if (req.user?.role !== 'ADMIN' && !isOwner) {
       return next(errorHandler(403, 'Forbidden'));
     }
 
@@ -105,7 +105,7 @@ export const updateMedia = async (req, res, next) => {
     }
 
     const isOwner = media.uploadedBy?.toString() === req.user?.id;
-    if (!req.user?.isAdmin && !isOwner) {
+    if (req.user?.role !== 'ADMIN' && !isOwner) {
       return next(errorHandler(403, 'Forbidden'));
     }
 

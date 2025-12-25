@@ -148,7 +148,7 @@ export const deleteComment = async (req, res, next) => {
 /** ✅ Get All Comments (Admin Only) */
 export const getComments = async (req, res, next) => {
   try {
-    if (!req.user?.isAdmin) {
+    if (req.user?.role !== "ADMIN") {
       return next(errorHandler(403, "You are not allowed to get all comments"));
     }
 

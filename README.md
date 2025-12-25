@@ -28,6 +28,7 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 - **Routes principales** :
   - `POST /api/auth/*` pour signup/signin/signout et flux reset password.
   - `GET /api/user/me`, `PUT /api/user/update/:userId`, `GET /api/user/getusers` (admin), `DELETE /api/user/delete/:userId`.
+  - `POST /api/admin/users`, `GET /api/admin/users`, `PUT /api/admin/users/:id`, `DELETE /api/admin/users/:id` (admin users CRUD CMS).
   - `POST /api/post/create`, `GET /api/post/getposts`, `PUT /api/post/updatepost/:postId/:userId`, `DELETE /api/post/deletepost/:postId/:userId`.
   - `GET /api/events` (liste TrustEvent côté CMS).
   - `POST /api/comment/create`, likes/édition/suppression et listing admin.
@@ -38,7 +39,7 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 
 ## Fonctionnalités actuelles
 - **Site média** : pages éditoriales par rubrique, page article avec commentaires, recherche multi-critères et pagination incrémentale, pages événement/production/projets.
-- **Authentification & rôles** : email/mot de passe JWT, persistance locale, gardes de routes, rôle ADMIN pour l'admin ; rôles supplémentaires gérés côté UI.
+- **Authentification & rôles** : email/mot de passe JWT, persistance locale, gardes de routes, rôles `ADMIN`/`EDITOR`/`AUTHOR`/`USER`.
 - **Backoffice CMS** : dashboard multi-modules (articles, pages, médias, événements, campagnes, clients, projets, newsletter, formulaires, commentaires, utilisateurs, paramètres, activité) avec maquettes de données et actions rapides.
 - **Médias** : upload image/vidéo via API, stockage dans `UPLOAD_DIR` exposé en statique.
 - **Thème & personnalisation** : mode clair/sombre, favoris/lecture, historique et préférences de notification côté client.
@@ -116,7 +117,7 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 - **SEO & partage** : `react-helmet-async` enrichi (canonical, OG/Twitter) + schéma Article sur la page article.
 
 ## Itération 3 – Cockpit agence (clients/projets/campagnes)
-- **Modèles Mongo + API CRUD** : nouveaux schémas `Client`, `Project`, `Campaign` (relations client → projet → campagne) avec endpoints REST `/api/clients`, `/api/projects`, `/api/campaigns` protégés (`ADMIN/MANAGER/EDITOR`). Cascade automatique sur les suppressions.
+- **Modèles Mongo + API CRUD** : nouveaux schémas `Client`, `Project`, `Campaign` (relations client → projet → campagne) avec endpoints REST `/api/clients`, `/api/projects`, `/api/campaigns` protégés (`ADMIN/EDITOR/AUTHOR`). Cascade automatique sur les suppressions.
 - **Admin UI** : vues Clients / Projets / Campagnes branchées sur l'API avec filtres, tri, pagination, sélection détaillée et actions rapides (génération de brief, assignation de statut, joindre un média depuis la médiathèque).
 - **Médias liés** : attachement direct des assets uploadés aux projets/campagnes (champ `attachments`/`assets`), réutilisable depuis la Media Library.
 - **Documentation & seed** : README/API contract enrichis + seed JSON mis à jour pour injecter des clients/projets/campagnes (`trustapi-main/scripts/cms-seed.json`).
@@ -189,6 +190,14 @@ Créer `.env` dans `trustapi-main` (voir `.env.example`) avec :
 - Exemple recommandé : `CORS_ORIGIN=http://localhost:5173,http://localhost:5174`.
 - (Optionnel) Email reset password : `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`.
 
+### Créer un administrateur
+1. Créer un compte utilisateur via `/api/auth/signup` ou via le CMS.
+2. Promouvoir l'utilisateur en admin depuis le CMS (module Users) **ou** via le script CLI :
+   ```bash
+   cd trustapi-main
+   npm run make-admin -- --email someone@mail.com
+   ```
+
 ### Media URLs & previews
 - Les uploads sont servis en statique via `GET /uploads/...`.
 - Les entrées Media stockent par défaut des URLs **relatives** (`/uploads/xxx.jpg`).
@@ -201,27 +210,25 @@ Créer `.env` dans `trustapi-main` (voir `.env.example`) avec :
 - API : `http://localhost:3000`
 
 ## Admin setup
-Pour activer les droits admin, assurez-vous qu'un utilisateur a bien **`role: "ADMIN"`** (champ de référence) et/ou **`isAdmin: true`** en base.
+Pour activer les droits admin, assurez-vous qu'un utilisateur a bien **`role: "ADMIN"`** en base.
 
 ### Rendre un utilisateur admin en base (MongoDB)
 ```js
 db.users.updateOne(
   { email: "admin@trustmedia.com" },
-  { $set: { role: "ADMIN", isAdmin: true } }
+  { $set: { role: "ADMIN" } }
 )
 ```
 
 ### Script rapide (dev)
 ```bash
 cd trustapi-main
-npm run make-admin -- admin@trustmedia.com
+npm run make-admin -- --email admin@trustmedia.com
 ```
-
-> ℹ️ Le backend utilise `role: "ADMIN"` comme référence principale et expose aussi `isAdmin` dans le payload utilisateur/JWT. Le CMS valide la session via `GET /api/user/me`.
 
 ## QA checklist (admin)
 Checklist rapide avant validation :
-- Connexion admin (CMS) → `/api/user/me` retourne `role: "ADMIN"` et `isAdmin: true`.
+- Connexion admin (CMS) → `/api/user/me` retourne `role: "ADMIN"`.
 - CMS dashboard : `/api/user/getusers` et `/api/comment/getcomments` répondent **200**.
 - Création d’un post TrustMedia avec sous-catégorie valide : apparition immédiate dans `/posts` et sur le site (si `status=published`).
 - Commentaires : aucun appel à `/api/comment/getPostComments/undefined` et `postId` invalide renvoie **400**.
@@ -251,7 +258,7 @@ Checklist détaillée : [`QA_CHECKLIST.md`](./QA_CHECKLIST.md).
 - **Site public** : home, recherche, rubriques, pages légales, détail article + commentaires.
 - **CMS & studio éditorial** : articles/pages/événements avec éditeur riche, filtres, upload médias, suggestions.
 - **Agence & delivery** : campagnes, clients, projets, formulaires, newsletter (mock côté UI, à brancher sur l'API).
-- **Gouvernance** : rôles ADMIN/MANAGER/EDITOR/VIEWER en UI, journal d’activité et paramètres.
+- **Gouvernance** : rôles ADMIN/EDITOR/AUTHOR/USER en UI, journal d’activité et paramètres.
 
 ### Dashboard CMS (MVP pro)
 - **Routes clés** : `/` (overview), `/posts`, `/posts/new`, `/posts/:id/edit`, `/media`, `/comments`, `/users`.
