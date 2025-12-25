@@ -45,7 +45,7 @@ const mergeSettings = (payload) => ({
 });
 
 export const Settings = () => {
-  const { user } = useAuth();
+  const { user, status } = useAuth();
   const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState('general');
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
@@ -89,7 +89,13 @@ export const Settings = () => {
       setSettings(mergeSettings(updated));
       addToast('Paramètres sauvegardés avec succès.', { type: 'success' });
     } catch (err) {
-      addToast(err?.message || 'Erreur lors de la sauvegarde.', { type: 'error' });
+      let message = err?.message || 'Erreur lors de la sauvegarde.';
+      if (err?.status === 401) {
+        message = 'Session expirée. Veuillez vous reconnecter.';
+      } else if (err?.status === 403) {
+        message = 'Accès admin requis pour modifier les paramètres.';
+      }
+      addToast(message, { type: 'error' });
     } finally {
       setSaving(false);
     }
@@ -180,7 +186,7 @@ export const Settings = () => {
           </button>
         </div>
 
-        {loading ? (
+        {loading || status === 'loading' ? (
           <div className="section">
             <div className="loader">Chargement des paramètres...</div>
           </div>

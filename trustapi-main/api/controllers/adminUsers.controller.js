@@ -1,6 +1,7 @@
 import bcryptjs from 'bcryptjs';
 import User, { USER_ROLES } from '../models/user.model.js';
 import { errorHandler } from '../utils/error.js';
+import { resolveUserRole } from '../utils/roles.js';
 
 const sanitizeUser = (userDoc = {}) => {
   const userObj = userDoc.toObject ? userDoc.toObject() : { ...userDoc };
@@ -8,6 +9,7 @@ const sanitizeUser = (userDoc = {}) => {
   delete userObj.passwordHash;
   delete userObj.passwordResetTokenHash;
   delete userObj.passwordResetExpiresAt;
+  userObj.role = resolveUserRole(userObj) || 'USER';
   return userObj;
 };
 

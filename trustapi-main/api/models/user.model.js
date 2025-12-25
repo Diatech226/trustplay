@@ -34,6 +34,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: USER_ROLES,
       default: "USER",
+      set: (value) => (typeof value === 'string' ? value.toUpperCase() : value),
     },
     profilePicture: {
       type: String,

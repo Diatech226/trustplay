@@ -1,11 +1,13 @@
 import bcryptjs from 'bcryptjs';
 import { errorHandler } from '../utils/error.js';
 import User from '../models/user.model.js';
+import { ensureUserRole, resolveUserRole } from '../utils/roles.js';
 
 const sanitizeUser = (userDoc = {}) => {
   const userObj = userDoc.toObject ? userDoc.toObject() : { ...userDoc };
   delete userObj.password;
   delete userObj.passwordHash;
+  userObj.role = resolveUserRole(userObj) || 'USER';
   return userObj;
 };
 
@@ -91,6 +93,7 @@ export const getMe = async (req, res, next) => {
     if (!user) {
       return next(errorHandler(401, 'Unauthorized'));
     }
+    await ensureUserRole(user);
     const rest = sanitizeUser(user);
     res.status(200).json({ success: true, data: { user: rest }, user: rest });
   } catch (error) {
@@ -104,7 +107,7 @@ export const getUsers = async (req, res, next) => {
   }
   try {
     const startIndex = parseInt(req.query.startIndex) || 0;
-    const limit = parseInt(req.query.limit) || 9;
+    const limit = parseInt(req.query.limit) || 20;
     const sortDirection = req.query.sort === 'asc' ? 1 : -1;
 
     const users = await User.find()

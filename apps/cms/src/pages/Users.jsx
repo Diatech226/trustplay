@@ -34,7 +34,7 @@ export const Users = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [resetPassword, setResetPassword] = useState(false);
   const { addToast } = useToast();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, status } = useAuth();
   const { confirm } = useConfirm();
   const isAdmin = currentUser?.role === 'ADMIN';
 
@@ -60,16 +60,23 @@ export const Users = () => {
       setUsers(response.users);
       setTotalUsers(response.totalUsers);
     } catch (err) {
-      setError(err.message);
-      addToast(`Erreur lors du chargement : ${err.message}`, { type: 'error' });
+      let message = err.message;
+      if (err.status === 401) {
+        message = 'Session expirée. Veuillez vous reconnecter.';
+      } else if (err.status === 403) {
+        message = 'Accès admin requis pour consulter les utilisateurs.';
+      }
+      setError(message);
+      addToast(`Erreur lors du chargement : ${message}`, { type: 'error' });
     } finally {
       setLoading(false);
     }
   }, [addToast, isAdmin, limit, page, roleFilter, search, sortOrder]);
 
   useEffect(() => {
+    if (status === 'loading') return;
     loadUsers();
-  }, [loadUsers]);
+  }, [loadUsers, status]);
 
   useEffect(() => {
     if (page > totalPages) {
@@ -159,6 +166,17 @@ export const Users = () => {
       addToast(err.message || 'Action impossible.', { type: 'error' });
     }
   };
+
+  if (status === 'loading') {
+    return (
+      <div className="section">
+        <div className="section-header">
+          <h2>Utilisateurs</h2>
+        </div>
+        <div className="loader">Chargement des utilisateurs…</div>
+      </div>
+    );
+  }
 
   if (!isAdmin) {
     return (

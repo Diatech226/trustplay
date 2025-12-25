@@ -23,12 +23,6 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const fetchProfile = useCallback(async () => {
-    const token = apiClient.getToken();
-    if (!token) {
-      setStatus('unauthenticated');
-      return;
-    }
-
     setStatus('loading');
     try {
       const data = await apiClient.get('/api/user/me', { skipAuthRedirect: true });
