@@ -4,6 +4,7 @@ import { errorHandler } from '../utils/error.js';
 import jwt from 'jsonwebtoken';
 import { generatePasswordResetToken, hashResetToken } from '../utils/passwordReset.js';
 import { sendResetPasswordEmail } from '../utils/mailer.js';
+import { ensureUserRole, resolveUserRole } from '../utils/roles.js';
 
 const authCookieOptions = {
   httpOnly: true,
@@ -28,6 +29,7 @@ const sanitizeUser = (userDoc = {}) => {
   delete userObj.passwordHash;
   delete userObj.passwordResetTokenHash;
   delete userObj.passwordResetExpiresAt;
+  userObj.role = resolveUserRole(userObj) || 'USER';
   return userObj;
 };
 
@@ -62,10 +64,29 @@ export const signup = async (req, res, next) => {
     });
 
     await newUser.save();
+    const resolvedRole = await ensureUserRole(newUser);
+
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET is missing in the environment variables.');
+      return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+
+    const token = jwt.sign(
+      {
+        id: newUser._id,
+        email: newUser.email,
+        role: resolvedRole,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    const userProfile = sanitizeUser(newUser);
+    persistSessionCookie(res, token);
 
     res.status(201).json({
       success: true,
-      data: { user: sanitizeUser(newUser) },
+      data: { user: userProfile, token },
     });
   } catch (error) {
     next(error);
@@ -105,11 +126,12 @@ export const signin = async (req, res) => {
       return res.status(500).json({ success: false, message: 'Internal server error' });
     }
 
+    const resolvedRole = await ensureUserRole(validUser);
     const token = jwt.sign(
       {
         id: validUser._id,
         email: validUser.email,
-        role: validUser.role,
+        role: resolvedRole,
       },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
@@ -228,11 +250,12 @@ export const resetPassword = async (req, res) => {
       return res.status(500).json({ success: false, message: 'Internal server error' });
     }
 
+    const resolvedRole = await ensureUserRole(user);
     const authToken = jwt.sign(
       {
         id: user._id,
         email: user.email,
-        role: user.role,
+        role: resolvedRole,
       },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }

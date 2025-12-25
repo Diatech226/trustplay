@@ -1,5 +1,7 @@
 import jwt from "jsonwebtoken";
 import { errorHandler } from "./error.js";
+import User from '../models/user.model.js';
+import { ensureUserRole, normalizeRoleValue } from './roles.js';
 
 const extractBearer = (value = "") => {
   if (typeof value !== "string") return null;
@@ -18,7 +20,7 @@ const getTokenFromRequest = (req) => {
   return null;
 };
 
-export const verifyToken = (req, res, next) => {
+export const verifyToken = async (req, res, next) => {
   try {
     const token = getTokenFromRequest(req);
 
@@ -28,20 +30,40 @@ export const verifyToken = (req, res, next) => {
         .json({ success: false, message: "Unauthorized: No token provided" });
     }
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, decodedUser) => {
-      if (err || !decodedUser) {
+    let decodedUser;
+    try {
+      decodedUser = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Unauthorized: Invalid token" });
+    }
+
+    const normalizedRole = normalizeRoleValue(decodedUser?.role);
+
+    if (!normalizedRole && decodedUser?.id) {
+      const user = await User.findById(decodedUser.id);
+      if (!user) {
         return res
           .status(401)
-          .json({ success: false, message: "Unauthorized: Invalid token" });
+          .json({ success: false, message: "Unauthorized: User not found" });
       }
+      const resolvedRole = await ensureUserRole(user);
+      req.user = {
+        id: user._id.toString(),
+        email: user.email,
+        role: resolvedRole,
+      };
+    } else {
       req.user = {
         id: decodedUser.id,
         email: decodedUser.email,
-        role: decodedUser.role,
+        role: normalizedRole,
       };
-      req.token = token;
-      next();
-    });
+    }
+
+    req.token = token;
+    next();
   } catch (error) {
     next(errorHandler(500, "Internal Server Error"));
   }

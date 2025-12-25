@@ -37,6 +37,11 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
   - `GET /api/settings` (public) et `PUT /api/settings` (admin) pour les réglages globaux du site.
 - **Auth & permissions** : middleware JWT `verifyToken` + contrôle `requireAdmin` sur les routes critiques (liste users, commentaires). Les autres permissions (ownership) sont gérées dans les contrôleurs.
 
+### Auth/RBAC — source de vérité
+- **Champ unique** : `User.role` (`ADMIN` | `EDITOR` | `AUTHOR` | `USER`) est la source unique de permissions.
+- **JWT payload** : `{ id, email, role }` est signé à la connexion/inscription.
+- **Session CMS** : le CMS hydrate le profil via `GET /api/user/me` et vérifie `currentUser.role === 'ADMIN'`.
+
 ## Fonctionnalités actuelles
 - **Site média** : pages éditoriales par rubrique, page article avec commentaires, recherche multi-critères et pagination incrémentale, pages événement/production/projets.
 - **Authentification & rôles** : email/mot de passe JWT, persistance locale, gardes de routes, rôles `ADMIN`/`EDITOR`/`AUTHOR`/`USER`.
@@ -197,6 +202,16 @@ Créer `.env` dans `trustapi-main` (voir `.env.example`) avec :
    cd trustapi-main
    npm run make-admin -- --email someone@mail.com
    ```
+3. En base, un admin est un user avec `role: "ADMIN"` (majuscule).
+
+### Endpoints admin utilisés par le CMS
+- `GET /api/user/me` : profil courant (role inclus).
+- `GET /api/admin/users` : liste paginée des users + `totalUsers`.
+- `POST /api/admin/users` : création user (admin only).
+- `PUT /api/admin/users/:id` + `PUT /api/admin/users/:id/role` : mise à jour user/rôle.
+- `DELETE /api/admin/users/:id` : suppression user (protégé contre la suppression du dernier admin).
+- `GET /api/comment/getcomments` : liste des commentaires (admin only).
+- `GET /api/settings` (public) + `PUT /api/settings` (admin only).
 
 ### Media URLs & previews
 - Les uploads sont servis en statique via `GET /uploads/...`.
