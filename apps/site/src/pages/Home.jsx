@@ -17,11 +17,10 @@ export default function Home() {
   const { rubrics: trustMediaRubrics, rubricMap } = useRubrics('TrustMedia');
 
   const categories = [
-    { name: 'Tous', key: 'all', path: '/search' },
+    { name: 'Tous', key: 'all' },
     ...trustMediaRubrics.map((cat) => ({
       name: cat.label,
       key: cat.slug,
-      path: cat.path || `/${cat.slug}`,
     })),
   ];
 
@@ -63,8 +62,8 @@ export default function Home() {
     return `/search?${urlParams.toString()}`;
   };
   const allPublicationsUrl = buildSearchUrl();
-  const featuredUrl = buildSearchUrl({ sort: 'recent', dateRange: '24h', featured: 'today' });
-  const allRubriquesUrl = buildSearchUrl();
+  const featuredUrl = buildSearchUrl({ sort: 'recent', dateRange: '24h' });
+  const allRubriquesUrl = '/rubriques';
 
   return (
     <main className='bg-mist/60 dark:bg-slate-950'>
@@ -84,7 +83,7 @@ export default function Home() {
               {categories.map((cat) => (
                 <Link
                   key={cat.key}
-                  to={cat.key === 'all' ? allPublicationsUrl : cat.path}
+                  to={cat.key === 'all' ? allPublicationsUrl : buildSearchUrl({ subCategory: cat.key })}
                   className='rounded-full bg-white px-4 py-2 text-sm font-semibold text-primary ring-1 ring-subtle transition hover:bg-subtle dark:bg-slate-900 dark:text-white dark:ring-slate-800'
                 >
                   {cat.name}
@@ -224,7 +223,7 @@ export default function Home() {
                       <p className='text-xs font-semibold uppercase tracking-[0.2em] text-primary'>Rubrique</p>
                       <h3 className='text-xl font-bold text-primary'>{category.label}</h3>
                     </div>
-                    <Link to={category.path || `/${category.slug}`} className={baseLinkClass}>
+                    <Link to={buildSearchUrl({ subCategory: category.slug })} className={baseLinkClass}>
                       Voir {category.label.toLowerCase()}
                     </Link>
                   </div>

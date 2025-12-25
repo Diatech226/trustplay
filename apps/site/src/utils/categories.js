@@ -23,6 +23,7 @@ export const getSubCategoryMeta = (value) => TRUST_MEDIA_SUBCATEGORY_MAP[value];
 export const getSubCategoryLabel = (value) => TRUST_MEDIA_SUBCATEGORY_MAP[value]?.label;
 
 export const normalizeSubCategory = (value = '') => {
+  if (value === null || value === undefined) return undefined;
   const normalized = value.toString().trim().toLowerCase();
   const map = {
     news: 'news',

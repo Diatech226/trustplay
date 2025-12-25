@@ -53,6 +53,7 @@ const Favorites = lazy(() => import('./pages/Favorites'));
 const History = lazy(() => import('./pages/History'));
 const NotificationsPreferences = lazy(() => import('./pages/NotificationsPreferences'));
 const RubricPage = lazy(() => import('./pages/RubricPage'));
+const Rubriques = lazy(() => import('./pages/Rubriques'));
 
 export default function App() {
   const dispatch = useDispatch();
@@ -105,6 +106,7 @@ export default function App() {
             <Route path='/favorites' element={<Favorites />} />
             <Route path='/history' element={<History />} />
             <Route path='/notifications-preferences' element={<NotificationsPreferences />} />
+            <Route path='/rubriques' element={<Rubriques />} />
             <Route path='/news' element={<NewsPage />} />
             <Route path='/politique' element={<PoliticsPage />} />
             <Route path='/science' element={<SciencePage />} />
