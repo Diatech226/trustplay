@@ -4,7 +4,8 @@ import { Link } from 'react-router-dom';
 import PageShell from '../../admin/components/PageShell';
 import ResourceTable from '../../admin/components/ResourceTable';
 import { apiRequest } from '../../lib/apiClient';
-import { ALL_SUBCATEGORIES, normalizeSubCategory } from '../../utils/categories';
+import { normalizeSubCategory } from '../../utils/categories';
+import { useRubrics } from '../../hooks/useRubrics';
 
 const statusOptions = [
   { value: 'all', label: 'Tous les statuts' },
@@ -29,6 +30,7 @@ export default function AdminPosts() {
     page: 1,
     limit: 10,
   });
+  const { rubrics: trustMediaRubrics } = useRubrics('TrustMedia');
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(totalPosts / filters.limit)), [filters.limit, totalPosts]);
   const fetchPosts = async () => {
@@ -180,8 +182,8 @@ k:bg-orange-900/30 dark:text-orange-100'>
           onChange={(e) => setFilters((prev) => ({ ...prev, subCategory: e.target.value, page: 1 }))}
         >
           <option value=''>Toutes les rubriques</option>
-          {ALL_SUBCATEGORIES.map((option) => (
-            <option key={option.value} value={option.value}>
+          {trustMediaRubrics.map((option) => (
+            <option key={option.slug} value={option.slug}>
               {option.label}
             </option>
           ))}

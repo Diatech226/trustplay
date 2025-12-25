@@ -3,10 +3,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { uploadMedia } from '../services/media.service';
 import { createPost, fetchPostById, updatePost } from '../services/posts.service';
 import { useToast } from '../components/ToastProvider';
+import { useRubrics } from '../hooks/useRubrics';
 
 const emptyForm = {
   title: '',
   content: '',
+  subCategory: '',
   status: 'draft',
   tags: '',
   image: '',
@@ -24,8 +26,19 @@ export const EventEditor = () => {
   const [formData, setFormData] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { rubrics: eventRubrics } = useRubrics('TrustEvent');
 
   const isEditing = useMemo(() => Boolean(postId), [postId]);
+  const eventRubricOptions = useMemo(() => {
+    const options = eventRubrics?.length
+      ? eventRubrics.map((rubric) => ({ value: rubric.slug, label: rubric.label }))
+      : [];
+    const current = formData.subCategory;
+    if (current && !options.find((option) => option.value === current)) {
+      options.unshift({ value: current, label: `Legacy: ${current}` });
+    }
+    return options;
+  }, [eventRubrics, formData.subCategory]);
 
   useEffect(() => {
     if (!isEditing) return;
@@ -38,6 +51,7 @@ export const EventEditor = () => {
         setFormData({
           title: post.title || '',
           content: post.content || '',
+          subCategory: post.subCategory || eventRubrics?.[0]?.slug || '',
           status: post.status || 'draft',
           tags: (post.tags || []).join(', '),
           image: post.image || '',
@@ -56,7 +70,7 @@ export const EventEditor = () => {
     };
 
     fetchEvent();
-  }, [isEditing, postId, addToast]);
+  }, [isEditing, postId, addToast, eventRubrics]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -70,7 +84,10 @@ export const EventEditor = () => {
     const file = event.target.files?.[0];
     if (!file) return;
     try {
-      const data = await uploadMedia(file, { category: 'event' });
+      const data = await uploadMedia(file, {
+        category: 'Media',
+        subCategory: formData.subCategory || undefined,
+      });
       const url = data.media?.url || data.url;
       setFormData((prev) => ({ ...prev, image: url || prev.image }));
       addToast('Fichier uploadé avec succès.', { type: 'success' });
@@ -108,6 +125,7 @@ export const EventEditor = () => {
     const payload = {
       ...formData,
       category: 'TrustEvent',
+      subCategory: formData.subCategory || undefined,
       tags: formData.tags
         .split(',')
         .map((tag) => tag.trim())
@@ -150,6 +168,17 @@ export const EventEditor = () => {
         <label>
           Description
           <textarea name="content" value={formData.content} onChange={handleChange} required />
+        </label>
+        <label>
+          Rubrique
+          <select name="subCategory" value={formData.subCategory} onChange={handleChange} required>
+            <option value="">Choisir une rubrique</option>
+            {eventRubricOptions.map((rubric) => (
+              <option key={rubric.value} value={rubric.value}>
+                {rubric.label}
+              </option>
+            ))}
+          </select>
         </label>
         <label>
           Date de l'événement

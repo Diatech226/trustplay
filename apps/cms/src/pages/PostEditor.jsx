@@ -7,6 +7,7 @@ import { createPost, fetchPostById, updatePost } from '../services/posts.service
 import { useToast } from '../components/ToastProvider';
 import { MediaPicker } from '../components/MediaPicker';
 import { resolveMediaUrl } from '../lib/mediaUrls';
+import { useRubrics } from '../hooks/useRubrics';
 
 const CATEGORY_OPTIONS = [
   { value: 'TrustMedia', label: 'Trust Media' },
@@ -42,7 +43,15 @@ const emptyForm = {
 const resolveMediaCategory = (category) => {
   if (category === 'TrustEvent') return 'event';
   if (category === 'TrustProduction') return 'branding';
-  return 'article';
+  return 'Media';
+};
+
+const resolveMediaMetadata = (category, subCategory) => {
+  const mediaCategory = resolveMediaCategory(category);
+  return {
+    category: mediaCategory,
+    subCategory: mediaCategory === 'Media' ? subCategory : undefined,
+  };
 };
 
 const buildMediaHtml = (media) => {
@@ -67,8 +76,22 @@ export const PostEditor = () => {
   const quillRef = useRef(null);
   const imageInputRef = useRef(null);
   const videoInputRef = useRef(null);
+  const { rubrics: mediaRubrics } = useRubrics('TrustMedia');
 
   const isEditing = useMemo(() => Boolean(postId), [postId]);
+  const rubricOptions = useMemo(() => {
+    const options = mediaRubrics?.length
+      ? mediaRubrics.map((rubric) => ({
+          value: rubric.slug,
+          label: rubric.label,
+        }))
+      : TRUST_MEDIA_SUBCATEGORIES;
+    const current = formData.subCategory;
+    if (current && !options.find((option) => option.value === current)) {
+      options.unshift({ value: current, label: `Legacy: ${current}` });
+    }
+    return options;
+  }, [formData.subCategory, mediaRubrics]);
   const quillModules = useMemo(
     () => ({
       toolbar: {
@@ -117,13 +140,15 @@ export const PostEditor = () => {
         const post = await fetchPostById(postId);
         if (!post) throw new Error('Post introuvable');
         const nextCategory = post.category || 'TrustMedia';
+        const fallbackSubCategory =
+          rubricOptions[0]?.value || TRUST_MEDIA_SUBCATEGORIES[0].value;
         setFormData({
           title: post.title || '',
           content: post.content || '',
           category: nextCategory,
           subCategory:
             nextCategory === 'TrustMedia'
-              ? post.subCategory || TRUST_MEDIA_SUBCATEGORIES[0].value
+              ? post.subCategory || fallbackSubCategory
               : post.subCategory || '',
           status: post.status || 'draft',
           tags: (post.tags || []).join(', '),
@@ -145,7 +170,7 @@ export const PostEditor = () => {
     };
 
     fetchPost();
-  }, [isEditing, postId, addToast]);
+  }, [isEditing, postId, addToast, rubricOptions]);
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -155,7 +180,7 @@ export const PostEditor = () => {
         return {
           ...prev,
           category: nextValue,
-          subCategory: nextValue === 'TrustMedia' ? prev.subCategory || TRUST_MEDIA_SUBCATEGORIES[0].value : '',
+          subCategory: nextValue === 'TrustMedia' ? prev.subCategory || rubricOptions[0]?.value || '' : '',
         };
       }
       return {
@@ -202,7 +227,7 @@ export const PostEditor = () => {
     const file = event.target.files?.[0];
     if (!file) return;
     try {
-      const data = await uploadMedia(file, { category: resolveMediaCategory(formData.category) });
+      const data = await uploadMedia(file, resolveMediaMetadata(formData.category, formData.subCategory));
       const url = data.media?.url || data.url;
       setFormData((prev) => ({
         ...prev,
@@ -221,7 +246,7 @@ export const PostEditor = () => {
     const file = event.target.files?.[0];
     if (!file) return;
     try {
-      const data = await uploadMedia(file, { category: resolveMediaCategory(formData.category) });
+      const data = await uploadMedia(file, resolveMediaMetadata(formData.category, formData.subCategory));
       const media = data.media;
       if (media) {
         insertMediaEmbed(media);
@@ -365,7 +390,7 @@ export const PostEditor = () => {
           <label>
             Sous-catégorie
             <select name="subCategory" value={formData.subCategory} onChange={handleChange} required>
-              {TRUST_MEDIA_SUBCATEGORIES.map((option) => (
+              {rubricOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>

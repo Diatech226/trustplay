@@ -7,6 +7,7 @@ import { toggleTheme } from '../redux/theme/themeSlice';
 import { signoutSuccess } from '../redux/user/userSlice';
 import { useEffect, useMemo, useState } from 'react';
 import { apiRequest } from '../lib/apiClient';
+import { useRubrics } from '../hooks/useRubrics';
 
 export default function Header() {
   const path = useLocation().pathname;
@@ -18,14 +19,14 @@ export default function Header() {
   const { unread } = useSelector((state) => state.notifications);
   const [searchTerm, setSearchTerm] = useState('');
   const cmsUrl = import.meta.env?.VITE_CMS_URL || 'http://localhost:5174';
+  const { rubrics: trustMediaRubrics } = useRubrics('TrustMedia');
   const navItems = useMemo(() => {
     const baseNav = [
       { path: '/', label: 'Accueil' },
-      { path: '/news', label: 'News' },
-      { path: '/politique', label: 'Politique' },
-      { path: '/science', label: 'Science & Tech' },
-      { path: '/sport', label: 'Sport' },
-      { path: '/cinema', label: 'Cinéma' },
+      ...trustMediaRubrics.map((rubric) => ({
+        path: rubric.path || `/${rubric.slug}`,
+        label: rubric.label,
+      })),
       { path: '/events', label: 'Trust Events' },
       { path: '/production', label: 'Trust Prod' },
       { path: '/favorites', label: 'Favoris' },
@@ -40,7 +41,7 @@ export default function Header() {
     }
 
     return baseNav;
-  }, [currentUser]);
+  }, [currentUser, trustMediaRubrics]);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);

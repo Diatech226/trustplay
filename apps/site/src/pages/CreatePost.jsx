@@ -5,7 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { uploadImageFile, uploadMediaFile } from '../utils/uploadImage';
 import { apiRequest } from '../lib/apiClient';
-import { ALL_SUBCATEGORIES, normalizeSubCategory, PRIMARY_SUBCATEGORIES } from '../utils/categories';
+import { normalizeSubCategory } from '../utils/categories';
+import { useRubrics } from '../hooks/useRubrics';
 
 const CATEGORY_OPTIONS = [
   { value: 'TrustMedia', label: 'Média' },
@@ -21,10 +22,12 @@ export default function CreatePost() {
   const [uploadError, setUploadError] = useState('');
   const [publishError, setPublishError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const { rubrics: trustMediaRubrics } = useRubrics('TrustMedia');
+  const { rubrics: trustEventRubrics } = useRubrics('TrustEvent', { fallback: false });
   const [formData, setFormData] = useState({
     title: '',
     category: CATEGORY_OPTIONS[0].value,
-    subCategory: PRIMARY_SUBCATEGORIES[0].value,
+    subCategory: '',
     content: '',
     image: '',
     eventDate: '',
@@ -55,6 +58,18 @@ export default function CreatePost() {
   useEffect(() => {
     localStorage.setItem('cms:createPostDraft', JSON.stringify(formData));
   }, [formData]);
+
+  useEffect(() => {
+    if (formData.category === 'TrustMedia' && !formData.subCategory && trustMediaRubrics.length) {
+      setFormData((prev) => ({ ...prev, subCategory: trustMediaRubrics[0]?.slug || '' }));
+    }
+  }, [formData.category, formData.subCategory, trustMediaRubrics]);
+
+  useEffect(() => {
+    if (formData.category === 'TrustEvent' && !formData.subCategory && trustEventRubrics.length) {
+      setFormData((prev) => ({ ...prev, subCategory: trustEventRubrics[0]?.slug || '' }));
+    }
+  }, [formData.category, formData.subCategory, trustEventRubrics]);
 
   const handleUploadImage = async () => {
     if (!file) {
@@ -204,7 +219,11 @@ export default function CreatePost() {
               setFormData({
                 ...formData,
                 category: e.target.value,
-                subCategory: e.target.value === 'TrustMedia' ? PRIMARY_SUBCATEGORIES[0].value : '',
+                subCategory: e.target.value === 'TrustMedia'
+                  ? trustMediaRubrics[0]?.slug || ''
+                  : e.target.value === 'TrustEvent'
+                    ? trustEventRubrics[0]?.slug || ''
+                    : '',
               })
             }
           >
@@ -224,12 +243,26 @@ export default function CreatePost() {
           onChange={(e) => setFormData({ ...formData, subCategory: e.target.value })}
         >
           <option value=''>Choisir une rubrique</option>
-          {ALL_SUBCATEGORIES.map((option) => (
-            <option key={option.value} value={option.value}>
+          {trustMediaRubrics.map((option) => (
+            <option key={option.slug} value={option.slug}>
               {option.label}
             </option>
           ))}
           </Select>
+        )}
+        {formData.category === 'TrustEvent' && (
+        <Select
+          required
+          value={formData.subCategory}
+          onChange={(e) => setFormData({ ...formData, subCategory: e.target.value })}
+        >
+          <option value=''>Choisir une rubrique événementielle</option>
+          {trustEventRubrics.map((option) => (
+            <option key={option.slug} value={option.slug}>
+              {option.label}
+            </option>
+          ))}
+        </Select>
         )}
 
         <div className='grid gap-4 md:grid-cols-2'>

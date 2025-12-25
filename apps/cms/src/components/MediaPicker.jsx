@@ -12,7 +12,7 @@ const KIND_OPTIONS = [
 
 export const MediaPicker = ({ open, onClose, onSelect, multiple = false, title = 'Bibliothèque médias' }) => {
   const [mediaItems, setMediaItems] = useState([]);
-  const [filters, setFilters] = useState({ search: '', category: '', kind: '' });
+  const [filters, setFilters] = useState({ search: '', category: '', subCategory: '', kind: '' });
   const [loading, setLoading] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const { addToast } = useToast();
@@ -25,6 +25,7 @@ export const MediaPicker = ({ open, onClose, onSelect, multiple = false, title =
         const response = await fetchMedia({
           search: filters.search,
           category: filters.category,
+          subCategory: filters.subCategory,
           kind: filters.kind,
           startIndex: 0,
           limit: 40,
@@ -96,6 +97,14 @@ export const MediaPicker = ({ open, onClose, onSelect, multiple = false, title =
               placeholder="article, event..."
               value={filters.category}
               onChange={(event) => setFilters((prev) => ({ ...prev, category: event.target.value }))}
+            />
+          </label>
+          <label>
+            Sous-catégorie
+            <input
+              placeholder="news, conférence..."
+              value={filters.subCategory}
+              onChange={(event) => setFilters((prev) => ({ ...prev, subCategory: event.target.value }))}
             />
           </label>
           <label>

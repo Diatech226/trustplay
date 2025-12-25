@@ -7,7 +7,8 @@ import PostCard from '../components/PostCard';
 import PostCardSkeleton from '../components/skeletons/PostCardSkeleton';
 import Seo from '../components/Seo';
 import { getMediaPosts, normalizePosts } from '../services/posts.service';
-import { MEDIA_CATEGORY, normalizeSubCategory, normalizeTrustMediaSubCategory, PRIMARY_SUBCATEGORIES } from '../utils/categories';
+import { useRubrics } from '../hooks/useRubrics';
+import { MEDIA_CATEGORY, normalizeSubCategory } from '../utils/categories';
 
 export default function Search() {
   const [sidebarData, setSidebarData] = useState({
@@ -22,6 +23,7 @@ export default function Search() {
   const [loading, setLoading] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [error, setError] = useState('');
+  const { rubrics: trustMediaRubrics } = useRubrics('TrustMedia');
 
   const location = useLocation();
 
@@ -33,7 +35,10 @@ export default function Search() {
     const urlParams = new URLSearchParams(location.search);
     const searchTermFromUrl = urlParams.get('searchTerm') || '';
     const sortFromUrl = urlParams.get('sort') || 'recent';
-    const subCategoryFromUrl = normalizeTrustMediaSubCategory(urlParams.get('subCategory')) || 'all';
+    const normalizedParam = normalizeSubCategory(urlParams.get('subCategory'));
+    const allowedSubCategories = new Set(trustMediaRubrics.map((rubric) => rubric.slug));
+    const subCategoryFromUrl =
+      normalizedParam && allowedSubCategories.has(normalizedParam) ? normalizedParam : 'all';
     const featuredFromUrl = urlParams.get('featured');
     const dateRangeFromUrl = urlParams.get('dateRange') || (featuredFromUrl === 'today' ? '24h' : 'any');
     const tagsFromUrl = urlParams.get('tags') || '';
@@ -70,7 +75,7 @@ export default function Search() {
       }
     };
     fetchPosts();
-  }, [location.search]);
+  }, [location.search, trustMediaRubrics]);
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -89,7 +94,7 @@ export default function Search() {
     if (sidebarData.subCategory === 'all') {
       urlParams.delete('subCategory');
     } else {
-      urlParams.set('subCategory', normalizeTrustMediaSubCategory(sidebarData.subCategory));
+      urlParams.set('subCategory', normalizeSubCategory(sidebarData.subCategory));
     }
     const searchQuery = urlParams.toString();
     navigate(`/search?${searchQuery}`);
@@ -103,7 +108,7 @@ export default function Search() {
         searchTerm: sidebarData.searchTerm || undefined,
         subCategory: sidebarData.subCategory === 'all'
           ? undefined
-          : normalizeTrustMediaSubCategory(sidebarData.subCategory),
+          : normalizeSubCategory(sidebarData.subCategory),
         order: sidebarData.sort === 'asc' ? 'asc' : 'desc',
         limit: pageSize,
         startIndex,
@@ -120,7 +125,7 @@ export default function Search() {
   const applyAdvancedFilters = (list, filters) => {
     // advanced search
     let results = [...list];
-    const normalizedFilterSub = normalizeTrustMediaSubCategory(filters.subCategory);
+    const normalizedFilterSub = normalizeSubCategory(filters.subCategory);
     if (filters.subCategory !== 'all' && normalizedFilterSub) {
       results = results.filter((item) => normalizeSubCategory(item.subCategory) === normalizedFilterSub);
     }
@@ -195,8 +200,8 @@ export default function Search() {
                 <label className='text-sm font-semibold text-slate-700 dark:text-slate-200'>Rubrique</label>
                 <Select onChange={handleChange} value={sidebarData.subCategory} id='subCategory'>
                   <option value='all'>Toutes</option>
-                  {PRIMARY_SUBCATEGORIES.map((option) => (
-                    <option key={option.value} value={option.value}>
+                  {trustMediaRubrics.map((option) => (
+                    <option key={option.slug} value={option.slug}>
                       {option.label}
                     </option>
                   ))}

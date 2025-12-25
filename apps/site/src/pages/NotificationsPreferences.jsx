@@ -1,17 +1,18 @@
+import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { toggleSubscription } from '../redux/notifications/notificationsSlice';
-
-const labels = {
-  news: 'News',
-  politique: 'Politique',
-  science: 'Science/Tech',
-  sport: 'Sport',
-  cinema: 'Cinéma',
-};
+import { setCategories, toggleSubscription } from '../redux/notifications/notificationsSlice';
+import { useRubrics } from '../hooks/useRubrics';
 
 export default function NotificationsPreferences() {
   const dispatch = useDispatch();
   const { categories, subscribed } = useSelector((state) => state.notifications);
+  const { rubrics } = useRubrics('TrustMedia');
+
+  useEffect(() => {
+    if (rubrics.length) {
+      dispatch(setCategories(rubrics.map((rubric) => rubric.slug)));
+    }
+  }, [dispatch, rubrics]);
 
   const handleToggle = (cat) => dispatch(toggleSubscription(cat));
 
@@ -27,6 +28,7 @@ export default function NotificationsPreferences() {
         <div className='grid gap-4 md:grid-cols-2'>
           {categories.map((cat) => {
             const active = subscribed.includes(cat);
+            const rubricLabel = rubrics.find((rubric) => rubric.slug === cat)?.label || cat;
             return (
               <button
                 key={cat}
@@ -36,7 +38,7 @@ export default function NotificationsPreferences() {
                 }`}
               >
                 <div>
-                  <p className='text-lg font-semibold'>{labels[cat]}</p>
+                  <p className='text-lg font-semibold'>{rubricLabel}</p>
                   <p className='text-sm text-slate-600 dark:text-slate-300'>Recevoir une alerte à chaque nouvel article.</p>
                 </div>
                 <span className={`h-4 w-4 rounded-full border ${active ? 'bg-primary' : 'border-slate-400'}`}></span>

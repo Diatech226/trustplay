@@ -7,6 +7,7 @@ const navItems = [
   { to: '/events', label: 'Events', icon: '📅' },
   { to: '/media', label: 'Media Library', icon: '🗂️' },
   { to: '/comments', label: 'Comments', icon: '💬' },
+  { to: '/rubrics', label: 'Rubriques', icon: '🧭' },
   { to: '/users', label: 'Users', icon: '👥' },
   { to: '/settings', label: 'Settings', icon: '⚙️' },
 ];
@@ -16,6 +17,7 @@ const labelMap = {
   events: 'Events',
   media: 'Media Library',
   comments: 'Comments',
+  rubrics: 'Rubriques',
   users: 'Users',
   settings: 'Settings',
   new: 'Nouveau',

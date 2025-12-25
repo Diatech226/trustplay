@@ -4,9 +4,10 @@ import { useToast } from '../components/ToastProvider';
 import { deleteMedia, fetchMedia, updateMedia, uploadMedia } from '../services/media.service';
 import { useAuth } from '../context/AuthContext';
 import { resolveMediaUrl } from '../lib/mediaUrls';
+import { useRubrics } from '../hooks/useRubrics';
 
 const CATEGORY_OPTIONS = [
-  { value: 'article', label: 'Article' },
+  { value: 'Media', label: 'Media (rubriques)' },
   { value: 'event', label: 'Event' },
   { value: 'gallery', label: 'Gallery' },
   { value: 'branding', label: 'Branding' },
@@ -29,12 +30,14 @@ export const MediaLibrary = () => {
   const [mediaItems, setMediaItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [filters, setFilters] = useState({ search: '', category: '', kind: '' });
+  const [filters, setFilters] = useState({ search: '', category: '', subCategory: '', kind: '' });
   const [pagination, setPagination] = useState({ startIndex: 0, limit: 20, total: 0 });
-  const [uploadCategory, setUploadCategory] = useState('gallery');
+  const [uploadCategory, setUploadCategory] = useState('Media');
+  const [uploadSubCategory, setUploadSubCategory] = useState('');
   const { addToast } = useToast();
   const { user: currentUser } = useAuth();
   const isAdmin = currentUser?.role === 'ADMIN';
+  const { rubrics: mediaRubrics } = useRubrics('Media');
 
   const MediaPreview = ({ item }) => {
     const [failed, setFailed] = useState(false);
@@ -67,6 +70,7 @@ export const MediaLibrary = () => {
         const response = await fetchMedia({
           search: filters.search,
           category: filters.category,
+          subCategory: filters.subCategory,
           kind: filters.kind,
           startIndex,
           limit: pagination.limit,
@@ -99,7 +103,10 @@ export const MediaLibrary = () => {
     if (!file) return;
     setLoading(true);
     try {
-      await uploadMedia(file, { category: uploadCategory });
+      await uploadMedia(file, {
+        category: uploadCategory,
+        subCategory: uploadCategory === 'Media' ? uploadSubCategory : undefined,
+      });
       await loadMedia({ reset: true });
       addToast('Upload réussi.', { type: 'success' });
     } catch (error) {
@@ -160,6 +167,19 @@ export const MediaLibrary = () => {
     }
   };
 
+  const handleUpdateSubCategory = async (media) => {
+    const subCategory = window.prompt('Nouvelle sous-catégorie', media.subCategory || '');
+    if (subCategory === null || subCategory === media.subCategory) return;
+    try {
+      const response = await updateMedia(media._id, { subCategory });
+      const updated = response?.media || response?.data?.media;
+      setMediaItems((prev) => prev.map((item) => (item._id === media._id ? updated : item)));
+      addToast('Sous-catégorie mise à jour.', { type: 'success' });
+    } catch (error) {
+      addToast(`Mise à jour impossible : ${error.message}`, { type: 'error' });
+    }
+  };
+
   return (
     <div>
       <div className="section">
@@ -177,6 +197,23 @@ export const MediaLibrary = () => {
               ))}
             </select>
           </label>
+          {uploadCategory === 'Media' ? (
+            <label>
+              Sous-catégorie
+              <select
+                value={uploadSubCategory}
+                onChange={(event) => setUploadSubCategory(event.target.value)}
+                required
+              >
+                <option value="">Choisir une rubrique</option>
+                {mediaRubrics.map((rubric) => (
+                  <option key={rubric.slug} value={rubric.slug}>
+                    {rubric.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
           <label>
             Sélectionner un fichier
             <input type="file" onChange={handleUpload} />
@@ -211,6 +248,14 @@ export const MediaLibrary = () => {
             />
           </label>
           <label>
+            Sous-catégorie
+            <input
+              placeholder="news, conférence..."
+              value={filters.subCategory}
+              onChange={(event) => setFilters((prev) => ({ ...prev, subCategory: event.target.value }))}
+            />
+          </label>
+          <label>
             Type
             <select value={filters.kind} onChange={(event) => setFilters((prev) => ({ ...prev, kind: event.target.value }))}>
               {KIND_OPTIONS.map((option) => (
@@ -236,6 +281,7 @@ export const MediaLibrary = () => {
                   <th>Aperçu</th>
                   <th>Nom</th>
                   <th>Catégorie</th>
+                  <th>Sous-catégorie</th>
                   <th>Type</th>
                   <th>Taille</th>
                   <th>Ajouté le</th>
@@ -253,6 +299,7 @@ export const MediaLibrary = () => {
                     </td>
                     <td>{item.name}</td>
                     <td>{item.category}</td>
+                    <td>{item.subCategory || '—'}</td>
                     <td>{item.mimeType || item.kind}</td>
                     <td>{formatSize(item.size)}</td>
                     <td>{formatDate(item.createdAt)}</td>
@@ -280,6 +327,9 @@ export const MediaLibrary = () => {
                         </button>
                         <button className="button secondary" type="button" onClick={() => handleUpdateCategory(item)}>
                           Catégorie
+                        </button>
+                        <button className="button secondary" type="button" onClick={() => handleUpdateSubCategory(item)}>
+                          Sous-catégorie
                         </button>
                         {isAdmin ? (
                           <button className="button danger" type="button" onClick={() => handleDelete(item._id)}>

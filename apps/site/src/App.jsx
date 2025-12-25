@@ -52,6 +52,7 @@ const NewsPage = lazy(() => import('./pages/NewsPage'));
 const Favorites = lazy(() => import('./pages/Favorites'));
 const History = lazy(() => import('./pages/History'));
 const NotificationsPreferences = lazy(() => import('./pages/NotificationsPreferences'));
+const RubricPage = lazy(() => import('./pages/RubricPage'));
 
 export default function App() {
   const dispatch = useDispatch();
@@ -110,6 +111,7 @@ export default function App() {
             <Route path='/science-tech' element={<SciencePage />} />
             <Route path='/sport' element={<SportPage />} />
             <Route path='/cinema' element={<CinemaPage />} />
+            <Route path='/:rubricSlug' element={<RubricPage />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsConditions />} />
             <Route element={<PrivateRoute />}>

@@ -6,10 +6,11 @@ const normalizeMediaResponse = (response) => {
   return { media, totalMedia };
 };
 
-export const fetchMedia = async ({ search, category, kind, startIndex, limit, order } = {}) => {
+export const fetchMedia = async ({ search, category, subCategory, kind, startIndex, limit, order } = {}) => {
   const searchParams = new URLSearchParams();
   if (search) searchParams.set('search', search);
   if (category) searchParams.set('category', category);
+  if (subCategory) searchParams.set('subCategory', subCategory);
   if (kind) searchParams.set('kind', kind);
   if (startIndex !== undefined) searchParams.set('startIndex', startIndex);
   if (limit) searchParams.set('limit', limit);

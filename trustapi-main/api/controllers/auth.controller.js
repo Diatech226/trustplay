@@ -76,6 +76,7 @@ export const signup = async (req, res, next) => {
         id: newUser._id,
         email: newUser.email,
         role: resolvedRole,
+        isAdmin: resolvedRole === 'ADMIN',
       },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
@@ -132,6 +133,7 @@ export const signin = async (req, res) => {
         id: validUser._id,
         email: validUser.email,
         role: resolvedRole,
+        isAdmin: resolvedRole === 'ADMIN',
       },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
@@ -256,6 +258,7 @@ export const resetPassword = async (req, res) => {
         id: user._id,
         email: user.email,
         role: resolvedRole,
+        isAdmin: resolvedRole === 'ADMIN',
       },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }

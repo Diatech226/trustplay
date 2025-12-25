@@ -6,20 +6,22 @@ import PostCard from '../components/PostCard';
 import PostCardSkeleton from '../components/skeletons/PostCardSkeleton';
 import Seo from '../components/Seo';
 import { getMediaPosts, normalizePosts } from '../services/posts.service';
-import { MEDIA_CATEGORY, normalizeSubCategory, TRUST_MEDIA_SUBCATEGORIES } from '../utils/categories';
+import { useRubrics } from '../hooks/useRubrics';
+import { MEDIA_CATEGORY, normalizeSubCategory } from '../utils/categories';
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
   const [sectionPosts, setSectionPosts] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { rubrics: trustMediaRubrics, rubricMap } = useRubrics('TrustMedia');
 
   const categories = [
     { name: 'Tous', key: 'all', path: '/search' },
-    ...TRUST_MEDIA_SUBCATEGORIES.map((cat) => ({
+    ...trustMediaRubrics.map((cat) => ({
       name: cat.label,
-      key: cat.value,
-      path: cat.path,
+      key: cat.slug,
+      path: cat.path || `/${cat.slug}`,
     })),
   ];
 
@@ -32,11 +34,11 @@ export default function Home() {
         const normalizedPosts = normalizePosts(latestResponse.posts).filter(
           (post) => !post.category || post.category === MEDIA_CATEGORY
         );
-        const nextSections = TRUST_MEDIA_SUBCATEGORIES.reduce((acc, cat) => {
+        const nextSections = trustMediaRubrics.reduce((acc, cat) => {
           const items = normalizedPosts.filter(
-            (post) => normalizeSubCategory(post.subCategory) === cat.value
+            (post) => normalizeSubCategory(post.subCategory) === cat.slug
           );
-          acc[cat.value] = items.slice(0, 4);
+          acc[cat.slug] = items.slice(0, 4);
           return acc;
         }, {});
         setPosts(normalizedPosts);
@@ -48,7 +50,7 @@ export default function Home() {
       }
     };
     fetchPosts();
-  }, []);
+  }, [trustMediaRubrics]);
 
   const featuredPost = posts[0];
   const latestPosts = posts.slice(1, 5);
@@ -166,7 +168,9 @@ export default function Home() {
                       />
                     </div>
                     <div className='space-y-2'>
-                      <p className='text-xs uppercase tracking-wide text-primary'>{post.subCategory}</p>
+                      <p className='text-xs uppercase tracking-wide text-primary'>
+                        {rubricMap[normalizeSubCategory(post.subCategory)]?.label || post.subCategory}
+                      </p>
                       <h3 className='text-base font-semibold leading-snug text-slate-900 line-clamp-2 dark:text-white'>
                         {post.title}
                       </h3>
@@ -211,22 +215,22 @@ export default function Home() {
             <Link to={allRubriquesUrl} className={baseLinkClass}>Voir toutes les rubriques</Link>
           </div>
           <div className='grid gap-8'>
-            {TRUST_MEDIA_SUBCATEGORIES.map((category) => {
-              const items = sectionPosts[category.value] || [];
+            {trustMediaRubrics.map((category) => {
+              const items = sectionPosts[category.slug] || [];
               return (
-                <div key={category.value} className='rounded-3xl border border-subtle bg-white p-5 shadow-subtle dark:border-slate-800 dark:bg-slate-900'>
+                <div key={category.slug} className='rounded-3xl border border-subtle bg-white p-5 shadow-subtle dark:border-slate-800 dark:bg-slate-900'>
                   <div className='flex flex-wrap items-center justify-between gap-3 pb-4'>
                     <div>
                       <p className='text-xs font-semibold uppercase tracking-[0.2em] text-primary'>Rubrique</p>
                       <h3 className='text-xl font-bold text-primary'>{category.label}</h3>
                     </div>
-                    <Link to={category.path} className={baseLinkClass}>
+                    <Link to={category.path || `/${category.slug}`} className={baseLinkClass}>
                       Voir {category.label.toLowerCase()}
                     </Link>
                   </div>
                   <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
                     {loading && Array.from({ length: 3 }).map((_, index) => (
-                      <PostCardSkeleton key={`${category.value}-skel-${index}`} />
+                      <PostCardSkeleton key={`${category.slug}-skel-${index}`} />
                     ))}
                     {error && !loading && (
                       <p className='col-span-full text-sm text-red-600 dark:text-red-200'>

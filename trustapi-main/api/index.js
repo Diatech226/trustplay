@@ -22,6 +22,7 @@ import seoRoutes from './routes/seo.route.js';
 import eventsRoutes from './routes/events.route.js';
 import settingsRoutes from './routes/settings.route.js';
 import adminUsersRoutes from './routes/adminUsers.route.js';
+import rubricsRoutes from './routes/rubrics.route.js';
 
 // Connexion à MongoDB
 if (!process.env.DATABASE_URL) {
@@ -113,6 +114,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/campaigns', campaignRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/admin', adminUsersRoutes);
+app.use('/api/rubrics', rubricsRoutes);
 app.get('/api/health', (_req, res) => {
   res.json({ success: true });
 });

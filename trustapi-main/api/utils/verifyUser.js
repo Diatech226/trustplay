@@ -39,7 +39,10 @@ export const verifyToken = async (req, res, next) => {
         .json({ success: false, message: "Unauthorized: Invalid token" });
     }
 
-    const normalizedRole = normalizeRoleValue(decodedUser?.role);
+    let normalizedRole = normalizeRoleValue(decodedUser?.role);
+    if (!normalizedRole && decodedUser?.isAdmin === true) {
+      normalizedRole = 'ADMIN';
+    }
 
     if (!normalizedRole && decodedUser?.id) {
       const user = await User.findById(decodedUser.id);
@@ -76,4 +79,49 @@ export const requireAdmin = (req, res, next) => {
       .json({ success: false, message: "Forbidden: Admin access required" });
   }
   return next();
+};
+
+export const verifyTokenOptional = async (req, res, next) => {
+  try {
+    const token = getTokenFromRequest(req);
+    if (!token) return next();
+
+    let decodedUser;
+    try {
+      decodedUser = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+      return next();
+    }
+
+    let normalizedRole = normalizeRoleValue(decodedUser?.role);
+    if (!normalizedRole && decodedUser?.isAdmin === true) {
+      normalizedRole = 'ADMIN';
+    }
+
+    if (!normalizedRole && decodedUser?.id) {
+      const user = await User.findById(decodedUser.id);
+      if (user) {
+        const resolvedRole = await ensureUserRole(user);
+        req.user = {
+          id: user._id.toString(),
+          email: user.email,
+          role: resolvedRole,
+        };
+      }
+    } else if (normalizedRole) {
+      req.user = {
+        id: decodedUser.id,
+        email: decodedUser.email,
+        role: normalizedRole,
+      };
+    }
+
+    if (req.user) {
+      req.token = token;
+    }
+
+    return next();
+  } catch (error) {
+    return next();
+  }
 };
