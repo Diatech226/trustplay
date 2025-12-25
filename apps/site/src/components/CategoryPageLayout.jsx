@@ -6,7 +6,7 @@ import PageContainer from './layout/PageContainer';
 import PageHeader from './layout/PageHeader';
 import Seo from './Seo';
 import PostCardSkeleton from './skeletons/PostCardSkeleton';
-import { apiRequest } from '../lib/apiClient';
+import { getMediaPosts, normalizePosts } from '../services/posts.service';
 import { normalizeSubCategory } from '../utils/categories';
 
 const DEFAULT_LIMIT = 12;
@@ -49,38 +49,28 @@ export default function CategoryPageLayout({ title, subCategory, description = '
       setError('');
       try {
         const params = new URLSearchParams();
-        params.set('limit', DEFAULT_LIMIT);
-        params.set('startIndex', (page - 1) * DEFAULT_LIMIT);
-        params.set('status', 'published');
         const normalizedSub = normalizeSubCategory(subCategory);
-        if (normalizedSub) {
-          params.set('subCategory', normalizedSub);
-        }
-
         if (sort === 'asc') {
           params.set('order', 'asc');
         } else if (sort === 'recent') {
           params.set('order', 'desc');
-        } else if (sort === 'popular') {
-          params.set('order', 'desc');
-          params.set('sortBy', 'views');
         }
+        const { posts: fetchedPosts, totalPosts } = await getMediaPosts({
+          subCategory: normalizedSub,
+          limit: DEFAULT_LIMIT,
+          startIndex: (page - 1) * DEFAULT_LIMIT,
+          order: params.get('order') || 'desc',
+        });
 
+        let normalizedPosts = normalizePosts(fetchedPosts);
         if (dateFilter !== 'all') {
           const days = dateFilter === '30d' ? 30 : 7;
-          const from = new Date();
-          from.setDate(from.getDate() - days);
-          params.set('publishedFrom', from.toISOString());
+          const cutoff = new Date();
+          cutoff.setDate(cutoff.getDate() - days);
+          normalizedPosts = normalizedPosts.filter((post) => new Date(post.createdAt || post.updatedAt || 0) >= cutoff);
         }
-
-        const data = await apiRequest(`/api/posts?${params.toString()}`);
-
-        let fetchedPosts = (data.posts || data.data?.posts || []).map((post) => ({
-          ...post,
-          subCategory: normalizeSubCategory(post.subCategory),
-        }));
         if (sort === 'popular') {
-          fetchedPosts = [...fetchedPosts].sort((a, b) => {
+          normalizedPosts = [...normalizedPosts].sort((a, b) => {
             const score = (item) => {
               for (const field of popularityFields) {
                 if (typeof item[field] === 'number') return item[field];
@@ -90,12 +80,12 @@ export default function CategoryPageLayout({ title, subCategory, description = '
             return score(b) - score(a);
           });
         } else if (sort === 'asc' || sort === 'recent') {
-          fetchedPosts = [...fetchedPosts].sort((a, b) =>
+          normalizedPosts = [...normalizedPosts].sort((a, b) =>
             sort === 'asc' ? getTimestamp(a) - getTimestamp(b) : getTimestamp(b) - getTimestamp(a)
           );
         }
-        setPosts(fetchedPosts);
-        setTotal(data.totalPosts || data.data?.totalPosts || fetchedPosts.length);
+        setPosts(normalizedPosts);
+        setTotal(dateFilter === 'all' ? totalPosts : normalizedPosts.length);
       } catch (err) {
         setError(err.message);
       } finally {

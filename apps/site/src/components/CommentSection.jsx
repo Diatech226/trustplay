@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import Comment from './Comment';
 import { HiOutlineExclamationCircle } from 'react-icons/hi';
 import { apiRequest } from '../lib/apiClient';
+import { getPostComments } from '../services/comments.service';
 
 export default function CommentSection({ postId }) {
   const { currentUser } = useSelector((state) => state.user);
@@ -25,13 +26,16 @@ export default function CommentSection({ postId }) {
   useEffect(() => {
     const fetchComments = async () => {
       if (!postId) {
+        if (import.meta.env.DEV) {
+          console.warn('[CommentSection] postId manquant, annulation du chargement des commentaires.');
+        }
         setComments([]);
         setLoading(false);
         return;
       }
       try {
         setLoading(true);
-        const data = await apiRequest(`/api/comment/getPostComments/${postId}`);
+        const data = await getPostComments(postId);
         const fetched = data.comments || data.data?.comments || data;
         setComments(Array.isArray(fetched) ? fetched.map(mapComment) : []);
       } catch (error) {

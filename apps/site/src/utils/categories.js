@@ -1,3 +1,22 @@
+export const MEDIA_CATEGORY = 'TrustMedia';
+export const EVENT_CATEGORY = 'TrustEvent';
+
+export const TRUST_MEDIA_SUBCATEGORIES = [
+  { value: 'news', label: 'News', path: '/news' },
+  { value: 'politique', label: 'Politique', path: '/politique' },
+  { value: 'science-tech', label: 'Science/Tech', path: '/science' },
+  { value: 'sport', label: 'Sport', path: '/sport' },
+  { value: 'cinema', label: 'Cinéma', path: '/cinema' },
+];
+
+const TRUST_MEDIA_SUBCATEGORY_MAP = TRUST_MEDIA_SUBCATEGORIES.reduce((acc, item) => {
+  acc[item.value] = item;
+  return acc;
+}, {});
+
+export const getSubCategoryMeta = (value) => TRUST_MEDIA_SUBCATEGORY_MAP[value];
+export const getSubCategoryLabel = (value) => TRUST_MEDIA_SUBCATEGORY_MAP[value]?.label;
+
 export const normalizeSubCategory = (value = '') => {
   const normalized = value.toString().trim().toLowerCase();
   const map = {
@@ -20,18 +39,12 @@ export const normalizeSubCategory = (value = '') => {
   };
 
   if (map[normalized]) return map[normalized];
-  const scienceKeys = ['science', 'science-tech', 'science/tech', 'sciencetech', 'technologie', 'technology', 'tech'];
+  const scienceKeys = ['science', 'science-tech', 'science/tech', 'science & tech', 'sciencetech', 'technologie', 'technology', 'tech'];
   if (scienceKeys.includes(normalized)) return 'science-tech';
   return normalized || undefined;
 };
 
-export const PRIMARY_SUBCATEGORIES = [
-  { value: 'news', label: 'News' },
-  { value: 'politique', label: 'Politique' },
-  { value: 'science-tech', label: 'Science & Tech' },
-  { value: 'sport', label: 'Sport' },
-  { value: 'cinema', label: 'Cinéma' },
-];
+export const PRIMARY_SUBCATEGORIES = TRUST_MEDIA_SUBCATEGORIES.map(({ value, label }) => ({ value, label }));
 
 export const SECONDARY_SUBCATEGORIES = [
   { value: 'economie', label: 'Économie' },

@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import PageContainer from '../components/layout/PageContainer';
 import PageHeader from '../components/layout/PageHeader';
 import Seo from '../components/Seo';
-import { fetchJson } from '../lib/apiClient';
-import { normalizeSubCategory } from '../utils/categories';
+import { getEvents } from '../services/events.service';
 import { logEventSignup } from '../lib/analytics';
 
 export default function TrustEvent() {
@@ -19,12 +18,8 @@ export default function TrustEvent() {
     const fetchEvents = async () => {
       try {
         setLoading(true);
-        // fix: event list sorted by date (upcoming first)
-        const data = await fetchJson(`/api/posts?category=TrustEvent&limit=6`);
-        const sortedEvents = (data.posts || data.data?.posts || []).map((event) => ({
-          ...event,
-          subCategory: normalizeSubCategory(event.subCategory),
-        })).sort(
+        const { events: fetchedEvents } = await getEvents({ order: 'desc', limit: 12 });
+        const sortedEvents = [...fetchedEvents].sort(
           (a, b) => new Date(a.eventDate || 0) - new Date(b.eventDate || 0)
         );
         setEvents(sortedEvents);
@@ -89,7 +84,9 @@ export default function TrustEvent() {
               <div key={`event-skel-${index}`} className="h-64 animate-pulse rounded-2xl bg-white shadow-subtle ring-1 ring-subtle dark:bg-slate-900 dark:ring-slate-800" />
             ))}
           {!loading && events.map((event) => {
-            const isPaid = event.isPaid || Number(event.price) > 0;
+            const priceValue = Number(event.price || 0);
+            const isPaid = Boolean(event.isPaid || event.paid) || priceValue > 0;
+            const eventDate = event.eventDate ? new Date(event.eventDate) : null;
             return (
             <div key={event._id} className="flex h-full flex-col rounded-2xl bg-white shadow-card ring-1 ring-subtle transition hover:-translate-y-1 hover:shadow-lg dark:bg-slate-900 dark:ring-slate-800">
               <img
@@ -104,14 +101,21 @@ export default function TrustEvent() {
               <div className="flex flex-1 flex-col gap-2 p-4">
                 <h2 className="text-xl font-semibold text-primary">{event.title}</h2>
                 <div className="flex items-center justify-between text-sm text-slate-500">
-                  <p>{new Date(event.eventDate).toLocaleDateString()}</p>
+                  <p>{eventDate ? eventDate.toLocaleDateString() : 'Date à confirmer'}</p>
                   <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
                     isPaid ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-100' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-100'
                   }`}>
-                    {isPaid ? `Payant${event.price ? ` · ${event.price}€` : ''}` : 'Gratuit'}
+                    {isPaid ? `Payant${priceValue ? ` · ${priceValue}€` : ''}` : 'Gratuit'}
                   </span>
                 </div>
-                <p className="text-sm text-slate-700 line-clamp-3 dark:text-slate-200">{event.description || event.location}</p>
+                <p className="text-sm text-slate-700 line-clamp-3 dark:text-slate-200">
+                  {event.description || event.location || event.content?.replace(/<[^>]+>/g, '').slice(0, 120)}
+                </p>
+                {event.location && (
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+                    {event.location}
+                  </p>
+                )}
                 <a href={`/post/${event.slug}`} className="mt-auto text-sm font-semibold text-ocean hover:underline">Lire plus</a>
               </div>
             </div>
