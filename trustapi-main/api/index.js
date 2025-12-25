@@ -20,6 +20,7 @@ import compression from 'compression';
 import analyticsRoutes from './routes/analytics.route.js';
 import seoRoutes from './routes/seo.route.js';
 import eventsRoutes from './routes/events.route.js';
+import settingsRoutes from './routes/settings.route.js';
 
 // Connexion à MongoDB
 if (!process.env.DATABASE_URL) {
@@ -109,6 +110,7 @@ app.use('/api/events', eventsRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/campaigns', campaignRoutes);
+app.use('/api/settings', settingsRoutes);
 app.get('/api/health', (_req, res) => {
   res.json({ success: true });
 });
