@@ -47,11 +47,11 @@ export default function FooterCom() {
               <Footer.LinkGroup col>
                 <Footer.Link href='/about'>Notre vision</Footer.Link>
                 <Footer.Link href='/production'>Trust Production</Footer.Link>
-                <Footer.Link href='/event'>Trust Events</Footer.Link>
-                <Footer.Link href='/rss/news' className='flex items-center gap-2'>
+                <Footer.Link href='/events'>Trust Events</Footer.Link>
+                <Footer.Link href='/news' className='flex items-center gap-2'>
                   <FaRss className='text-primary' /> RSS News
                 </Footer.Link>
-                <Footer.Link href='/rss/politique' className='flex items-center gap-2'>
+                <Footer.Link href='/politique' className='flex items-center gap-2'>
                   <FaRss className='text-primary' /> RSS Politique
                 </Footer.Link>
               </Footer.LinkGroup>
@@ -68,14 +68,14 @@ export default function FooterCom() {
               <Footer.Title title='Légal' />
               <Footer.LinkGroup col>
                 <Footer.Link href='/privacy-policy'>Politique de confidentialité</Footer.Link>
-                <Footer.Link href='Terms'>Termes &amp; Conditions</Footer.Link>
-                <Footer.Link href='/rss/science' className='flex items-center gap-2'>
+                <Footer.Link href='/terms'>Termes &amp; Conditions</Footer.Link>
+                <Footer.Link href='/science' className='flex items-center gap-2'>
                   <FaRss className='text-primary' /> RSS Science/Tech
                 </Footer.Link>
-                <Footer.Link href='/rss/sport' className='flex items-center gap-2'>
+                <Footer.Link href='/sport' className='flex items-center gap-2'>
                   <FaRss className='text-primary' /> RSS Sport
                 </Footer.Link>
-                <Footer.Link href='/rss/cinema' className='flex items-center gap-2'>
+                <Footer.Link href='/cinema' className='flex items-center gap-2'>
                   <FaRss className='text-primary' /> RSS Cinéma
                 </Footer.Link>
               </Footer.LinkGroup>

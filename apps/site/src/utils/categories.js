@@ -10,6 +10,10 @@ export const TRUST_MEDIA_SUBCATEGORIES = [
   { value: 'cinema', label: 'Cinéma', path: '/cinema' },
 ];
 
+const TRUST_MEDIA_SUBCATEGORY_VALUES = TRUST_MEDIA_SUBCATEGORIES.map(({ value }) => value);
+const TRUST_MEDIA_SUBCATEGORY_SET = new Set(TRUST_MEDIA_SUBCATEGORY_VALUES);
+const TRUST_MEDIA_FALLBACK_SUBCATEGORY = 'news';
+
 const TRUST_MEDIA_SUBCATEGORY_MAP = TRUST_MEDIA_SUBCATEGORIES.reduce((acc, item) => {
   acc[item.value] = item;
   return acc;
@@ -43,6 +47,12 @@ export const normalizeSubCategory = (value = '') => {
   const scienceKeys = ['science', 'science-tech', 'science/tech', 'science & tech', 'sciencetech', 'technologie', 'technology', 'tech'];
   if (scienceKeys.includes(normalized)) return 'science-tech';
   return normalized || undefined;
+};
+
+export const normalizeTrustMediaSubCategory = (value = '') => {
+  const normalized = normalizeSubCategory(value);
+  if (!normalized) return undefined;
+  return TRUST_MEDIA_SUBCATEGORY_SET.has(normalized) ? normalized : TRUST_MEDIA_FALLBACK_SUBCATEGORY;
 };
 
 export const PRIMARY_SUBCATEGORIES = TRUST_MEDIA_SUBCATEGORIES.map(({ value, label }) => ({ value, label }));

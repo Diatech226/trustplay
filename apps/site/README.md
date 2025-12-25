@@ -33,8 +33,11 @@ npm run lint
 - `/news`, `/politique`, `/science`, `/sport`, `/cinema` : rubriques Trust Media
 - `/search` : recherche/filtrage
 - `/post/:slug` : article
-- `/events` : Trust Event
+- `/events` (alias `/event`) : Trust Event
 - `/production` : Trust Production
+- `/about` : à propos
+- `/privacy-policy`, `/terms` : pages légales
+- `/favorites`, `/history`, `/notifications-preferences` : espaces lecteurs
 
 ## Mapping rubriques → API
 - `MEDIA_CATEGORY` = `TrustMedia`
@@ -46,6 +49,7 @@ npm run lint
   - Science/Tech → `science-tech`
   - Sport → `sport`
   - Cinéma → `cinema`
+  - Toute valeur obsolète est normalisée vers ces rubriques côté front (fallback: `news`).
 
 ## Queries API (site public)
 Les pages publiques consomment `GET /api/post/getposts` avec les paramètres supportés :

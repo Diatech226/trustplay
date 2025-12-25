@@ -7,7 +7,7 @@ import PostCard from '../components/PostCard';
 import PostCardSkeleton from '../components/skeletons/PostCardSkeleton';
 import Seo from '../components/Seo';
 import { getMediaPosts, normalizePosts } from '../services/posts.service';
-import { normalizeSubCategory, PRIMARY_SUBCATEGORIES } from '../utils/categories';
+import { normalizeSubCategory, normalizeTrustMediaSubCategory, PRIMARY_SUBCATEGORIES } from '../utils/categories';
 
 export default function Search() {
   const [sidebarData, setSidebarData] = useState({
@@ -32,7 +32,7 @@ export default function Search() {
     const urlParams = new URLSearchParams(location.search);
     const searchTermFromUrl = urlParams.get('searchTerm') || '';
     const sortFromUrl = urlParams.get('sort') || 'recent';
-    const subCategoryFromUrl = normalizeSubCategory(urlParams.get('subCategory')) || 'all';
+    const subCategoryFromUrl = normalizeTrustMediaSubCategory(urlParams.get('subCategory')) || 'all';
     const dateRangeFromUrl = urlParams.get('dateRange') || 'any';
     const tagsFromUrl = urlParams.get('tags') || '';
     const nextFilters = {
@@ -83,7 +83,7 @@ export default function Search() {
     if (sidebarData.subCategory === 'all') {
       urlParams.delete('subCategory');
     } else {
-      urlParams.set('subCategory', normalizeSubCategory(sidebarData.subCategory));
+      urlParams.set('subCategory', normalizeTrustMediaSubCategory(sidebarData.subCategory));
     }
     const searchQuery = urlParams.toString();
     navigate(`/search?${searchQuery}`);
@@ -95,7 +95,9 @@ export default function Search() {
     try {
       const { posts: fetchedPosts } = await getMediaPosts({
         searchTerm: sidebarData.searchTerm || undefined,
-        subCategory: sidebarData.subCategory === 'all' ? undefined : normalizeSubCategory(sidebarData.subCategory),
+        subCategory: sidebarData.subCategory === 'all'
+          ? undefined
+          : normalizeTrustMediaSubCategory(sidebarData.subCategory),
         order: sidebarData.sort === 'asc' ? 'asc' : 'desc',
         limit: pageSize,
         startIndex,
@@ -112,7 +114,7 @@ export default function Search() {
   const applyAdvancedFilters = (list, filters) => {
     // advanced search
     let results = [...list];
-    const normalizedFilterSub = normalizeSubCategory(filters.subCategory);
+    const normalizedFilterSub = normalizeTrustMediaSubCategory(filters.subCategory);
     if (filters.subCategory !== 'all' && normalizedFilterSub) {
       results = results.filter((item) => normalizeSubCategory(item.subCategory) === normalizedFilterSub);
     }

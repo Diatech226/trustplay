@@ -1,5 +1,10 @@
 import { apiRequest } from '../lib/apiClient';
-import { MEDIA_CATEGORY, PRODUCTION_CATEGORY, normalizeSubCategory } from '../utils/categories';
+import {
+  MEDIA_CATEGORY,
+  PRODUCTION_CATEGORY,
+  normalizeSubCategory,
+  normalizeTrustMediaSubCategory,
+} from '../utils/categories';
 
 const POSTS_ENDPOINT = '/api/post/getposts';
 
@@ -14,10 +19,15 @@ const setParam = (params, key, value) => {
   params.set(key, value);
 };
 
-export const normalizePost = (post) => ({
-  ...post,
-  subCategory: normalizeSubCategory(post.subCategory),
-});
+export const normalizePost = (post) => {
+  const normalizedSubCategory = post?.category === MEDIA_CATEGORY || !post?.category
+    ? normalizeTrustMediaSubCategory(post.subCategory)
+    : normalizeSubCategory(post.subCategory);
+  return {
+    ...post,
+    subCategory: normalizedSubCategory,
+  };
+};
 
 export const normalizePosts = (posts = []) => posts.map(normalizePost);
 

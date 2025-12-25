@@ -51,7 +51,7 @@ const About = () => {
 
           <div className="text-center">
             <Link
-              to="/contact"
+              to="/production#contact"
               className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-white shadow-card transition hover:-translate-y-0.5 hover:shadow-lg"
             >
               Contactez-nous
