@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { fetchComments } from '../services/comments.service';
 import { fetchPosts } from '../services/posts.service';
 import { fetchUsers } from '../services/users.service';
+import { fetchMedia } from '../services/media.service';
+import { fetchEvents } from '../services/events.service';
 import { formatDate } from '../lib/format';
 import { useToast } from '../components/ToastProvider';
 import { useAuth } from '../context/AuthContext';
@@ -15,6 +17,7 @@ const initialState = {
   metrics: {
     totalPosts: 0,
     totalEvents: 0,
+    totalMedia: 0,
     totalComments: 0,
     totalUsers: 0,
     lastMonthComments: 0,
@@ -34,9 +37,10 @@ export const Overview = () => {
     setState((prev) => ({ ...prev, loading: true, error: null, adminError: null }));
     try {
       const statusFilter = 'draft,review,published,scheduled';
-      const [postsResponse, eventsResponse] = await Promise.all([
+      const [postsResponse, eventsResponse, mediaResponse] = await Promise.all([
         fetchPosts({ limit: 5, order: 'desc', status: statusFilter }),
-        fetchPosts({ limit: 5, order: 'desc', category: 'TrustEvent', status: statusFilter }),
+        fetchEvents({ limit: 5, order: 'desc' }),
+        fetchMedia({ limit: 1, startIndex: 0, order: 'desc' }),
       ]);
 
       let commentsResponse = { comments: [], totalComments: 0, lastMonthComments: 0 };
@@ -81,7 +85,8 @@ export const Overview = () => {
         users: usersResponse.users,
         metrics: {
           totalPosts: postsResponse.totalPosts,
-          totalEvents: eventsResponse.totalPosts,
+          totalEvents: eventsResponse.totalEvents,
+          totalMedia: mediaResponse.totalMedia,
           totalComments: commentsResponse.totalComments,
           totalUsers: usersResponse.totalUsers,
           lastMonthComments: commentsResponse.lastMonthComments,
@@ -123,6 +128,11 @@ export const Overview = () => {
               ? `${state.metrics.lastMonthComments} sur les 30 derniers jours.`
               : 'Total modéré.'}
           </p>
+        </div>
+        <div className="card">
+          <h3>Médias</h3>
+          <div className="metric">{state.metrics.totalMedia}</div>
+          <p className="helper">Total des médias disponibles dans la bibliothèque.</p>
         </div>
         <div className="card">
           <h3>Utilisateurs</h3>

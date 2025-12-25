@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import multer from 'multer';
+import Media from '../models/media.model.js';
 
 const uploadsDir = process.env.UPLOAD_DIR || './public/uploads';
 export const absoluteUploadPath = path.isAbsolute(uploadsDir)
@@ -60,21 +61,44 @@ export const uploadMiddleware = upload.fields([
   { name: 'image', maxCount: 1 },
 ]);
 
-const buildResponsePayload = (file) => {
+const parseTags = (value) => {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.map((tag) => tag?.toString().trim()).filter(Boolean);
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+  }
+  return [];
+};
+
+const resolveKind = (mime) => {
+  if (mime.startsWith('image/')) return 'image';
+  if (mime.startsWith('video/')) return 'video';
+  return 'file';
+};
+
+const buildResponsePayload = (file, media) => {
   const isImage = file.mimetype.startsWith('image/');
   return {
     success: true,
+    media,
     data: {
       url: `/uploads/${file.filename}`,
-      name: file.filename,
+      name: file.originalname,
       mime: file.mimetype,
       size: file.size,
       type: isImage ? 'image' : 'video',
+      media,
     },
+    url: `/uploads/${file.filename}`,
+    name: file.originalname,
+    mime: file.mimetype,
   };
 };
 
-export const handleUpload = (req, res) => {
+export const handleUpload = async (req, res, next) => {
   const uploadedFile = req.files?.file?.[0] || req.files?.image?.[0];
 
   if (!uploadedFile) {
@@ -89,7 +113,24 @@ export const handleUpload = (req, res) => {
       .json({ success: false, message: 'Image too large (max 10MB)' });
   }
 
-  return res.status(201).json(buildResponsePayload(uploadedFile));
+  try {
+    const mediaPayload = {
+      name: req.body?.name || uploadedFile.originalname,
+      category: req.body?.category || 'gallery',
+      url: `/uploads/${uploadedFile.filename}`,
+      mimeType: uploadedFile.mimetype,
+      size: uploadedFile.size,
+      kind: resolveKind(uploadedFile.mimetype),
+      uploadedBy: req.user?.id || req.user?._id,
+      altText: req.body?.altText,
+      tags: parseTags(req.body?.tags),
+    };
+
+    const media = await Media.create(mediaPayload);
+    return res.status(201).json(buildResponsePayload(uploadedFile, media));
+  } catch (error) {
+    return next(error);
+  }
 };
 
 const resolveMimeType = (filename) => {

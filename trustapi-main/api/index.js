@@ -7,6 +7,7 @@ import postRoutes from './routes/post.route.js';
 import postsRoutes from './routes/posts.route.js';
 import commentRoutes from './routes/comment.route.js';
 import uploadRoutes from './routes/upload.route.js';
+import mediaRoutes from './routes/media.route.js';
 import clientRoutes from './routes/clients.route.js';
 import projectRoutes from './routes/projects.route.js';
 import campaignRoutes from './routes/campaigns.route.js';
@@ -18,6 +19,7 @@ import cors from 'cors';
 import compression from 'compression';
 import analyticsRoutes from './routes/analytics.route.js';
 import seoRoutes from './routes/seo.route.js';
+import eventsRoutes from './routes/events.route.js';
 
 // Connexion à MongoDB
 if (!process.env.DATABASE_URL) {
@@ -102,6 +104,8 @@ app.use('/api/post', postRoutes);
 app.use('/api/posts', postsRoutes);
 app.use('/api/comment', commentRoutes);
 app.use('/api/uploads', uploadRoutes);
+app.use('/api/media', mediaRoutes);
+app.use('/api/events', eventsRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/campaigns', campaignRoutes);

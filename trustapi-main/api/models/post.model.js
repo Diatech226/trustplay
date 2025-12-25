@@ -30,7 +30,7 @@ const PostSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: ["TrustEvent", "TrustMedia", "TrustProd", "uncategorized"], // ✅ Restrict to predefined categories
+      enum: ["TrustEvent", "TrustMedia", "TrustProduction", "TrustProd", "uncategorized"], // ✅ Restrict to predefined categories
       default: "uncategorized",
     },
     subCategory: {
@@ -51,6 +51,14 @@ const PostSchema = new mongoose.Schema(
       type: String,
       trim: true, // ✅ Optional field for event posts
     },
+    pricingType: {
+      type: String,
+      enum: ["free", "paid"],
+    },
+    price: {
+      type: Number,
+      min: 0,
+    },
     status: {
       type: String,
       enum: ["draft", "review", "published", "scheduled"],
@@ -70,6 +78,16 @@ const PostSchema = new mongoose.Schema(
     seoDescription: { type: String, trim: true },
     ogImage: { type: String, trim: true },
     featured: { type: Boolean, default: false },
+    coverMediaId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Media",
+    },
+    mediaIds: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Media",
+      },
+    ],
   },
   { timestamps: true }
 );
