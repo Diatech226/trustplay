@@ -25,18 +25,18 @@ export default function Home() {
       try {
         setLoading(true);
         setError('');
-        const [latestResponse, ...sections] = await Promise.all([
-          getMediaPosts({ order: 'desc', limit: 20 }),
-          ...TRUST_MEDIA_SUBCATEGORIES.map((cat) =>
-            getMediaPosts({ order: 'desc', limit: 4, subCategory: cat.value })
-          ),
-        ]);
-        const latestPosts = normalizePosts(latestResponse.posts).filter((post) => post.category === MEDIA_CATEGORY);
-        const nextSections = TRUST_MEDIA_SUBCATEGORIES.reduce((acc, cat, index) => {
-          acc[cat.value] = normalizePosts(sections[index]?.posts || []);
+        const latestResponse = await getMediaPosts({ order: 'desc', limit: 40 });
+        const normalizedPosts = normalizePosts(latestResponse.posts).filter(
+          (post) => !post.category || post.category === MEDIA_CATEGORY
+        );
+        const nextSections = TRUST_MEDIA_SUBCATEGORIES.reduce((acc, cat) => {
+          const items = normalizedPosts.filter(
+            (post) => normalizeSubCategory(post.subCategory) === cat.value
+          );
+          acc[cat.value] = items.slice(0, 4);
           return acc;
         }, {});
-        setPosts(latestPosts);
+        setPosts(normalizedPosts);
         setSectionPosts(nextSections);
       } catch (error) {
         setError('Erreur lors du chargement des posts.');
@@ -117,6 +117,20 @@ export default function Home() {
             </Link>
           )}
         </PageContainer>
+        {!loading && error && (
+          <PageContainer>
+            <div className='rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-100'>
+              {error}
+            </div>
+          </PageContainer>
+        )}
+        {!loading && !error && posts.length === 0 && (
+          <PageContainer>
+            <div className='rounded-2xl border border-dashed border-subtle bg-white/80 p-4 text-sm text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-200'>
+              Aucun article Trust Media disponible pour le moment.
+            </div>
+          </PageContainer>
+        )}
       </section>
 
       <PageContainer className='space-y-10 py-10'>

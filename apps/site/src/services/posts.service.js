@@ -1,5 +1,5 @@
 import { apiRequest } from '../lib/apiClient';
-import { MEDIA_CATEGORY, normalizeSubCategory } from '../utils/categories';
+import { MEDIA_CATEGORY, PRODUCTION_CATEGORY, normalizeSubCategory } from '../utils/categories';
 
 const POSTS_ENDPOINT = '/api/post/getposts';
 
@@ -53,6 +53,9 @@ export const getPosts = async ({
 
 export const getMediaPosts = (params = {}) =>
   getPosts({ category: MEDIA_CATEGORY, ...params });
+
+export const getProductionPosts = (params = {}) =>
+  getPosts({ category: PRODUCTION_CATEGORY, ...params });
 
 export const getPostBySlug = async (slug) => {
   if (!slug) {

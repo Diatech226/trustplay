@@ -41,6 +41,7 @@ const PostPage = lazy(() => import('./pages/PostPage'));
 const Search = lazy(() => import('./pages/Search'));
 const TrustEvent = lazy(() => import('./pages/Event'));
 const TrustProd = lazy(() => import('./pages/TrustProd'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const TermsConditions = lazy(() => import('./pages/TermsConditions'));
 const PoliticsPage = lazy(() => import('./pages/PoliticsPage'));
@@ -97,6 +98,7 @@ export default function App() {
             <Route path='/forgot-password' element={<ForgotPassword />} />
             <Route path='/reset-password' element={<ResetPassword />} />
             <Route path='/search' element={<Search />} />
+            <Route path='/events' element={<TrustEvent />} />
             <Route path='/event' element={<TrustEvent />} />
             <Route path='/production' element={<TrustProd />} />
             <Route path='/favorites' element={<Favorites />} />
@@ -141,6 +143,7 @@ export default function App() {
 
             <Route path='/projects' element={<Projects />} />
             <Route path='/post/:postSlug' element={<PostPage />} />
+            <Route path='*' element={<NotFound />} />
           </Routes>
         </Suspense>
         <Footer />

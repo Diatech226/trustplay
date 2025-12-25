@@ -26,7 +26,7 @@ export default function Header() {
       { path: '/science', label: 'Science & Tech' },
       { path: '/sport', label: 'Sport' },
       { path: '/cinema', label: 'Cinéma' },
-      { path: '/event', label: 'Trust Events' },
+      { path: '/events', label: 'Trust Events' },
       { path: '/production', label: 'Trust Prod' },
       { path: '/favorites', label: 'Favoris' },
       { path: '/history', label: 'Historique' },

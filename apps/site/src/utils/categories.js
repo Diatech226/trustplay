@@ -1,5 +1,6 @@
 export const MEDIA_CATEGORY = 'TrustMedia';
 export const EVENT_CATEGORY = 'TrustEvent';
+export const PRODUCTION_CATEGORY = 'TrustProduction';
 
 export const TRUST_MEDIA_SUBCATEGORIES = [
   { value: 'news', label: 'News', path: '/news' },

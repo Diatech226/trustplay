@@ -33,11 +33,13 @@ npm run lint
 - `/news`, `/politique`, `/science`, `/sport`, `/cinema` : rubriques Trust Media
 - `/search` : recherche/filtrage
 - `/post/:slug` : article
-- `/event` : Trust Event
+- `/events` : Trust Event
+- `/production` : Trust Production
 
 ## Mapping rubriques → API
 - `MEDIA_CATEGORY` = `TrustMedia`
 - `EVENT_CATEGORY` = `TrustEvent`
+- `PRODUCTION_CATEGORY` = `TrustProduction`
 - Rubriques `TrustMedia` (`subCategory`) :
   - News → `news`
   - Politique → `politique`
@@ -51,3 +53,8 @@ Les pages publiques consomment `GET /api/post/getposts` avec les paramètres sup
 - `searchTerm`
 - `startIndex` (pagination), `limit`
 - `order` (`asc`/`desc`)
+
+Endpoints utilisés :
+- Home Trust Media : `GET /api/post/getposts?category=TrustMedia&order=desc&limit=...`
+- Trust Event : `GET /api/post/getposts?category=TrustEvent&order=desc&limit=...`
+- Trust Production : `GET /api/post/getposts?category=TrustProduction&order=desc&limit=...`
