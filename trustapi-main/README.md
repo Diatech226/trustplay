@@ -63,6 +63,7 @@ Variables utilisées par le code :
 - **Client** : `name`, `contacts[]` (`name/email/phone/role`), `notes`, `status` (`prospect/onboarding/active/paused/archived`), `tags`, timestamps.
 - **Project** : `clientId`, `title`, `brief`, `status` (`planning/in_progress/delivered/on_hold/archived`), `deadline`, `attachments[]` (médias liés), `tags`, timestamps.
 - **Campaign** : `projectId`, `title`, `channel`, `goal`, `budget`, `kpis[]`, `assets[]` (médias liés), `schedule { start, end, cadence? }`, `status` (`planned/in_progress/delivered/on_hold/archived`).
+- **Setting** : `siteName`, `siteDescription`, `logoUrl`, `primaryColor`, `socialLinks`, `navigationCategories[]`, `commentsEnabled`, `maintenanceMode`, `emailSettings` (senderName/senderEmail/replyToEmail), timestamps.
 
 ## Pagination & Slugs
 - `startIndex` : offset (0 par défaut).
@@ -108,6 +109,10 @@ Résumé (voir le détail complet dans `API_CONTRACT.md`). Les routes sont préf
 ### Upload
 - `POST /api/uploads` — `multipart/form-data` avec champ `file` (recommandé) ou `image` (compat)
 - `GET /uploads/<filename>` — fichiers statiques servis depuis `UPLOAD_DIR`
+
+### Settings
+- `GET /api/settings` — lecture publique des paramètres du site.
+- `PUT /api/settings` — mise à jour (admin).
 
 ### Agence (clients / projets / campagnes)
 - `GET /api/clients` — liste paginée + recherche plein texte, filtre par statut ; `POST` pour créer un client avec contacts/notes.

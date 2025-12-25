@@ -33,6 +33,7 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
   - `POST /api/comment/create`, likes/édition/suppression et listing admin.
   - `POST /api/uploads` (Multer) avec filtrage MIME et quotas (10 Mo image, 100 Mo vidéo).
   - `GET /api/media`, `POST /api/media`, `PUT /api/media/:id`, `DELETE /api/media/:id` (métadonnées Media).
+  - `GET /api/settings` (public) et `PUT /api/settings` (admin) pour les réglages globaux du site.
 - **Auth & permissions** : middleware JWT `verifyToken` + contrôle `requireAdmin` sur les routes critiques (liste users, commentaires). Les autres permissions (ownership) sont gérées dans les contrôleurs.
 
 ## Fonctionnalités actuelles
@@ -67,6 +68,39 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 - `POST /api/media` : créer une entrée metadata si besoin.
 - `PUT /api/media/:id` : rename / changer catégorie.
 - `DELETE /api/media/:id` : suppression (admin ou owner).
+
+## Settings (CMS)
+### Schéma Settings (Mongo)
+```json
+{
+  "_id": "ObjectId",
+  "siteName": "string",
+  "siteDescription": "string",
+  "logoUrl": "string",
+  "primaryColor": "string",
+  "socialLinks": {
+    "facebook": "string",
+    "twitter": "string",
+    "youtube": "string",
+    "instagram": "string",
+    "linkedin": "string"
+  },
+  "navigationCategories": ["string"],
+  "commentsEnabled": true,
+  "maintenanceMode": false,
+  "emailSettings": {
+    "senderName": "string",
+    "senderEmail": "string",
+    "replyToEmail": "string"
+  },
+  "createdAt": "date",
+  "updatedAt": "date"
+}
+```
+
+### Endpoints Settings
+- `GET /api/settings` : lecture publique des paramètres du site.
+- `PUT /api/settings` : mise à jour (admin only).
 
 ### Workflow
 1. Upload fichier via `/api/uploads` → stockage `UPLOAD_DIR`.
@@ -153,7 +187,7 @@ Créer un fichier `.env` dans `apps/cms` avec :
 Créer `.env` dans `trustapi-main` (voir `.env.example`) avec :
 - `PORT`, `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN`, `FRONTEND_URL`, `UPLOAD_DIR`.
 - Exemple recommandé : `CORS_ORIGIN=http://localhost:5173,http://localhost:5174`.
-- (Optionnel) `RESEND_API_KEY`, `MAIL_FROM` pour l'e-mail reset password.
+- (Optionnel) Email reset password : `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`.
 
 ### Media URLs & previews
 - Les uploads sont servis en statique via `GET /uploads/...`.
