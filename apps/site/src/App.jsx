@@ -111,7 +111,7 @@ export default function App() {
             <Route path='/sport' element={<SportPage />} />
             <Route path='/cinema' element={<CinemaPage />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/Terms" element={<TermsConditions />} />
+            <Route path="/terms" element={<TermsConditions />} />
             <Route element={<PrivateRoute />}>
               <Route path='/dashboard' element={<AdminLayout />}>
                 <Route element={<OnlyAdminPrivateRoute />}>
