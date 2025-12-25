@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { deletePost, fetchPosts } from '../services/posts.service';
+import { deletePost } from '../services/posts.service';
+import { fetchEvents } from '../services/events.service';
 import { formatDate } from '../lib/format';
 import { useConfirm } from '../components/ConfirmDialog';
 import { useToast } from '../components/ToastProvider';
@@ -18,8 +19,8 @@ export const Events = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetchPosts({ limit: 100, order: 'desc', category: 'TrustEvent' });
-      setEvents(response.posts);
+      const response = await fetchEvents({ limit: 100, order: 'desc' });
+      setEvents(response.events);
     } catch (err) {
       setError(err.message);
       addToast(`Erreur lors du chargement : ${err.message}`, { type: 'error' });
@@ -40,7 +41,7 @@ export const Events = () => {
 
   const handleDelete = async (eventId) => {
     const accepted = await confirm({
-      title: 'Supprimer l\'événement',
+      title: "Supprimer l'événement",
       message: 'Cette action est définitive. Voulez-vous supprimer cet événement ?',
       confirmText: 'Supprimer',
     });
@@ -84,7 +85,10 @@ export const Events = () => {
               <th>Titre</th>
               <th>Date</th>
               <th>Lieu</th>
+              <th>Gratuit / Payant</th>
+              <th>Prix</th>
               <th>Statut</th>
+              <th>Slug</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -94,9 +98,12 @@ export const Events = () => {
                 <td>{event.title}</td>
                 <td>{formatDate(event.eventDate || event.publishedAt)}</td>
                 <td>{event.location || '—'}</td>
+                <td>{event.pricingType || '—'}</td>
+                <td>{event.pricingType === 'paid' ? `${event.price ?? 0} €` : '—'}</td>
                 <td>
                   <span className="status-pill">{event.status}</span>
                 </td>
+                <td>{event.slug}</td>
                 <td>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <Link className="button secondary" to={`/events/${event._id}/edit`}>

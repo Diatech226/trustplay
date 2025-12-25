@@ -2,7 +2,7 @@ import Post from '../models/post.model.js';
 import { errorHandler } from '../utils/error.js';
 import slugify from 'slugify';
 
-const allowedCategories = new Set(['TrustMedia', 'TrustEvent', 'TrustProduction']);
+const allowedCategories = new Set(['TrustMedia', 'TrustEvent', 'TrustProduction', 'TrustProd']);
 const trustMediaSubCategories = new Set(['news', 'politique', 'science-tech', 'sport', 'cinema']);
 
 const normalizeSubCategory = (value = '') => {
@@ -56,6 +56,25 @@ const resolveStatusAndSchedule = (status, publishedAt) => {
   return { status: nextStatus, publishedAt: parsedDate };
 };
 
+const normalizePricingType = (value) => {
+  if (!value) return undefined;
+  const normalized = value.toString().trim().toLowerCase();
+  if (normalized === 'free' || normalized === 'paid') return normalized;
+  return undefined;
+};
+
+const parseMediaIds = (value) => {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map((id) => id.trim())
+      .filter(Boolean);
+  }
+  return [];
+};
+
 const removeUndefined = (payload) => {
   const cleaned = { ...payload };
   Object.keys(cleaned).forEach((key) => {
@@ -68,7 +87,22 @@ const removeUndefined = (payload) => {
 
 export const create = async (req, res, next) => {
   try {
-    const { title, content, category, subCategory, eventDate, location, image, status, publishedAt, tags } = req.body;
+    const {
+      title,
+      content,
+      category,
+      subCategory,
+      eventDate,
+      location,
+      pricingType,
+      price,
+      image,
+      status,
+      publishedAt,
+      tags,
+      coverMediaId,
+      mediaIds,
+    } = req.body;
     if (!title || !content || !category) {
       return next(errorHandler(400, 'Missing required fields'));
     }
@@ -89,6 +123,23 @@ export const create = async (req, res, next) => {
     }
     const tagList = parseTags(tags);
     const { status: finalStatus, publishedAt: finalPublishedAt } = resolveStatusAndSchedule(status, publishedAt);
+    const normalizedPricing = normalizePricingType(pricingType);
+    const parsedPrice = price !== undefined && price !== '' ? Number(price) : undefined;
+
+    if (category === 'TrustEvent') {
+      if (!eventDate) {
+        return next(errorHandler(400, 'Event date is required for TrustEvent'));
+      }
+      if (!location) {
+        return next(errorHandler(400, 'Location is required for TrustEvent'));
+      }
+      if (!normalizedPricing) {
+        return next(errorHandler(400, 'Pricing type is required for TrustEvent'));
+      }
+      if (normalizedPricing === 'paid' && (parsedPrice === undefined || Number.isNaN(parsedPrice))) {
+        return next(errorHandler(400, 'Price is required for paid events'));
+      }
+    }
 
     const newPost = new Post({
       userId: req.user.id || req.user._id,
@@ -106,7 +157,14 @@ export const create = async (req, res, next) => {
       seoDescription: req.body.seoDescription,
       ogImage: req.body.ogImage,
       featured: Boolean(req.body.featured),
-      ...(category === 'TrustEvent' && { eventDate, location }),
+      ...(category === 'TrustEvent' && {
+        eventDate,
+        location,
+        pricingType: normalizedPricing,
+        price: normalizedPricing === 'paid' ? parsedPrice : undefined,
+      }),
+      coverMediaId,
+      mediaIds: parseMediaIds(mediaIds),
     });
 
     await newPost.save();
@@ -130,7 +188,9 @@ export const updatepost = async (req, res, next) => {
     if (req.user?.role !== 'ADMIN') {
       let ownerId = targetUserId;
       if (!ownerId && postId) {
-        existingPost = await Post.findById(postId).select('userId category subCategory');
+        existingPost = await Post.findById(postId).select(
+          'userId category subCategory eventDate location pricingType price'
+        );
         ownerId = existingPost?.userId?.toString();
       }
       if (ownerId && ownerId !== req.user.id) {
@@ -139,7 +199,7 @@ export const updatepost = async (req, res, next) => {
     }
 
     if (!existingPost) {
-      existingPost = await Post.findById(postId).select('category subCategory');
+      existingPost = await Post.findById(postId).select('category subCategory eventDate location pricingType price');
     }
     if (!existingPost) {
       return next(errorHandler(404, 'Post not found'));
@@ -165,6 +225,26 @@ export const updatepost = async (req, res, next) => {
       req.body.status,
       req.body.publishedAt
     );
+    const normalizedPricing = normalizePricingType(req.body.pricingType || existingPost?.pricingType);
+    const parsedPrice =
+      req.body.price !== undefined && req.body.price !== '' ? Number(req.body.price) : existingPost?.price;
+
+    if (nextCategory === 'TrustEvent') {
+      const nextEventDate = req.body.eventDate || existingPost?.eventDate;
+      const nextLocation = req.body.location || existingPost?.location;
+      if (!nextEventDate) {
+        return next(errorHandler(400, 'Event date is required for TrustEvent'));
+      }
+      if (!nextLocation) {
+        return next(errorHandler(400, 'Location is required for TrustEvent'));
+      }
+      if (!normalizedPricing) {
+        return next(errorHandler(400, 'Pricing type is required for TrustEvent'));
+      }
+      if (normalizedPricing === 'paid' && (parsedPrice === undefined || Number.isNaN(parsedPrice))) {
+        return next(errorHandler(400, 'Price is required for paid events'));
+      }
+    }
 
     const updatePayload = removeUndefined({
       title: req.body.title,
@@ -183,6 +263,10 @@ export const updatepost = async (req, res, next) => {
       featured: req.body.featured !== undefined ? Boolean(req.body.featured) : undefined,
       eventDate: req.body.eventDate,
       location: req.body.location,
+      pricingType: nextCategory === 'TrustEvent' ? normalizedPricing : undefined,
+      price: nextCategory === 'TrustEvent' && normalizedPricing === 'paid' ? parsedPrice : undefined,
+      coverMediaId: req.body.coverMediaId,
+      mediaIds: req.body.mediaIds ? parseMediaIds(req.body.mediaIds) : undefined,
     });
 
     const updatedPost = await Post.findByIdAndUpdate(

@@ -152,23 +152,31 @@ export const apiClient = {
   setUser: setStoredUser,
 };
 
-export const uploadFile = async (file, fieldName = 'file') => {
+export const uploadFile = async (file, options = {}) => {
   if (!file) throw new Error('Aucun fichier sélectionné');
+  const { fieldName = 'file', metadata = {} } = options;
   const formData = new FormData();
   formData.append(fieldName, file);
   if (fieldName !== 'file') {
     formData.append('file', file);
   }
+  Object.entries(metadata).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      formData.append(key, value);
+    }
+  });
 
   const data = await apiClient.post('/api/uploads', {
     body: formData,
     headers: {},
   });
 
+  const media = data?.media || data?.data?.media;
   return {
     ...data,
-    url: data?.url || data?.location || data?.path,
-    name: data?.name || data?.filename,
-    mime: data?.mime || data?.mimetype,
+    media,
+    url: media?.url || data?.url || data?.location || data?.path,
+    name: media?.name || data?.name || data?.filename,
+    mime: media?.mimeType || data?.mime || data?.mimetype,
   };
 };

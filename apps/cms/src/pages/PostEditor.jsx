@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useRef, useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { uploadMedia } from '../services/media.service';
 import { createPost, fetchPostById, updatePost } from '../services/posts.service';
 import { useToast } from '../components/ToastProvider';
+import { MediaPicker } from '../components/MediaPicker';
 
 const CATEGORY_OPTIONS = [
   { value: 'TrustMedia', label: 'Trust Media' },
@@ -31,6 +32,24 @@ const emptyForm = {
   ogImage: '',
   featured: false,
   publishedAt: '',
+  coverMediaId: '',
+  mediaIds: [],
+};
+
+const resolveMediaCategory = (category) => {
+  if (category === 'TrustEvent') return 'event';
+  if (category === 'TrustProduction') return 'branding';
+  return 'article';
+};
+
+const buildMediaHtml = (media) => {
+  if (media.kind === 'image') {
+    return `<img src="${media.url}" alt="${media.name || ''}" />`;
+  }
+  if (media.kind === 'video') {
+    return `<video src="${media.url}" controls></video>`;
+  }
+  return `<a href="${media.url}" target="_blank" rel="noreferrer">${media.name || media.url}</a>`;
 };
 
 export const PostEditor = () => {
@@ -40,6 +59,8 @@ export const PostEditor = () => {
   const [formData, setFormData] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [pickerState, setPickerState] = useState({ open: false, mode: 'cover' });
+  const contentRef = useRef(null);
 
   const isEditing = useMemo(() => Boolean(postId), [postId]);
 
@@ -68,6 +89,8 @@ export const PostEditor = () => {
           ogImage: post.ogImage || '',
           featured: Boolean(post.featured),
           publishedAt: post.publishedAt ? post.publishedAt.slice(0, 16) : '',
+          coverMediaId: post.coverMediaId || '',
+          mediaIds: post.mediaIds || [],
         });
       } catch (err) {
         setError(err.message);
@@ -98,16 +121,73 @@ export const PostEditor = () => {
     });
   };
 
+  const insertIntoContent = (snippet) => {
+    setFormData((prev) => {
+      const content = prev.content || '';
+      const textarea = contentRef.current;
+      if (!textarea) {
+        return { ...prev, content: `${content}\n${snippet}` };
+      }
+      const start = textarea.selectionStart || 0;
+      const end = textarea.selectionEnd || 0;
+      const nextContent = `${content.slice(0, start)}${snippet}${content.slice(end)}`;
+      return { ...prev, content: nextContent };
+    });
+  };
+
   const handleUpload = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
     try {
-      const data = await uploadMedia(file);
-      setFormData((prev) => ({ ...prev, image: data.url || prev.image }));
+      const data = await uploadMedia(file, { category: resolveMediaCategory(formData.category) });
+      const url = data.media?.url || data.url;
+      setFormData((prev) => ({
+        ...prev,
+        image: url || prev.image,
+        coverMediaId: data.media?._id || prev.coverMediaId,
+      }));
       addToast('Fichier uploadé avec succès.', { type: 'success' });
     } catch (err) {
       addToast(`Upload impossible : ${err.message}`, { type: 'error' });
     }
+  };
+
+  const handleInlineUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const data = await uploadMedia(file, { category: resolveMediaCategory(formData.category) });
+      const media = data.media;
+      if (media) {
+        insertIntoContent(buildMediaHtml(media));
+        setFormData((prev) => ({
+          ...prev,
+          mediaIds: Array.from(new Set([...(prev.mediaIds || []), media._id])),
+        }));
+      }
+      addToast('Média inséré dans le contenu.', { type: 'success' });
+    } catch (err) {
+      addToast(`Upload impossible : ${err.message}`, { type: 'error' });
+    }
+  };
+
+  const handlePickerSelect = (selected) => {
+    if (pickerState.mode === 'cover') {
+      const media = selected[0];
+      setFormData((prev) => ({
+        ...prev,
+        image: media.url || prev.image,
+        coverMediaId: media._id,
+      }));
+      return;
+    }
+
+    const snippets = selected.map((media) => buildMediaHtml(media)).join('\n');
+    insertIntoContent(snippets);
+    setFormData((prev) => ({
+      ...prev,
+      mediaIds: Array.from(new Set([...(prev.mediaIds || []), ...selected.map((media) => media._id)])),
+    }));
   };
 
   const handleSubmit = async (event) => {
@@ -123,6 +203,8 @@ export const PostEditor = () => {
         .map((tag) => tag.trim())
         .filter(Boolean),
       publishedAt: formData.publishedAt || undefined,
+      mediaIds: formData.mediaIds,
+      coverMediaId: formData.coverMediaId || undefined,
     };
 
     try {
@@ -157,7 +239,21 @@ export const PostEditor = () => {
         </label>
         <label>
           Contenu
-          <textarea name="content" value={formData.content} onChange={handleChange} required />
+          <textarea ref={contentRef} name="content" value={formData.content} onChange={handleChange} required />
+          <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+            <button
+              className="button secondary"
+              type="button"
+              onClick={() => setPickerState({ open: true, mode: 'inline' })}
+            >
+              Bibliothèque médias
+            </button>
+            <label className="button secondary" style={{ cursor: 'pointer' }}>
+              Upload & insérer
+              <input type="file" onChange={handleInlineUpload} style={{ display: 'none' }} />
+            </label>
+            <span className="helper">{(formData.mediaIds || []).length} média(s) liés</span>
+          </div>
         </label>
         <label>
           Catégorie
@@ -197,11 +293,21 @@ export const PostEditor = () => {
         <label>
           Image de couverture
           <input name="image" value={formData.image} onChange={handleChange} placeholder="https://..." />
-          <span className="helper">Vous pouvez coller une URL ou uploader un média.</span>
-        </label>
-        <label>
-          Upload média
-          <input type="file" onChange={handleUpload} />
+          <span className="helper">Vous pouvez coller une URL ou sélectionner un média.</span>
+          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            <button
+              className="button secondary"
+              type="button"
+              onClick={() => setPickerState({ open: true, mode: 'cover' })}
+            >
+              Bibliothèque médias
+            </button>
+            <label className="button secondary" style={{ cursor: 'pointer' }}>
+              Upload cover
+              <input type="file" onChange={handleUpload} style={{ display: 'none' }} />
+            </label>
+          </div>
+          {formData.coverMediaId ? <span className="helper">Cover media ID: {formData.coverMediaId}</span> : null}
         </label>
         <label>
           SEO Title
@@ -232,6 +338,13 @@ export const PostEditor = () => {
           </button>
         </div>
       </form>
+      <MediaPicker
+        open={pickerState.open}
+        multiple={pickerState.mode === 'inline'}
+        title={pickerState.mode === 'inline' ? 'Sélectionner des médias' : 'Sélectionner un cover'}
+        onClose={() => setPickerState((prev) => ({ ...prev, open: false }))}
+        onSelect={handlePickerSelect}
+      />
     </div>
   );
 };

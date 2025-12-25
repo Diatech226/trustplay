@@ -191,16 +191,22 @@ export const post = (path, options) => request('POST', path, options);
 export const put = (path, options) => request('PUT', path, options);
 export const del = (path, options) => request('DELETE', path, options);
 
-export async function uploadFile(file, fieldName = 'file') {
+export async function uploadFile(file, options = {}) {
   if (!file) {
     throw new Error('Aucun fichier sélectionné');
   }
 
+  const { fieldName = 'file', metadata = {} } = options;
   const formData = new FormData();
   formData.append(fieldName, file);
   if (fieldName !== 'file') {
     formData.append('file', file);
   }
+  Object.entries(metadata).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      formData.append(key, value);
+    }
+  });
 
   const response = await post('/api/uploads', {
     body: formData,
@@ -209,11 +215,13 @@ export async function uploadFile(file, fieldName = 'file') {
   });
 
   const data = response?.data || response;
+  const media = data?.media || response?.media;
   return {
     ...data,
-    url: data?.url || data?.location || data?.path,
-    name: data?.name || data?.filename,
-    mime: data?.mime || data?.mimetype,
+    media,
+    url: media?.url || data?.url || data?.location || data?.path,
+    name: media?.name || data?.name || data?.filename,
+    mime: media?.mimeType || data?.mime || data?.mimetype,
   };
 }
 

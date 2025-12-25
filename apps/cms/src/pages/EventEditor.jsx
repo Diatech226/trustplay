@@ -12,6 +12,8 @@ const emptyForm = {
   image: '',
   eventDate: '',
   location: '',
+  pricingType: 'free',
+  price: '',
   publishedAt: '',
 };
 
@@ -41,6 +43,8 @@ export const EventEditor = () => {
           image: post.image || '',
           eventDate: post.eventDate ? post.eventDate.slice(0, 16) : '',
           location: post.location || '',
+          pricingType: post.pricingType || 'free',
+          price: post.price ?? '',
           publishedAt: post.publishedAt ? post.publishedAt.slice(0, 16) : '',
         });
       } catch (err) {
@@ -66,8 +70,9 @@ export const EventEditor = () => {
     const file = event.target.files?.[0];
     if (!file) return;
     try {
-      const data = await uploadMedia(file);
-      setFormData((prev) => ({ ...prev, image: data.url || prev.image }));
+      const data = await uploadMedia(file, { category: 'event' });
+      const url = data.media?.url || data.url;
+      setFormData((prev) => ({ ...prev, image: url || prev.image }));
       addToast('Fichier uploadé avec succès.', { type: 'success' });
     } catch (err) {
       addToast(`Upload impossible : ${err.message}`, { type: 'error' });
@@ -79,6 +84,27 @@ export const EventEditor = () => {
     setLoading(true);
     setError(null);
 
+    if (!formData.eventDate) {
+      setError("La date de l'événement est obligatoire.");
+      setLoading(false);
+      return;
+    }
+    if (!formData.location) {
+      setError("Le lieu de l'événement est obligatoire.");
+      setLoading(false);
+      return;
+    }
+    if (!formData.pricingType) {
+      setError('Le type de tarification est obligatoire.');
+      setLoading(false);
+      return;
+    }
+    if (formData.pricingType === 'paid' && !formData.price) {
+      setError('Le prix est obligatoire pour un événement payant.');
+      setLoading(false);
+      return;
+    }
+
     const payload = {
       ...formData,
       category: 'TrustEvent',
@@ -88,6 +114,7 @@ export const EventEditor = () => {
         .filter(Boolean),
       publishedAt: formData.publishedAt || undefined,
       eventDate: formData.eventDate || undefined,
+      price: formData.pricingType === 'paid' ? Number(formData.price) : undefined,
     };
 
     try {
@@ -126,12 +153,31 @@ export const EventEditor = () => {
         </label>
         <label>
           Date de l'événement
-          <input type="datetime-local" name="eventDate" value={formData.eventDate} onChange={handleChange} />
+          <input
+            type="datetime-local"
+            name="eventDate"
+            value={formData.eventDate}
+            onChange={handleChange}
+            required
+          />
         </label>
         <label>
           Lieu
-          <input name="location" value={formData.location} onChange={handleChange} />
+          <input name="location" value={formData.location} onChange={handleChange} required />
         </label>
+        <label>
+          Tarification
+          <select name="pricingType" value={formData.pricingType} onChange={handleChange} required>
+            <option value="free">Gratuit</option>
+            <option value="paid">Payant</option>
+          </select>
+        </label>
+        {formData.pricingType === 'paid' ? (
+          <label>
+            Prix (€)
+            <input name="price" value={formData.price} onChange={handleChange} type="number" min="0" />
+          </label>
+        ) : null}
         <label>
           Statut
           <select name="status" value={formData.status} onChange={handleChange}>

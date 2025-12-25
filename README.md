@@ -29,8 +29,10 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
   - `POST /api/auth/*` pour signup/signin/signout et flux reset password.
   - `GET /api/user/me`, `PUT /api/user/update/:userId`, `GET /api/user/getusers` (admin), `DELETE /api/user/delete/:userId`.
   - `POST /api/post/create`, `GET /api/post/getposts`, `PUT /api/post/updatepost/:postId/:userId`, `DELETE /api/post/deletepost/:postId/:userId`.
+  - `GET /api/events` (liste TrustEvent côté CMS).
   - `POST /api/comment/create`, likes/édition/suppression et listing admin.
   - `POST /api/uploads` (Multer) avec filtrage MIME et quotas (10 Mo image, 100 Mo vidéo).
+  - `GET /api/media`, `POST /api/media`, `PUT /api/media/:id`, `DELETE /api/media/:id` (métadonnées Media).
 - **Auth & permissions** : middleware JWT `verifyToken` + contrôle `requireAdmin` sur les routes critiques (liste users, commentaires). Les autres permissions (ownership) sont gérées dans les contrôleurs.
 
 ## Fonctionnalités actuelles
@@ -39,6 +41,38 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 - **Backoffice CMS** : dashboard multi-modules (articles, pages, médias, événements, campagnes, clients, projets, newsletter, formulaires, commentaires, utilisateurs, paramètres, activité) avec maquettes de données et actions rapides.
 - **Médias** : upload image/vidéo via API, stockage dans `UPLOAD_DIR` exposé en statique.
 - **Thème & personnalisation** : mode clair/sombre, favoris/lecture, historique et préférences de notification côté client.
+
+## Media Library (CMS pro)
+### Schéma Media (Mongo)
+```json
+{
+  "_id": "ObjectId",
+  "name": "string",
+  "category": "article | event | gallery | branding",
+  "url": "/uploads/xxx.jpg",
+  "mimeType": "image/jpeg",
+  "size": 123456,
+  "kind": "image | video | file",
+  "uploadedBy": "userId",
+  "altText": "string",
+  "tags": ["string"],
+  "createdAt": "date",
+  "updatedAt": "date"
+}
+```
+
+### Endpoints Media/Upload
+- `POST /api/uploads` : upload fichier (multipart) + création automatique du Media.
+- `GET /api/media?search=&category=&kind=&startIndex=&limit=&order=` : liste + filtres + pagination.
+- `POST /api/media` : créer une entrée metadata si besoin.
+- `PUT /api/media/:id` : rename / changer catégorie.
+- `DELETE /api/media/:id` : suppression (admin ou owner).
+
+### Workflow
+1. Upload fichier via `/api/uploads` → stockage `UPLOAD_DIR`.
+2. Le backend crée un `Media` → retour `{ media, url }`.
+3. Le CMS liste via `/api/media` et permet la sélection dans l’éditeur.
+4. Les posts stockent `coverMediaId`, `mediaIds[]` + HTML avec URLs.
 
 ## Itération 2 – CMS éditorial pro
 - **Workflow éditorial** : statuts `draft` → `review` → `published` (+ `scheduled`) avec date de publication, tags, SEO (title/description/OG) et indicateur « featured ».
@@ -152,7 +186,8 @@ Checklist rapide avant validation :
 - Création d’un post TrustMedia avec sous-catégorie valide : apparition immédiate dans `/posts` et sur le site (si `status=published`).
 - Commentaires : aucun appel à `/api/comment/getPostComments/undefined` et `postId` invalide renvoie **400**.
 - CMS Overview : compteurs totaux (posts/users/comments/events) alignés avec la base.
-- Media Library : upload réussi puis média visible dans la liste.
+- Media Library : upload réussi via `/api/uploads` puis média visible dans `/api/media`.
+- Events : `/api/events` retourne tous les TrustEvent (draft + published).
 - Navigation CMS : toutes les entrées sidebar ouvrent une route active.
 
 Checklist détaillée : [`QA_CHECKLIST.md`](./QA_CHECKLIST.md).
@@ -181,16 +216,18 @@ Checklist détaillée : [`QA_CHECKLIST.md`](./QA_CHECKLIST.md).
 - **Routes clés** : `/` (overview), `/posts`, `/posts/new`, `/posts/:id/edit`, `/media`, `/comments`, `/users`.
 - **Endoints utilisés** :
   - Articles : `GET /api/posts`, `POST /api/posts`, `PUT /api/posts/:postId`, `DELETE /api/posts/:postId`.
+  - Événements : `GET /api/events`, `POST /api/posts` (category `TrustEvent`).
+  - Médias : `GET /api/media`, `PUT /api/media/:id`, `DELETE /api/media/:id`.
   - Commentaires : `GET /api/comment/getcomments`, `DELETE /api/comment/deleteComment/:commentId`.
   - Utilisateurs : `GET /api/user/getusers`.
-  - Upload : `POST /api/uploads` (FormData, champ `file`) + `GET /api/uploads/list` (liste médias admin).
+  - Upload : `POST /api/uploads` (FormData, champ `file`) → création d’un Media.
 - **Métriques** :
-  - Overview lit `totalPosts`, `totalUsers`, `totalComments` depuis les endpoints listants.
-  - Les événements utilisent `GET /api/posts?category=TrustEvent` pour le total.
+  - Overview lit `totalPosts`, `totalUsers`, `totalComments`, `totalMedia` depuis les endpoints listants.
+  - Les événements utilisent `GET /api/events` pour le total.
 - **Comportements** :
   - Tableau de bord affiche KPIs (posts, utilisateurs, commentaires) + listes récentes et actions contextuelles.
   - Content Manager : recherche rapide, actions voir/éditer/supprimer.
-  - Media upload : formulaire contrôlé + listing depuis `/api/uploads/list` (rafraîchissement auto).
+  - Media upload : formulaire contrôlé + listing depuis `/api/media` (rafraîchissement auto).
   - Comments moderation : suppression sécurisée avec confirmation.
   - Users : listing admin avec rafraîchissement manuel.
 
