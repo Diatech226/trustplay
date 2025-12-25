@@ -1,6 +1,6 @@
 import bcryptjs from 'bcryptjs';
 import { errorHandler } from '../utils/error.js';
-import User from '../models/user.model.js';
+import User, { USER_ROLES } from '../models/user.model.js';
 import { ensureUserRole, resolveUserRole } from '../utils/roles.js';
 
 const sanitizeUser = (userDoc = {}) => {
@@ -109,15 +109,28 @@ export const getUsers = async (req, res, next) => {
     const startIndex = parseInt(req.query.startIndex) || 0;
     const limit = parseInt(req.query.limit) || 20;
     const sortDirection = req.query.sort === 'asc' ? 1 : -1;
+    const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+    const role = typeof req.query.role === 'string' ? req.query.role.trim().toUpperCase() : '';
 
-    const users = await User.find()
+    const filter = {};
+    if (search) {
+      filter.$or = [{ username: { $regex: search, $options: 'i' } }, { email: { $regex: search, $options: 'i' } }];
+    }
+    if (role) {
+      if (!USER_ROLES.includes(role)) {
+        return next(errorHandler(400, 'Invalid role filter'));
+      }
+      filter.role = role;
+    }
+
+    const users = await User.find(filter)
       .sort({ createdAt: sortDirection })
       .skip(startIndex)
       .limit(limit);
 
     const usersWithoutPassword = users.map(sanitizeUser);
 
-    const totalUsers = await User.countDocuments();
+    const totalUsers = await User.countDocuments(filter);
 
     const now = new Date();
 

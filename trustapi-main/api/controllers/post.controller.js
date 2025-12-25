@@ -283,6 +283,30 @@ export const updatepost = async (req, res, next) => {
   }
 };
 
+export const getpost = async (req, res, next) => {
+  try {
+    const postId = req.params.postId;
+    const post = await Post.findById(postId);
+    if (!post) {
+      return next(errorHandler(404, 'Post not found'));
+    }
+
+    const isAdmin = req.user?.role === 'ADMIN';
+    const isOwner = req.user?.id && post.userId?.toString() === req.user.id;
+    if (post.status !== 'published' && !isAdmin && !isOwner) {
+      return next(errorHandler(403, 'You are not allowed to view this post'));
+    }
+
+    res.status(200).json({
+      success: true,
+      data: { post },
+      post,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getposts = async (req, res, next) => {
   try {
     const {
@@ -306,15 +330,19 @@ export const getposts = async (req, res, next) => {
     const requestedTags = parseTags(tags);
     const statusList = status ? status.split(',').map((value) => value.trim()).filter(Boolean) : [];
 
+    const isAdmin = req.user?.role === 'ADMIN';
+    const allowAllStatuses = isAdmin || Boolean(userId);
+    const defaultStatusFilter =
+      !allowAllStatuses && statusList.length === 0 ? { status: { $in: ['published'] } } : {};
+    const statusFilter = statusList.length ? { status: { $in: statusList } } : defaultStatusFilter;
+
     const query = {
       ...(userId && { userId }),
       ...(category && { category }),
       ...(normalizedSubCategory && { subCategory: normalizedSubCategory }),
       ...(slug && { slug }),
       ...(postId && { _id: postId }),
-      ...(statusList.length
-        ? { status: { $in: statusList } }
-        : !userId && { status: { $in: ['published'] } }),
+      ...statusFilter,
       ...(requestedTags.length ? { tags: { $all: requestedTags } } : {}),
       ...(publishedFrom || publishedTo
         ? {
@@ -336,7 +364,7 @@ export const getposts = async (req, res, next) => {
     const hasStatusFilter = statusList.length > 0;
     const usesPublishedAt =
       (hasStatusFilter && statusList.every((value) => ['published', 'scheduled'].includes(value))) ||
-      (!hasStatusFilter && !userId);
+      (!hasStatusFilter && !userId && !isAdmin);
     const sortField = sortBy || (usesPublishedAt ? 'publishedAt' : 'updatedAt');
     const posts = await Post.find(query)
       .sort({ [sortField]: order === 'asc' ? 1 : -1 })

@@ -1,11 +1,12 @@
 import express from 'express';
-import { verifyToken } from '../utils/verifyUser.js';
-import { create, deletepost, getposts, updatepost } from '../controllers/post.controller.js';
+import { verifyToken, verifyTokenOptional } from '../utils/verifyUser.js';
+import { create, deletepost, getpost, getposts, updatepost } from '../controllers/post.controller.js';
 
 const router = express.Router();
 
 router.post('/create', verifyToken, create);
-router.get('/getposts', getposts);
+router.get('/getposts', verifyTokenOptional, getposts);
+router.get('/:postId', verifyTokenOptional, getpost);
 router.delete('/deletepost/:postId/:userId', verifyToken, deletepost);
 router.put('/updatepost/:postId/:userId', verifyToken, updatepost);
 

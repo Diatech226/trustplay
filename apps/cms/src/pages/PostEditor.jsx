@@ -71,7 +71,9 @@ export const PostEditor = () => {
   const { addToast } = useToast();
   const [formData, setFormData] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(false);
   const [error, setError] = useState(null);
+  const [errorCode, setErrorCode] = useState(null);
   const [pickerState, setPickerState] = useState({ open: false, mode: 'cover' });
   const quillRef = useRef(null);
   const imageInputRef = useRef(null);
@@ -134,8 +136,9 @@ export const PostEditor = () => {
   useEffect(() => {
     if (!isEditing) return;
     const fetchPost = async () => {
-      setLoading(true);
+      setFetching(true);
       setError(null);
+      setErrorCode(null);
       try {
         const post = await fetchPostById(postId);
         if (!post) throw new Error('Post introuvable');
@@ -163,9 +166,10 @@ export const PostEditor = () => {
         });
       } catch (err) {
         setError(err.message);
+        setErrorCode(err.status || (err.message === 'Post introuvable' ? 404 : null));
         addToast(`Impossible de charger le post : ${err.message}`, { type: 'error' });
       } finally {
-        setLoading(false);
+        setFetching(false);
       }
     };
 
@@ -323,6 +327,33 @@ export const PostEditor = () => {
       setLoading(false);
     }
   };
+
+  if (fetching) {
+    return (
+      <div className="section">
+        <div className="section-header">
+          <h2>{isEditing ? 'Éditer un post' : 'Créer un post'}</h2>
+        </div>
+        <div className="loader">Chargement du post…</div>
+      </div>
+    );
+  }
+
+  if (isEditing && errorCode === 404) {
+    return (
+      <div className="section">
+        <div className="section-header">
+          <h2>Post introuvable</h2>
+        </div>
+        <div className="empty-state">
+          <p>Ce post n’existe plus ou vous n’avez plus accès à son édition.</p>
+          <button className="button secondary" type="button" onClick={() => navigate('/posts')}>
+            Retour à la liste
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="section">

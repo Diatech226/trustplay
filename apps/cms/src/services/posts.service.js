@@ -19,9 +19,8 @@ export const fetchPosts = async (params = {}) => {
 
 export const fetchPostById = async (postId) => {
   if (!postId) return null;
-  const response = await apiClient.get(`/api/posts?postId=${postId}`);
-  const posts = response?.posts || response?.data?.posts || [];
-  return posts[0] || response?.post || response?.data?.post || null;
+  const response = await apiClient.get(`/api/posts/${postId}`);
+  return response?.post || response?.data?.post || null;
 };
 
 export const createPost = async (payload) => apiClient.post('/api/posts', { body: payload });

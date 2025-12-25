@@ -34,10 +34,14 @@ Créer un fichier `.env` dans `apps/cms` (voir `.env.example`) :
 - `/settings` : paramètres
 
 ## Endpoints utilisés
-- Posts : `GET /api/posts`, `POST /api/posts`, `PUT /api/posts/:postId`, `DELETE /api/posts/:postId`
+- Posts : `GET /api/posts`, `GET /api/posts/:postId`, `POST /api/posts`, `PUT /api/posts/:postId`, `DELETE /api/posts/:postId`
 - Upload : `POST /api/uploads` (FormData, champ `file`) + `GET /api/uploads/list`
 - Comments : `GET /api/comment/getcomments`, `DELETE /api/comment/deleteComment/:commentId`
-- Users : `GET /api/user/getusers`
+- Users : `GET /api/admin/users`, `POST /api/admin/users`, `PUT /api/admin/users/:id`, `DELETE /api/admin/users/:id`, `PUT /api/admin/users/:id/toggle-admin`
+
+## Identifiants
+- Le CMS utilise `_id` (Mongo) pour l'édition/suppression des posts.
+- Le site public utilise `slug` pour les URLs de lecture (`/post/:slug`).
 
 ## QA checklist
 - Login/Logout OK

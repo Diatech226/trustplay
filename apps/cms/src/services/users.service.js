@@ -43,6 +43,11 @@ export const updateUserRole = async (id, role) => {
   return response?.data?.user || response?.user || response?.data;
 };
 
+export const toggleAdminUser = async (id) => {
+  const response = await apiClient.put(`/api/admin/users/${id}/toggle-admin`);
+  return response?.data?.user || response?.user || response?.data;
+};
+
 export const deleteUser = async (id) => {
   const response = await apiClient.del(`/api/admin/users/${id}`);
   return response?.data || response;

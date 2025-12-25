@@ -28,9 +28,11 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 - **Routes principales** :
   - `POST /api/auth/*` pour signup/signin/signout et flux reset password.
   - `GET /api/user/me`, `PUT /api/user/update/:userId`, `GET /api/user/getusers` (admin), `DELETE /api/user/delete/:userId`.
+  - `POST /api/user/create`, `PUT /api/user/:id`, `PUT /api/user/:id/toggle-admin` (alias admin CMS).
   - `POST /api/admin/users`, `GET /api/admin/users`, `PUT /api/admin/users/:id`, `DELETE /api/admin/users/:id`, `PUT /api/admin/users/:id/toggle-admin` (admin users CRUD CMS).
   - `GET /api/rubrics?scope=TrustMedia`, `POST /api/rubrics`, `PUT /api/rubrics/:id`, `DELETE /api/rubrics/:id` (taxonomie rubriques).
-  - `POST /api/post/create`, `GET /api/post/getposts`, `PUT /api/post/updatepost/:postId/:userId`, `DELETE /api/post/deletepost/:postId/:userId`.
+  - `POST /api/post/create`, `GET /api/post/getposts`, `GET /api/post/:postId`, `PUT /api/post/updatepost/:postId/:userId`, `DELETE /api/post/deletepost/:postId/:userId`.
+  - `GET /api/posts/:postId` (CMS : lecture par `_id`).
   - `GET /api/events` (liste TrustEvent côté CMS).
   - `POST /api/comment/create`, likes/édition/suppression et listing admin.
   - `POST /api/uploads` (Multer) avec filtrage MIME et quotas (10 Mo image, 100 Mo vidéo).
@@ -43,6 +45,7 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 - **JWT payload** : `{ id, email, role }` est signé à la connexion/inscription.
 - **Admin flag** : `isAdmin: true` est ajouté au JWT pour compatibilité legacy.
 - **Session CMS** : le CMS hydrate le profil via `GET /api/user/me` et vérifie `currentUser.role === 'ADMIN'`.
+- **Identifiants** : le CMS utilise `_id` pour l'édition/suppression, le site public utilise `slug` pour la lecture (`/post/:slug`).
 
 ## Fonctionnalités actuelles
 - **Site média** : pages éditoriales par rubrique, page article avec commentaires, recherche multi-critères et pagination incrémentale, pages événement/production/projets.
@@ -315,7 +318,7 @@ Checklist détaillée : [`QA_CHECKLIST.md`](./QA_CHECKLIST.md).
 ### Dashboard CMS (MVP pro)
 - **Routes clés** : `/` (overview), `/posts`, `/posts/new`, `/posts/:id/edit`, `/media`, `/comments`, `/users`.
 - **Endoints utilisés** :
-  - Articles : `GET /api/posts`, `POST /api/posts`, `PUT /api/posts/:postId`, `DELETE /api/posts/:postId`.
+  - Articles : `GET /api/posts`, `GET /api/posts/:postId`, `POST /api/posts`, `PUT /api/posts/:postId`, `DELETE /api/posts/:postId`.
   - Événements : `GET /api/events`, `POST /api/posts` (category `TrustEvent`).
   - Médias : `GET /api/media`, `PUT /api/media/:id`, `DELETE /api/media/:id`.
   - Commentaires : `GET /api/comment/getcomments`, `DELETE /api/comment/deleteComment/:commentId`.
