@@ -1,9 +1,12 @@
 import { useMemo, useRef, useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import { uploadMedia } from '../services/media.service';
 import { createPost, fetchPostById, updatePost } from '../services/posts.service';
 import { useToast } from '../components/ToastProvider';
 import { MediaPicker } from '../components/MediaPicker';
+import { resolveMediaUrl } from '../lib/mediaUrls';
 
 const CATEGORY_OPTIONS = [
   { value: 'TrustMedia', label: 'Trust Media' },
@@ -43,13 +46,14 @@ const resolveMediaCategory = (category) => {
 };
 
 const buildMediaHtml = (media) => {
+  const url = resolveMediaUrl(media.url);
   if (media.kind === 'image') {
-    return `<img src="${media.url}" alt="${media.name || ''}" />`;
+    return `<img src="${url}" alt="${media.name || ''}" />`;
   }
   if (media.kind === 'video') {
-    return `<video src="${media.url}" controls></video>`;
+    return `<video src="${url}" controls></video>`;
   }
-  return `<a href="${media.url}" target="_blank" rel="noreferrer">${media.name || media.url}</a>`;
+  return `<a href="${url}" target="_blank" rel="noreferrer">${media.name || url}</a>`;
 };
 
 export const PostEditor = () => {
@@ -60,9 +64,49 @@ export const PostEditor = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [pickerState, setPickerState] = useState({ open: false, mode: 'cover' });
-  const contentRef = useRef(null);
+  const quillRef = useRef(null);
+  const imageInputRef = useRef(null);
+  const videoInputRef = useRef(null);
 
   const isEditing = useMemo(() => Boolean(postId), [postId]);
+  const quillModules = useMemo(
+    () => ({
+      toolbar: {
+        container: [
+          [{ header: [1, 2, 3, false] }],
+          ['bold', 'italic', 'underline', 'strike'],
+          ['blockquote', 'code-block'],
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          [{ align: [] }],
+          ['link', 'image', 'video'],
+          ['clean'],
+        ],
+        handlers: {
+          image: () => imageInputRef.current?.click(),
+          video: () => videoInputRef.current?.click(),
+        },
+      },
+    }),
+    []
+  );
+  const quillFormats = useMemo(
+    () => [
+      'header',
+      'bold',
+      'italic',
+      'underline',
+      'strike',
+      'blockquote',
+      'code-block',
+      'list',
+      'bullet',
+      'align',
+      'link',
+      'image',
+      'video',
+    ],
+    []
+  );
 
   useEffect(() => {
     if (!isEditing) return;
@@ -124,15 +168,34 @@ export const PostEditor = () => {
   const insertIntoContent = (snippet) => {
     setFormData((prev) => {
       const content = prev.content || '';
-      const textarea = contentRef.current;
-      if (!textarea) {
+      const editor = quillRef.current?.getEditor();
+      if (!editor) {
         return { ...prev, content: `${content}\n${snippet}` };
       }
-      const start = textarea.selectionStart || 0;
-      const end = textarea.selectionEnd || 0;
-      const nextContent = `${content.slice(0, start)}${snippet}${content.slice(end)}`;
-      return { ...prev, content: nextContent };
+      const range = editor.getSelection(true) || { index: editor.getLength(), length: 0 };
+      editor.clipboard.dangerouslyPasteHTML(range.index, snippet);
+      return { ...prev, content: editor.root.innerHTML };
     });
+  };
+
+  const insertMediaEmbed = (media) => {
+    if (!media?.url) return;
+    const editor = quillRef.current?.getEditor();
+    const url = resolveMediaUrl(media.url);
+    if (!editor) {
+      insertIntoContent(buildMediaHtml(media));
+      return;
+    }
+    const range = editor.getSelection(true) || { index: editor.getLength(), length: 0 };
+    if (media.kind === 'image') {
+      editor.insertEmbed(range.index, 'image', url, 'user');
+    } else if (media.kind === 'video') {
+      editor.insertEmbed(range.index, 'video', url, 'user');
+    } else {
+      const label = media.name || url;
+      editor.insertText(range.index, label, { link: url }, 'user');
+    }
+    editor.setSelection(range.index + 1, 0, 'user');
   };
 
   const handleUpload = async (event) => {
@@ -149,6 +212,8 @@ export const PostEditor = () => {
       addToast('Fichier uploadé avec succès.', { type: 'success' });
     } catch (err) {
       addToast(`Upload impossible : ${err.message}`, { type: 'error' });
+    } finally {
+      event.target.value = '';
     }
   };
 
@@ -159,7 +224,7 @@ export const PostEditor = () => {
       const data = await uploadMedia(file, { category: resolveMediaCategory(formData.category) });
       const media = data.media;
       if (media) {
-        insertIntoContent(buildMediaHtml(media));
+        insertMediaEmbed(media);
         setFormData((prev) => ({
           ...prev,
           mediaIds: Array.from(new Set([...(prev.mediaIds || []), media._id])),
@@ -168,6 +233,8 @@ export const PostEditor = () => {
       addToast('Média inséré dans le contenu.', { type: 'success' });
     } catch (err) {
       addToast(`Upload impossible : ${err.message}`, { type: 'error' });
+    } finally {
+      event.target.value = '';
     }
   };
 
@@ -181,9 +248,7 @@ export const PostEditor = () => {
       }));
       return;
     }
-
-    const snippets = selected.map((media) => buildMediaHtml(media)).join('\n');
-    insertIntoContent(snippets);
+    selected.forEach((media) => insertMediaEmbed(media));
     setFormData((prev) => ({
       ...prev,
       mediaIds: Array.from(new Set([...(prev.mediaIds || []), ...selected.map((media) => media._id)])),
@@ -192,6 +257,16 @@ export const PostEditor = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (!formData.title?.trim()) {
+      setError('Le titre est obligatoire.');
+      addToast('Le titre est obligatoire.', { type: 'error' });
+      return;
+    }
+    if (!formData.category) {
+      setError('La catégorie est obligatoire.');
+      addToast('La catégorie est obligatoire.', { type: 'error' });
+      return;
+    }
     setLoading(true);
     setError(null);
 
@@ -239,7 +314,14 @@ export const PostEditor = () => {
         </label>
         <label>
           Contenu
-          <textarea ref={contentRef} name="content" value={formData.content} onChange={handleChange} required />
+          <ReactQuill
+            ref={quillRef}
+            theme="snow"
+            value={formData.content}
+            onChange={(value) => setFormData((prev) => ({ ...prev, content: value }))}
+            modules={quillModules}
+            formats={quillFormats}
+          />
           <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
             <button
               className="button secondary"
@@ -255,6 +337,20 @@ export const PostEditor = () => {
             <span className="helper">{(formData.mediaIds || []).length} média(s) liés</span>
           </div>
         </label>
+        <input
+          ref={imageInputRef}
+          type="file"
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={handleInlineUpload}
+        />
+        <input
+          ref={videoInputRef}
+          type="file"
+          accept="video/*"
+          style={{ display: 'none' }}
+          onChange={handleInlineUpload}
+        />
         <label>
           Catégorie
           <select name="category" value={formData.category} onChange={handleChange} required>

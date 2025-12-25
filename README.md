@@ -155,6 +155,12 @@ Créer `.env` dans `trustapi-main` (voir `.env.example`) avec :
 - Exemple recommandé : `CORS_ORIGIN=http://localhost:5173,http://localhost:5174`.
 - (Optionnel) `RESEND_API_KEY`, `MAIL_FROM` pour l'e-mail reset password.
 
+### Media URLs & previews
+- Les uploads sont servis en statique via `GET /uploads/...`.
+- Les entrées Media stockent par défaut des URLs **relatives** (`/uploads/xxx.jpg`).
+- Le CMS préfixe automatiquement `VITE_API_URL` pour générer les previews et liens cliquables.
+- Pour forcer des URLs absolues côté API, configurez un reverse proxy qui expose `/uploads` sur le même domaine que l'API.
+
 ### URLs de développement
 - Site public : `http://localhost:5173`
 - CMS v2 : `http://localhost:5174`
@@ -177,7 +183,7 @@ cd trustapi-main
 npm run make-admin -- admin@trustmedia.com
 ```
 
-> ℹ️ Le backend utilise `role: "ADMIN"` comme référence principale et expose aussi `isAdmin` dans le payload utilisateur/JWT.
+> ℹ️ Le backend utilise `role: "ADMIN"` comme référence principale et expose aussi `isAdmin` dans le payload utilisateur/JWT. Le CMS valide la session via `GET /api/user/me`.
 
 ## QA checklist (admin)
 Checklist rapide avant validation :
@@ -187,6 +193,7 @@ Checklist rapide avant validation :
 - Commentaires : aucun appel à `/api/comment/getPostComments/undefined` et `postId` invalide renvoie **400**.
 - CMS Overview : compteurs totaux (posts/users/comments/events) alignés avec la base.
 - Media Library : upload réussi via `/api/uploads` puis média visible dans `/api/media`.
+- Media Library : les previews utilisent `/uploads/...` et s'ouvrent via le lien cliquable.
 - Events : `/api/events` retourne tous les TrustEvent (draft + published).
 - Navigation CMS : toutes les entrées sidebar ouvrent une route active.
 
