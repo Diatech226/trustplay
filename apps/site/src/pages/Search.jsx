@@ -23,19 +23,23 @@ export default function Search() {
   const [loading, setLoading] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [error, setError] = useState('');
+  const [pageSize, setPageSize] = useState(9);
   const { rubrics: trustMediaRubrics } = useRubrics('TrustMedia');
 
   const location = useLocation();
 
   const navigate = useNavigate();
-  const pageSize = 9;
+  const defaultPageSize = 9;
 
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const searchTermFromUrl = urlParams.get('searchTerm') || '';
-    const sortFromUrl = urlParams.get('sort') || 'recent';
-    const normalizedParam = normalizeSubCategory(urlParams.get('subCategory'));
+    const orderFromUrl = urlParams.get('order');
+    const rawSortFromUrl = urlParams.get('sort') || (orderFromUrl === 'asc' ? 'asc' : 'recent');
+    const allowedSorts = new Set(['recent', 'asc', 'popular', 'relevance']);
+    const sortFromUrl = allowedSorts.has(rawSortFromUrl) ? rawSortFromUrl : 'recent';
+    const normalizedParam = normalizeSubCategory(urlParams.get('subCategory') || '');
     const allowedSubCategories = new Set(trustMediaRubrics.map((rubric) => rubric.slug));
     const subCategoryFromUrl =
       normalizedParam && allowedSubCategories.has(normalizedParam) ? normalizedParam : 'all';
@@ -43,6 +47,9 @@ export default function Search() {
     const dateRangeFromUrl = urlParams.get('dateRange') || (featuredFromUrl === 'today' ? '24h' : 'any');
     const tagsFromUrl = urlParams.get('tags') || '';
     const categoryFromUrl = urlParams.get('category') || MEDIA_CATEGORY;
+    const limitFromUrl = Number.parseInt(urlParams.get('limit') || '', 10);
+    const startIndexFromUrl = Number.parseInt(urlParams.get('startIndex') || '0', 10);
+    const nextPageSize = Number.isFinite(limitFromUrl) && limitFromUrl > 0 ? limitFromUrl : defaultPageSize;
     const nextFilters = {
       searchTerm: searchTermFromUrl,
       sort: sortFromUrl,
@@ -53,6 +60,7 @@ export default function Search() {
     };
 
     setSidebarData(nextFilters);
+    setPageSize(nextPageSize);
 
     const fetchPosts = async () => {
       setLoading(true);
@@ -62,12 +70,13 @@ export default function Search() {
           searchTerm: searchTermFromUrl || undefined,
           subCategory: subCategoryFromUrl === 'all' ? undefined : subCategoryFromUrl,
           order: sortFromUrl === 'asc' ? 'asc' : 'desc',
-          limit: pageSize,
+          limit: nextPageSize,
+          startIndex: Number.isFinite(startIndexFromUrl) && startIndexFromUrl > 0 ? startIndexFromUrl : 0,
         });
         const normalizedPosts = normalizePosts(fetchedPosts);
         const filtered = applyAdvancedFilters(normalizedPosts, nextFilters);
         setPosts(filtered);
-        setShowMore(fetchedPosts.length === pageSize);
+        setShowMore(fetchedPosts.length === nextPageSize);
       } catch (err) {
         setError('Impossible de récupérer les résultats.');
       } finally {
@@ -91,6 +100,7 @@ export default function Search() {
     urlParams.set('tags', sidebarData.tags);
     urlParams.set('category', MEDIA_CATEGORY);
     urlParams.delete('featured');
+    urlParams.delete('order');
     if (sidebarData.subCategory === 'all') {
       urlParams.delete('subCategory');
     } else {
@@ -155,6 +165,8 @@ export default function Search() {
       results.sort((a, b) => (b.views || b.likes || 0) - (a.views || a.likes || 0));
     } else if (filters.sort === 'relevance') {
       results.sort((a, b) => (b?.title?.length || 0) - (a?.title?.length || 0));
+    } else if (filters.sort === 'asc') {
+      results.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
     } else {
       results.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     }
@@ -192,6 +204,7 @@ export default function Search() {
                 <label className='text-sm font-semibold text-slate-700 dark:text-slate-200'>Trier</label>
                 <Select onChange={handleChange} value={sidebarData.sort} id='sort'>
                   <option value='recent'>Les plus récents</option>
+                  <option value='asc'>Les plus anciens</option>
                   <option value='popular'>Les plus populaires</option>
                   <option value='relevance'>Pertinence</option>
                 </Select>

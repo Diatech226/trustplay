@@ -31,6 +31,7 @@ npm run lint
 ## Routes publiques principales
 - `/` : Home
 - `/news`, `/politique`, `/science`, `/sport`, `/cinema` : rubriques Trust Media
+- `/rubriques` : liste des rubriques Trust Media
 - `/search` : recherche/filtrage
 - `/post/:slug` : article
 - `/events` (alias `/event`) : Trust Event
@@ -57,6 +58,16 @@ Les pages publiques consomment `GET /api/post/getposts` avec les paramètres sup
 - `searchTerm`
 - `startIndex` (pagination), `limit`
 - `order` (`asc`/`desc`)
+
+## Paramètres de navigation (UI)
+La page `/search` accepte les paramètres suivants (tous optionnels) :
+- `category` (par défaut `TrustMedia`)
+- `subCategory` (slug de rubrique Trust Media)
+- `searchTerm`
+- `sort` (`recent`, `asc`, `popular`, `relevance`)
+- `dateRange` (`any`, `24h`, `7d`, `30d`, `1y`)
+- `tags` (séparés par des virgules)
+- `startIndex`, `limit` (pagination)
 
 Endpoints utilisés :
 - Home Trust Media : `GET /api/post/getposts?category=TrustMedia&order=desc&limit=...`
