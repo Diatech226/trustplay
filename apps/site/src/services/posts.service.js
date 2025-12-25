@@ -3,7 +3,6 @@ import {
   MEDIA_CATEGORY,
   PRODUCTION_CATEGORY,
   normalizeSubCategory,
-  normalizeTrustMediaSubCategory,
 } from '../utils/categories';
 
 const POSTS_ENDPOINT = '/api/post/getposts';
@@ -20,9 +19,7 @@ const setParam = (params, key, value) => {
 };
 
 export const normalizePost = (post) => {
-  const normalizedSubCategory = post?.category === MEDIA_CATEGORY || !post?.category
-    ? normalizeTrustMediaSubCategory(post.subCategory)
-    : normalizeSubCategory(post.subCategory);
+  const normalizedSubCategory = normalizeSubCategory(post.subCategory);
   return {
     ...post,
     subCategory: normalizedSubCategory,

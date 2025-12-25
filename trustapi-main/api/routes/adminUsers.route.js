@@ -4,6 +4,7 @@ import {
   deleteAdminUser,
   getAdminUser,
   listAdminUsers,
+  toggleAdminUser,
   updateAdminUser,
   updateAdminUserRole,
 } from '../controllers/adminUsers.controller.js';
@@ -17,5 +18,6 @@ router.get('/users/:id', verifyToken, requireAdmin, getAdminUser);
 router.put('/users/:id', verifyToken, requireAdmin, updateAdminUser);
 router.delete('/users/:id', verifyToken, requireAdmin, deleteAdminUser);
 router.put('/users/:id/role', verifyToken, requireAdmin, updateAdminUserRole);
+router.put('/users/:id/toggle-admin', verifyToken, requireAdmin, toggleAdminUser);
 
 export default router;

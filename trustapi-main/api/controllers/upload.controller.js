@@ -117,6 +117,7 @@ export const handleUpload = async (req, res, next) => {
     const mediaPayload = {
       name: req.body?.name || uploadedFile.originalname,
       category: req.body?.category || 'gallery',
+      subCategory: req.body?.subCategory || null,
       url: `/uploads/${uploadedFile.filename}`,
       mimeType: uploadedFile.mimetype,
       size: uploadedFile.size,

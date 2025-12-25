@@ -14,12 +14,17 @@ const notificationsSlice = createSlice({
   reducers: {
     toggleSubscription: (state, action) => {
       const category = action.payload;
-      if (!availableCategories.includes(category)) return;
+      if (!state.categories.includes(category)) return;
       if (state.subscribed.includes(category)) {
         state.subscribed = state.subscribed.filter((c) => c !== category);
       } else {
         state.subscribed.push(category);
       }
+    },
+    setCategories: (state, action) => {
+      const next = Array.isArray(action.payload) ? action.payload : [];
+      state.categories = next.length ? next : availableCategories;
+      state.subscribed = state.subscribed.filter((cat) => state.categories.includes(cat));
     },
     setUnreadBadge: (state, action) => {
       state.unread = action.payload;
@@ -30,5 +35,5 @@ const notificationsSlice = createSlice({
   },
 });
 
-export const { toggleSubscription, setUnreadBadge, clearNotificationsBadge } = notificationsSlice.actions;
+export const { toggleSubscription, setCategories, setUnreadBadge, clearNotificationsBadge } = notificationsSlice.actions;
 export default notificationsSlice.reducer;

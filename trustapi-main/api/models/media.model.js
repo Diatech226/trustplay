@@ -4,6 +4,7 @@ const MediaSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     category: { type: String, required: true, trim: true },
+    subCategory: { type: String, trim: true },
     url: { type: String, required: true, trim: true },
     mimeType: { type: String, trim: true },
     size: { type: Number },

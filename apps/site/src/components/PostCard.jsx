@@ -1,9 +1,16 @@
 import { Link } from 'react-router-dom';
 import FavoriteButton from './FavoriteButton';
-import { getSubCategoryLabel } from '../utils/categories';
+import { MEDIA_CATEGORY, normalizeSubCategory } from '../utils/categories';
+import { useRubrics } from '../hooks/useRubrics';
 
 export default function PostCard({ post }) {
-  const subCategoryLabel = getSubCategoryLabel(post.subCategory) || post.subCategory || post.category;
+  const { rubricMap } = useRubrics('TrustMedia');
+  const normalizedSubCategory = normalizeSubCategory(post.subCategory);
+  const rubric = normalizedSubCategory ? rubricMap[normalizedSubCategory] : null;
+  let subCategoryLabel = rubric?.label || post.subCategory || post.category;
+  if (post?.subCategory && !rubric && (!post.category || post.category === MEDIA_CATEGORY)) {
+    subCategoryLabel = `Legacy: ${post.subCategory}`;
+  }
   const readingTime = Math.max(1, Math.round((post?.content?.length || 0) / 800));
   const withFormatParam = (format) => {
     if (!post?.image) return '';

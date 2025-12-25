@@ -28,7 +28,8 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 - **Routes principales** :
   - `POST /api/auth/*` pour signup/signin/signout et flux reset password.
   - `GET /api/user/me`, `PUT /api/user/update/:userId`, `GET /api/user/getusers` (admin), `DELETE /api/user/delete/:userId`.
-  - `POST /api/admin/users`, `GET /api/admin/users`, `PUT /api/admin/users/:id`, `DELETE /api/admin/users/:id` (admin users CRUD CMS).
+  - `POST /api/admin/users`, `GET /api/admin/users`, `PUT /api/admin/users/:id`, `DELETE /api/admin/users/:id`, `PUT /api/admin/users/:id/toggle-admin` (admin users CRUD CMS).
+  - `GET /api/rubrics?scope=TrustMedia`, `POST /api/rubrics`, `PUT /api/rubrics/:id`, `DELETE /api/rubrics/:id` (taxonomie rubriques).
   - `POST /api/post/create`, `GET /api/post/getposts`, `PUT /api/post/updatepost/:postId/:userId`, `DELETE /api/post/deletepost/:postId/:userId`.
   - `GET /api/events` (liste TrustEvent côté CMS).
   - `POST /api/comment/create`, likes/édition/suppression et listing admin.
@@ -40,6 +41,7 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 ### Auth/RBAC — source de vérité
 - **Champ unique** : `User.role` (`ADMIN` | `EDITOR` | `AUTHOR` | `USER`) est la source unique de permissions.
 - **JWT payload** : `{ id, email, role }` est signé à la connexion/inscription.
+- **Admin flag** : `isAdmin: true` est ajouté au JWT pour compatibilité legacy.
 - **Session CMS** : le CMS hydrate le profil via `GET /api/user/me` et vérifie `currentUser.role === 'ADMIN'`.
 
 ## Fonctionnalités actuelles
@@ -55,7 +57,8 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 {
   "_id": "ObjectId",
   "name": "string",
-  "category": "article | event | gallery | branding",
+  "category": "Media | event | gallery | branding",
+  "subCategory": "string",
   "url": "/uploads/xxx.jpg",
   "mimeType": "image/jpeg",
   "size": 123456,
@@ -70,10 +73,38 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 
 ### Endpoints Media/Upload
 - `POST /api/uploads` : upload fichier (multipart) + création automatique du Media.
-- `GET /api/media?search=&category=&kind=&startIndex=&limit=&order=` : liste + filtres + pagination.
+- `GET /api/media?search=&category=&subCategory=&kind=&startIndex=&limit=&order=` : liste + filtres + pagination.
 - `POST /api/media` : créer une entrée metadata si besoin.
-- `PUT /api/media/:id` : rename / changer catégorie.
+- `PUT /api/media/:id` : rename / changer catégorie / sous-catégorie.
 - `DELETE /api/media/:id` : suppression (admin ou owner).
+
+## Rubriques / Taxonomie
+### Schéma Rubric (Mongo)
+```json
+{
+  "_id": "ObjectId",
+  "scope": "TrustMedia | TrustEvent | TrustProduction | Media",
+  "slug": "politique",
+  "label": "Politique",
+  "description": "string",
+  "order": 1,
+  "isActive": true,
+  "deletedAt": null,
+  "createdAt": "date",
+  "updatedAt": "date"
+}
+```
+
+### Endpoints Rubriques
+- `GET /api/rubrics?scope=TrustMedia` (public).
+- `POST /api/rubrics` (admin).
+- `PUT /api/rubrics/:id` (admin).
+- `DELETE /api/rubrics/:id` (admin, soft delete).
+
+### Mapping unifié (Posts / Events / Media)
+- **Posts** : `category = TrustMedia`, `subCategory = rubric.slug` (scope TrustMedia).
+- **Events** : `category = TrustEvent`, `subCategory = rubric.slug` (scope TrustEvent).
+- **Media** : `category = Media`, `subCategory = rubric.slug` (scope Media).
 
 ## Settings (CMS)
 ### Schéma Settings (Mongo)
@@ -113,6 +144,12 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 2. Le backend crée un `Media` → retour `{ media, url }`.
 3. Le CMS liste via `/api/media` et permet la sélection dans l’éditeur.
 4. Les posts stockent `coverMediaId`, `mediaIds[]` + HTML avec URLs.
+
+## QA checklist (Users & Rubriques)
+- **Users** : liste / création / édition / suppression ok (CMS → `/api/admin/users`).
+- **Admin toggle** : promotion/rétrogradation via `/api/admin/users/:id/toggle-admin`.
+- **Rubriques** : création TrustMedia/TrustEvent/Media visible dans CMS, site public et éditeurs.
+- **Legacy** : les posts avec subCategory inconnue affichent “Legacy”.
 
 ## Itération 2 – CMS éditorial pro
 - **Workflow éditorial** : statuts `draft` → `review` → `published` (+ `scheduled`) avec date de publication, tags, SEO (title/description/OG) et indicateur « featured ».

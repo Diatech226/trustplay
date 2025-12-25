@@ -257,3 +257,28 @@ export const updateAdminUserRole = async (req, res, next) => {
     return next(error);
   }
 };
+
+export const toggleAdminUser = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return next(errorHandler(404, 'User not found'));
+    }
+
+    const nextRole = user.role === 'ADMIN' ? 'USER' : 'ADMIN';
+    if (user.role === 'ADMIN' && nextRole !== 'ADMIN') {
+      await ensureNotLastAdmin(user);
+    }
+
+    user.role = nextRole;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'User role toggled successfully',
+      data: { user: sanitizeUser(user) },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};

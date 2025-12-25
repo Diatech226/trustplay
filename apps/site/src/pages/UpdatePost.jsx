@@ -7,7 +7,8 @@ import { useDispatch } from 'react-redux';
 import { setUser } from '../redux/user/userSlice';
 import { uploadImageFile, uploadMediaFile } from '../utils/uploadImage';
 import { apiRequest } from '../lib/apiClient';
-import { ALL_SUBCATEGORIES, normalizeSubCategory, PRIMARY_SUBCATEGORIES } from '../utils/categories';
+import { normalizeSubCategory } from '../utils/categories';
+import { useRubrics } from '../hooks/useRubrics';
 
 const CATEGORY_OPTIONS = [
   { value: 'TrustMedia', label: 'Média' },
@@ -25,10 +26,12 @@ export default function UpdatePost() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
   const [publishError, setPublishError] = useState('');
+  const { rubrics: trustMediaRubrics } = useRubrics('TrustMedia');
+  const { rubrics: trustEventRubrics } = useRubrics('TrustEvent', { fallback: false });
   const [formData, setFormData] = useState({
     title: '',
     category: CATEGORY_OPTIONS[0].value,
-    subCategory: PRIMARY_SUBCATEGORIES[0].value,
+    subCategory: '',
     content: '',
     image: '',
     eventDate: '',
@@ -60,7 +63,7 @@ export default function UpdatePost() {
             ...prev,
             ...fetchedPost,
             category: normalizedCategory,
-            subCategory: normalizeSubCategory(fetchedPost.subCategory) || PRIMARY_SUBCATEGORIES[0].value,
+            subCategory: normalizeSubCategory(fetchedPost.subCategory) || '',
             // CMS: events (TrustEvent)
             eventDate: fetchedPost.eventDate || '',
             location: fetchedPost.location || '',
@@ -77,6 +80,34 @@ export default function UpdatePost() {
 
     fetchPost();
   }, [postId]);
+
+  useEffect(() => {
+    if (formData.category === 'TrustMedia' && !formData.subCategory && trustMediaRubrics.length) {
+      setFormData((prev) => ({ ...prev, subCategory: trustMediaRubrics[0]?.slug || '' }));
+    }
+  }, [formData.category, formData.subCategory, trustMediaRubrics]);
+
+  useEffect(() => {
+    if (formData.category === 'TrustEvent' && !formData.subCategory && trustEventRubrics.length) {
+      setFormData((prev) => ({ ...prev, subCategory: trustEventRubrics[0]?.slug || '' }));
+    }
+  }, [formData.category, formData.subCategory, trustEventRubrics]);
+
+  const trustMediaOptions = useMemo(() => {
+    const options = trustMediaRubrics.map((rubric) => ({ value: rubric.slug, label: rubric.label }));
+    if (formData.subCategory && !options.find((option) => option.value === formData.subCategory)) {
+      options.unshift({ value: formData.subCategory, label: `Legacy: ${formData.subCategory}` });
+    }
+    return options;
+  }, [formData.subCategory, trustMediaRubrics]);
+
+  const trustEventOptions = useMemo(() => {
+    const options = trustEventRubrics.map((rubric) => ({ value: rubric.slug, label: rubric.label }));
+    if (formData.subCategory && !options.find((option) => option.value === formData.subCategory)) {
+      options.unshift({ value: formData.subCategory, label: `Legacy: ${formData.subCategory}` });
+    }
+    return options;
+  }, [formData.subCategory, trustEventRubrics]);
 
   const handleUploadImage = async () => {
     if (!file) {
@@ -223,8 +254,10 @@ export default function UpdatePost() {
                   category: e.target.value,
                   subCategory:
                     e.target.value === 'TrustMedia'
-                      ? prev.subCategory || PRIMARY_SUBCATEGORIES[0].value
-                      : '',
+                      ? prev.subCategory || trustMediaRubrics[0]?.slug || ''
+                      : e.target.value === 'TrustEvent'
+                        ? prev.subCategory || trustEventRubrics[0]?.slug || ''
+                        : '',
                 }))
               }
             >
@@ -244,7 +277,21 @@ export default function UpdatePost() {
             onChange={(e) => setFormData((prev) => ({ ...prev, subCategory: e.target.value }))}
           >
             <option value=''>Choisir une rubrique</option>
-            {ALL_SUBCATEGORIES.map((option) => (
+            {trustMediaOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+        )}
+        {formData.category === 'TrustEvent' && (
+          <Select
+            required
+            value={formData.subCategory || ''}
+            onChange={(e) => setFormData((prev) => ({ ...prev, subCategory: e.target.value }))}
+          >
+            <option value=''>Choisir une rubrique événementielle</option>
+            {trustEventOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>

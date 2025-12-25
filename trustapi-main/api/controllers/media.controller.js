@@ -21,7 +21,7 @@ const resolveKind = (mimeType = '') => {
 
 export const createMedia = async (req, res, next) => {
   try {
-    const { name, category, url, mimeType, size, kind, altText, tags } = req.body;
+    const { name, category, subCategory, url, mimeType, size, kind, altText, tags } = req.body;
     if (!name || !category || !url) {
       return next(errorHandler(400, 'Missing required fields'));
     }
@@ -29,6 +29,7 @@ export const createMedia = async (req, res, next) => {
     const payload = {
       name,
       category,
+      subCategory,
       url,
       mimeType,
       size,
@@ -50,6 +51,7 @@ export const listMedia = async (req, res, next) => {
     const {
       search,
       category,
+      subCategory,
       kind,
       startIndex = 0,
       limit = 20,
@@ -58,6 +60,7 @@ export const listMedia = async (req, res, next) => {
 
     const query = {};
     if (category) query.category = category;
+    if (subCategory) query.subCategory = subCategory;
     if (kind) query.kind = kind;
     if (search) {
       const regex = new RegExp(search, 'i');
@@ -112,6 +115,7 @@ export const updateMedia = async (req, res, next) => {
     const updates = {
       name: req.body.name,
       category: req.body.category,
+      subCategory: req.body.subCategory,
       altText: req.body.altText,
       tags: req.body.tags ? parseTags(req.body.tags) : undefined,
     };

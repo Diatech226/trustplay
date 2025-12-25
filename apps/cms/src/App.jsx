@@ -8,6 +8,7 @@ import { Events } from './pages/Events';
 import { EventEditor } from './pages/EventEditor';
 import { MediaLibrary } from './pages/MediaLibrary';
 import { Comments } from './pages/Comments';
+import { Rubrics } from './pages/Rubrics';
 import { Users } from './pages/Users';
 import { Settings } from './pages/Settings';
 import { Login } from './pages/Login';
@@ -34,6 +35,7 @@ export const App = () => {
         <Route path="events/:id/edit" element={<EventEditor />} />
         <Route path="media" element={<MediaLibrary />} />
         <Route path="comments" element={<Comments />} />
+        <Route path="rubrics" element={<Rubrics />} />
         <Route path="users" element={<Users />} />
         <Route path="settings" element={<Settings />} />
       </Route>

@@ -14,8 +14,9 @@ import ArticleHeroSkeleton from '../components/skeletons/ArticleHeroSkeleton';
 import PostCardSkeleton from '../components/skeletons/PostCardSkeleton';
 import { logReading } from '../redux/history/historySlice';
 import { getMediaPosts, getPostBySlug, normalizePosts } from '../services/posts.service';
-import { getSubCategoryMeta } from '../utils/categories';
+import { MEDIA_CATEGORY, normalizeSubCategory } from '../utils/categories';
 import { logPageView } from '../lib/analytics';
+import { useRubrics } from '../hooks/useRubrics';
 
 export default function PostPage() {
   const { postSlug } = useParams();
@@ -25,6 +26,7 @@ export default function PostPage() {
   const [recentPosts, setRecentPosts] = useState([]);
   const { currentUser } = useSelector((state) => state.user);
   const dispatch = useDispatch();
+  const { rubricMap } = useRubrics('TrustMedia');
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -121,11 +123,23 @@ export default function PostPage() {
       }
     : null;
 
-  const subCategoryMeta = post?.subCategory ? getSubCategoryMeta(post.subCategory) : null;
+  const normalizedSubCategory = normalizeSubCategory(post?.subCategory);
+  const rubric = normalizedSubCategory ? rubricMap[normalizedSubCategory] : null;
+  const subCategoryMeta = rubric
+    ? { label: rubric.label, path: rubric.path || `/${rubric.slug}` }
+    : null;
+  const legacyLabel =
+    post?.subCategory && !rubric && (!post.category || post.category === MEDIA_CATEGORY)
+      ? `Legacy: ${post.subCategory}`
+      : null;
   const readingTime = Math.max(1, Math.round((post?.content?.length || 0) / 900));
   const breadcrumbItems = [
     { label: 'Accueil', href: '/' },
-    subCategoryMeta ? { label: subCategoryMeta.label, href: subCategoryMeta.path } : { label: post?.category || 'Article' },
+    subCategoryMeta
+      ? { label: subCategoryMeta.label, href: subCategoryMeta.path }
+      : legacyLabel
+        ? { label: legacyLabel }
+        : { label: post?.category || 'Article' },
     { label: post?.title || 'Article' },
   ].filter(Boolean);
 
@@ -184,12 +198,12 @@ export default function PostPage() {
                   className='h-full w-full object-cover'
                 />
               </picture>
-              {subCategoryMeta && (
+              {(subCategoryMeta || legacyLabel) && (
                 <Link
-                  to={subCategoryMeta.path}
+                  to={subCategoryMeta?.path || '#'}
                   className='absolute left-6 top-6 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-primary shadow-subtle dark:bg-slate-800/80'
                 >
-                  {subCategoryMeta.label}
+                  {subCategoryMeta?.label || legacyLabel}
                 </Link>
               )}
             </div>
