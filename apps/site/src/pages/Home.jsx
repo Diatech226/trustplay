@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import CallToAction from '../components/CallToAction';
 import PageContainer from '../components/layout/PageContainer';
@@ -13,11 +13,14 @@ export default function Home() {
   const [sectionPosts, setSectionPosts] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
 
   const categories = [
-    { name: 'Tous', key: 'all' },
-    ...TRUST_MEDIA_SUBCATEGORIES.map((cat) => ({ name: cat.label, key: cat.value })),
+    { name: 'Tous', key: 'all', path: '/search' },
+    ...TRUST_MEDIA_SUBCATEGORIES.map((cat) => ({
+      name: cat.label,
+      key: cat.value,
+      path: cat.path,
+    })),
   ];
 
   useEffect(() => {
@@ -46,19 +49,20 @@ export default function Home() {
     };
     fetchPosts();
   }, []);
-  
-
-  // Optimisation : Utilisation de `useMemo` pour éviter le recalcul inutile
-  const filteredPosts = useMemo(() => {
-    if (selectedCategory === 'all') return posts;
-    return posts.filter((post) => normalizeSubCategory(post.subCategory) === selectedCategory);
-  }, [selectedCategory, posts]);
 
   const featuredPost = posts[0];
   const latestPosts = posts.slice(1, 5);
-  const gridPosts = filteredPosts.slice(0, 9);
+  const featuredPosts = posts.slice(0, 9);
   const heroDescription = featuredPost?.content?.replace(/<[^>]+>/g, '').slice(0, 160) ||
     "Une rédaction engagée qui met en avant les rubriques phares : News, Politique, Science/Tech, Sport et Cinéma.";
+  const baseLinkClass = 'text-sm font-semibold text-ocean hover:underline';
+  const buildSearchUrl = (params = {}) => {
+    const urlParams = new URLSearchParams({ category: MEDIA_CATEGORY, ...params });
+    return `/search?${urlParams.toString()}`;
+  };
+  const allPublicationsUrl = buildSearchUrl();
+  const featuredUrl = buildSearchUrl({ sort: 'recent', dateRange: '24h', featured: 'today' });
+  const allRubriquesUrl = buildSearchUrl();
 
   return (
     <main className='bg-mist/60 dark:bg-slate-950'>
@@ -76,17 +80,13 @@ export default function Home() {
             </p>
             <div className='flex flex-wrap gap-3'>
               {categories.map((cat) => (
-                <button
+                <Link
                   key={cat.key}
-                  onClick={() => setSelectedCategory(cat.key)}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                    selectedCategory === cat.key
-                      ? 'bg-primary text-white shadow-card'
-                      : 'bg-white text-primary ring-1 ring-subtle hover:bg-subtle'
-                  }`}
+                  to={cat.key === 'all' ? allPublicationsUrl : cat.path}
+                  className='rounded-full bg-white px-4 py-2 text-sm font-semibold text-primary ring-1 ring-subtle transition hover:bg-subtle dark:bg-slate-900 dark:text-white dark:ring-slate-800'
                 >
                   {cat.name}
-                </button>
+                </Link>
               ))}
             </div>
           </div>
@@ -137,7 +137,7 @@ export default function Home() {
         <section>
           <div className='flex items-center justify-between gap-4 pb-4'>
             <h2 className='text-2xl font-bold text-primary'>Dernières actualités</h2>
-            <Link to='/search' className='text-sm font-semibold text-ocean hover:underline'>Voir toutes les publications</Link>
+            <Link to={allPublicationsUrl} className={baseLinkClass}>Voir toutes les publications</Link>
           </div>
           <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-4'>
             {loading && Array.from({ length: 4 }).map((_, index) => <PostCardSkeleton key={`latest-${index}`} />)}
@@ -184,26 +184,31 @@ export default function Home() {
           <div className='flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between'>
             <div>
               <p className='text-sm font-semibold uppercase tracking-[0.2em] text-primary'>Sélection de la rédaction</p>
-              <h2 className='text-3xl font-extrabold text-primary'>Les incontournables du jour</h2>
+              <h2 className='text-2xl font-bold text-primary'>Les incontournables du jour</h2>
               <p className='text-slate-600 dark:text-slate-300'>Une sélection équilibrée entre les rubriques phares.</p>
             </div>
-            <Link to='/search' className='text-sm font-semibold text-ocean hover:underline'>Explorer les rubriques</Link>
+            <Link to={featuredUrl} className={baseLinkClass}>Voir les incontournables du jour</Link>
           </div>
           <div className='mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3'>
             {loading && Array.from({ length: 6 }).map((_, index) => <PostCardSkeleton key={`grid-${index}`} />)}
-            {!loading && !error && gridPosts.length === 0 && (
+            {error && !loading && (
+              <p className='col-span-full rounded-xl bg-red-50 p-4 text-sm text-red-700 ring-1 ring-red-200 dark:bg-red-900/30 dark:text-red-100 dark:ring-red-800'>
+                {error}
+              </p>
+            )}
+            {!loading && !error && featuredPosts.length === 0 && (
               <p className='col-span-full rounded-xl border border-dashed border-subtle bg-subtle/30 p-6 text-center text-slate-500 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-200'>
                 Aucun post trouvé pour cette catégorie.
               </p>
             )}
-            {!loading && !error && gridPosts.map((post) => <PostCard key={post._id} post={post} />)}
+            {!loading && !error && featuredPosts.map((post) => <PostCard key={post._id} post={post} />)}
           </div>
         </section>
 
         <section className='space-y-8'>
           <div className='flex items-center justify-between'>
             <h2 className='text-2xl font-bold text-primary'>Par rubrique</h2>
-            <Link to='/search' className='text-sm font-semibold text-ocean hover:underline'>Voir toutes les rubriques</Link>
+            <Link to={allRubriquesUrl} className={baseLinkClass}>Voir toutes les rubriques</Link>
           </div>
           <div className='grid gap-8'>
             {TRUST_MEDIA_SUBCATEGORIES.map((category) => {
@@ -215,7 +220,7 @@ export default function Home() {
                       <p className='text-xs font-semibold uppercase tracking-[0.2em] text-primary'>Rubrique</p>
                       <h3 className='text-xl font-bold text-primary'>{category.label}</h3>
                     </div>
-                    <Link to={category.path} className='text-sm font-semibold text-ocean hover:underline'>
+                    <Link to={category.path} className={baseLinkClass}>
                       Voir {category.label.toLowerCase()}
                     </Link>
                   </div>
@@ -223,6 +228,11 @@ export default function Home() {
                     {loading && Array.from({ length: 3 }).map((_, index) => (
                       <PostCardSkeleton key={`${category.value}-skel-${index}`} />
                     ))}
+                    {error && !loading && (
+                      <p className='col-span-full text-sm text-red-600 dark:text-red-200'>
+                        {error}
+                      </p>
+                    )}
                     {!loading && !error && items.length === 0 && (
                       <p className='col-span-full text-sm text-slate-500 dark:text-slate-300'>
                         Aucun article pour cette rubrique.

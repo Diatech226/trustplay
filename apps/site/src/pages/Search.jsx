@@ -7,7 +7,7 @@ import PostCard from '../components/PostCard';
 import PostCardSkeleton from '../components/skeletons/PostCardSkeleton';
 import Seo from '../components/Seo';
 import { getMediaPosts, normalizePosts } from '../services/posts.service';
-import { normalizeSubCategory, normalizeTrustMediaSubCategory, PRIMARY_SUBCATEGORIES } from '../utils/categories';
+import { MEDIA_CATEGORY, normalizeSubCategory, normalizeTrustMediaSubCategory, PRIMARY_SUBCATEGORIES } from '../utils/categories';
 
 export default function Search() {
   const [sidebarData, setSidebarData] = useState({
@@ -16,6 +16,7 @@ export default function Search() {
     subCategory: 'all',
     dateRange: 'any',
     tags: '',
+    category: MEDIA_CATEGORY,
   });
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -33,14 +34,17 @@ export default function Search() {
     const searchTermFromUrl = urlParams.get('searchTerm') || '';
     const sortFromUrl = urlParams.get('sort') || 'recent';
     const subCategoryFromUrl = normalizeTrustMediaSubCategory(urlParams.get('subCategory')) || 'all';
-    const dateRangeFromUrl = urlParams.get('dateRange') || 'any';
+    const featuredFromUrl = urlParams.get('featured');
+    const dateRangeFromUrl = urlParams.get('dateRange') || (featuredFromUrl === 'today' ? '24h' : 'any');
     const tagsFromUrl = urlParams.get('tags') || '';
+    const categoryFromUrl = urlParams.get('category') || MEDIA_CATEGORY;
     const nextFilters = {
       searchTerm: searchTermFromUrl,
       sort: sortFromUrl,
       subCategory: subCategoryFromUrl,
       dateRange: dateRangeFromUrl,
       tags: tagsFromUrl,
+      category: categoryFromUrl,
     };
 
     setSidebarData(nextFilters);
@@ -80,6 +84,8 @@ export default function Search() {
     urlParams.set('sort', sidebarData.sort);
     urlParams.set('dateRange', sidebarData.dateRange);
     urlParams.set('tags', sidebarData.tags);
+    urlParams.set('category', MEDIA_CATEGORY);
+    urlParams.delete('featured');
     if (sidebarData.subCategory === 'all') {
       urlParams.delete('subCategory');
     } else {
