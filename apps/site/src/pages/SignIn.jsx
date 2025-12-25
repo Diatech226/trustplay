@@ -54,7 +54,7 @@ export default function SignIn() {
           ? fromState
           : fromState?.pathname && fromState?.pathname !== '/sign-in'
           ? `${fromState.pathname}${fromState.search || ''}${fromState.hash || ''}`
-          : profile?.role && ['ADMIN', 'MANAGER', 'EDITOR', 'VIEWER'].includes(profile.role)
+          : profile?.role && ['ADMIN', 'EDITOR', 'AUTHOR'].includes(profile.role)
           ? '/dashboard'
           : '/');
 

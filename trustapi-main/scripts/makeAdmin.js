@@ -4,7 +4,9 @@ import User from '../api/models/user.model.js';
 
 dotenv.config();
 
-const email = process.argv[2];
+const args = process.argv.slice(2);
+const emailFlagIndex = args.findIndex((arg) => arg === '--email' || arg === '-e');
+const email = emailFlagIndex >= 0 ? args[emailFlagIndex + 1] : args[0];
 
 if (!process.env.DATABASE_URL) {
   console.error('DATABASE_URL is required to run this script.');
@@ -12,7 +14,7 @@ if (!process.env.DATABASE_URL) {
 }
 
 if (!email) {
-  console.error('Usage: npm run make-admin -- <email>');
+  console.error('Usage: npm run make-admin -- --email someone@mail.com');
   process.exit(1);
 }
 
@@ -23,7 +25,7 @@ async function makeAdmin() {
 
     const user = await User.findOneAndUpdate(
       { email: email.toLowerCase() },
-      { $set: { role: 'ADMIN', isAdmin: true } },
+      { $set: { role: 'ADMIN' } },
       { new: true }
     );
 

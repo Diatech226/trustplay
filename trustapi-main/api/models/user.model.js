@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 
+export const USER_ROLES = ["ADMIN", "EDITOR", "AUTHOR", "USER"];
+
 const userSchema = new mongoose.Schema(
   {
     username: {
@@ -30,12 +32,8 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["USER", "ADMIN", "MANAGER", "EDITOR", "VIEWER", "client"],
+      enum: USER_ROLES,
       default: "USER",
-    },
-    isAdmin: {
-      type: Boolean,
-      default: false,
     },
     profilePicture: {
       type: String,
@@ -59,6 +57,8 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+userSchema.index({ email: 1 }, { unique: true });
 
 const User = mongoose.model("User", userSchema);
 export default User;

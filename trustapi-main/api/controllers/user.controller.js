@@ -4,7 +4,6 @@ import User from '../models/user.model.js';
 
 const sanitizeUser = (userDoc = {}) => {
   const userObj = userDoc.toObject ? userDoc.toObject() : { ...userDoc };
-  userObj.isAdmin = Boolean(userObj.isAdmin || userObj.role === 'ADMIN');
   delete userObj.password;
   delete userObj.passwordHash;
   return userObj;
@@ -62,10 +61,20 @@ export const updateUser = async (req, res, next) => {
 };
 
 export const deleteUser = async (req, res, next) => {
-  if (!req.user?.isAdmin && req.user.id !== req.params.userId) {
+  if (req.user?.role !== 'ADMIN' && req.user.id !== req.params.userId) {
     return next(errorHandler(403, 'You are not allowed to delete this user'));
   }
   try {
+    const targetUser = await User.findById(req.params.userId);
+    if (!targetUser) {
+      return next(errorHandler(404, 'User not found'));
+    }
+    if (targetUser.role === 'ADMIN') {
+      const adminCount = await User.countDocuments({ role: 'ADMIN' });
+      if (adminCount <= 1) {
+        return next(errorHandler(400, 'Cannot delete the last admin'));
+      }
+    }
     await User.findByIdAndDelete(req.params.userId);
     res.status(200).json({ success: true, message: 'User has been deleted' });
   } catch (error) {
@@ -90,7 +99,7 @@ export const getMe = async (req, res, next) => {
 };
 
 export const getUsers = async (req, res, next) => {
-  if (!req.user?.isAdmin) {
+  if (req.user?.role !== 'ADMIN') {
     return next(errorHandler(403, 'You are not allowed to see all users'));
   }
   try {

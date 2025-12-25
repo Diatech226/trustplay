@@ -1,21 +1,49 @@
 import { apiClient } from '../lib/apiClient';
 
 const normalizeUsersResponse = (response) => {
-  const users = response?.users || response?.data?.users || [];
+  const payload = response?.data || response;
+  const users = payload?.users || [];
   return {
     users,
-    totalUsers: response?.totalUsers ?? response?.data?.totalUsers ?? 0,
-    lastMonthUsers: response?.lastMonthUsers ?? response?.data?.lastMonthUsers ?? 0,
+    totalUsers: payload?.totalUsers ?? 0,
+    page: payload?.page ?? 1,
+    limit: payload?.limit ?? 20,
   };
 };
 
-export const fetchUsers = async (params = {}) => {
+const buildQuery = (params = {}) => {
   const searchParams = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
     if (value === undefined || value === null || value === '') return;
     searchParams.set(key, value);
   });
-  const query = searchParams.toString();
-  const response = await apiClient.get(`/api/user/getusers${query ? `?${query}` : ''}`);
+  return searchParams.toString();
+};
+
+export const fetchUsers = async (params = {}) => {
+  const query = buildQuery(params);
+  const response = await apiClient.get(`/api/admin/users${query ? `?${query}` : ''}`);
   return normalizeUsersResponse(response);
+};
+
+export const createUser = async (payload) => {
+  const response = await apiClient.post('/api/admin/users', { body: payload });
+  return response?.data?.user || response?.user || response?.data;
+};
+
+export const updateUser = async (id, payload) => {
+  const response = await apiClient.put(`/api/admin/users/${id}`, { body: payload });
+  return response?.data?.user || response?.user || response?.data;
+};
+
+export const updateUserRole = async (id, role) => {
+  const response = await apiClient.put(`/api/admin/users/${id}/role`, {
+    body: { role },
+  });
+  return response?.data?.user || response?.user || response?.data;
+};
+
+export const deleteUser = async (id) => {
+  const response = await apiClient.del(`/api/admin/users/${id}`);
+  return response?.data || response;
 };

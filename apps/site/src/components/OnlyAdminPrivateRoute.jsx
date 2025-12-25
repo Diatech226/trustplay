@@ -5,7 +5,7 @@ import LoadingScreen from './LoadingScreen';
 export default function OnlyAdminPrivateRoute() {
   const { currentUser, initialized, token, loading } = useSelector((state) => state.user);
   const location = useLocation();
-  const allowedRoles = ['ADMIN', 'MANAGER', 'EDITOR', 'VIEWER'];
+  const allowedRoles = ['ADMIN', 'EDITOR', 'AUTHOR'];
   const isCheckingSession = !initialized || loading || (!!token && !currentUser);
 
   if (isCheckingSession) {

@@ -24,7 +24,6 @@ const clearSessionCookie = (res) => {
 
 const sanitizeUser = (userDoc = {}) => {
   const userObj = userDoc.toObject ? userDoc.toObject() : { ...userDoc };
-  userObj.isAdmin = Boolean(userObj.isAdmin || userObj.role === 'ADMIN');
   delete userObj.password;
   delete userObj.passwordHash;
   delete userObj.passwordResetTokenHash;
@@ -111,7 +110,6 @@ export const signin = async (req, res) => {
         id: validUser._id,
         email: validUser.email,
         role: validUser.role,
-        isAdmin: Boolean(validUser.isAdmin || validUser.role === 'ADMIN'),
       },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
@@ -235,7 +233,6 @@ export const resetPassword = async (req, res) => {
         id: user._id,
         email: user.email,
         role: user.role,
-        isAdmin: Boolean(user.isAdmin || user.role === 'ADMIN'),
       },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }

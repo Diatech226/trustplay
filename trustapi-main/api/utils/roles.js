@@ -1,4 +1,4 @@
-export const allowedAgencyRoles = ['ADMIN', 'MANAGER', 'EDITOR'];
+export const allowedAgencyRoles = ['ADMIN', 'EDITOR', 'AUTHOR'];
 
 export const hasRole = (user, roles = allowedAgencyRoles) => {
   if (!user?.role) return false;

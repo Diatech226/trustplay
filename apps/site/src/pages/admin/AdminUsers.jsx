@@ -35,7 +35,7 @@ export default function AdminUsers() {
   return (
     <PageShell
       title='Utilisateurs & rôles'
-      description='Attribuez des rôles (ADMIN, MANAGER, EDITOR, VIEWER) et sécurisez les accès.'
+      description='Attribuez des rôles (ADMIN, EDITOR, AUTHOR, USER) et sécurisez les accès.'
       actions={
         <Button color='gray' size='sm' onClick={fetchUsers} isProcessing={loading} disabled={loading}>
           Rafraîchir
@@ -65,7 +65,7 @@ export default function AdminUsers() {
           {
             header: 'Statut',
             accessor: 'status',
-            cell: (row) => (row.isAdmin ? 'Admin' : 'Utilisateur'),
+            cell: (row) => (row.role === 'ADMIN' ? 'Admin' : 'Utilisateur'),
           },
         ]}
         data={filteredUsers}

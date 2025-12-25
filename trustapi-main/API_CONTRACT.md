@@ -30,6 +30,16 @@
 | DELETE | `/api/user/delete/:userId` | Oui (proprio ou admin) | – | `{ success, message }` |
 | POST | `/api/user/signout` | Facultatif | – | Équivaut à `/api/auth/signout` |
 
+### Administration utilisateurs (CMS)
+| Méthode | Route | Auth | Détails | Réponse principale |
+| --- | --- | --- | --- | --- |
+| POST | `/api/admin/users` | Oui (admin) | `{ username, email, password, role }` | `{ success, data: { user }, message }` |
+| GET | `/api/admin/users` | Oui (admin) | Query: `page`, `limit`, `search`, `role`, `sort` (`asc`/`desc`) | `{ success, data: { users, totalUsers, page, limit }, message }` |
+| GET | `/api/admin/users/:id` | Oui (admin) | Détail user | `{ success, data: { user }, message }` |
+| PUT | `/api/admin/users/:id` | Oui (admin) | Update profil + rôle + reset password | `{ success, data: { user }, message }` |
+| PUT | `/api/admin/users/:id/role` | Oui (admin) | `{ role }` | `{ success, data: { user }, message }` |
+| DELETE | `/api/admin/users/:id` | Oui (admin) | – | `{ success, data: { id }, message }` |
+
 ### Posts & Événements
 | Méthode | Route | Auth | Corps / Query | Réponse |
 | --- | --- | --- | --- | --- |
@@ -57,7 +67,7 @@
 | GET | `/uploads/<filename>` | Non | – | Fichier statique (servi depuis `UPLOAD_DIR`) |
 
 ## Agence (clients/projets/campagnes)
-Toutes les routes sont protégées `verifyToken` + rôle `ADMIN`/`MANAGER`/`EDITOR`.
+Toutes les routes sont protégées `verifyToken` + rôle `ADMIN`/`EDITOR`/`AUTHOR`.
 
 | Méthode | Route | Auth | Payload | Réponse |
 | --- | --- | --- | --- | --- |
@@ -78,7 +88,7 @@ Toutes les routes sont protégées `verifyToken` + rôle `ADMIN`/`MANAGER`/`EDIT
 | DELETE | `/api/campaigns/:id` | Oui | – | `200 { success, message }` |
 
 ## Modèles de données
-- **User** : `username`, `email`, `password`, `profilePicture`, `isAdmin`, timestamps.
+- **User** : `username`, `email`, `passwordHash`, `role` (`ADMIN`/`EDITOR`/`AUTHOR`/`USER`), `profilePicture`, timestamps.
 - **Post** : `userId`, `title`, `slug` (slugify lowercase/strict), `content`, `image`, `category`, `subCategory`, `eventDate?`, `location?`, timestamps.
 - **Comment** : `userId`, `postId`, `content`, `likes[]`, `numberOfLikes`, timestamps.
 
@@ -93,4 +103,3 @@ Toutes les routes sont protégées `verifyToken` + rôle `ADMIN`/`MANAGER`/`EDIT
 - 403 : non autorisé (propriété/admin).
 - 404 : ressource manquante.
 - 500 : erreur serveur ou Mongo.
-
