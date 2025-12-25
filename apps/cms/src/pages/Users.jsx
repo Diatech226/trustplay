@@ -2,14 +2,23 @@ import { useCallback, useEffect, useState } from 'react';
 import { fetchUsers } from '../services/users.service';
 import { formatDate } from '../lib/format';
 import { useToast } from '../components/ToastProvider';
+import { useAuth } from '../context/AuthContext';
 
 export const Users = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { addToast } = useToast();
+  const { user: currentUser } = useAuth();
+  const isAdmin = Boolean(currentUser?.isAdmin);
 
   const loadUsers = useCallback(async () => {
+    if (!isAdmin) {
+      setLoading(false);
+      setUsers([]);
+      setError(null);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -25,19 +34,23 @@ export const Users = () => {
 
   useEffect(() => {
     loadUsers();
-  }, [loadUsers]);
+  }, [loadUsers, isAdmin]);
 
   return (
     <div className="section">
       <div className="section-header">
         <h2>Utilisateurs</h2>
-        <button className="button secondary" onClick={loadUsers}>
-          Rafraîchir
-        </button>
+        {isAdmin ? (
+          <button className="button secondary" onClick={loadUsers}>
+            Rafraîchir
+          </button>
+        ) : null}
       </div>
 
       {loading ? (
         <div className="loader">Chargement des utilisateurs…</div>
+      ) : !isAdmin ? (
+        <div className="empty-state">Accès admin requis pour consulter les utilisateurs.</div>
       ) : error ? (
         <div className="notice">{error}</div>
       ) : users.length === 0 ? (

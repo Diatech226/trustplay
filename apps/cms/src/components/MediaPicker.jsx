@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { fetchMedia } from '../services/media.service';
 import { useToast } from './ToastProvider';
+import { resolveMediaUrl } from '../lib/mediaUrls';
 
 const KIND_OPTIONS = [
   { value: '', label: 'Tous' },
@@ -118,23 +119,30 @@ export const MediaPicker = ({ open, onClose, onSelect, multiple = false, title =
           </div>
         ) : (
           <div className="media-grid" style={{ marginTop: 16 }}>
-            {mediaItems.map((item) => (
-              <button
-                type="button"
-                key={item._id}
-                className={`media-card${selectedIds.has(item._id) ? ' selected' : ''}`}
-                onClick={() => toggleSelect(item._id)}
-              >
-                {item.kind === 'image' ? (
-                  <img src={item.url} alt={item.name} />
-                ) : item.kind === 'video' ? (
-                  <video src={item.url} />
-                ) : (
-                  <div className="media-file">{item.name}</div>
-                )}
-                <span>{item.name}</span>
-              </button>
-            ))}
+            {mediaItems.map((item) => {
+              const previewUrl = resolveMediaUrl(item.url);
+              return (
+                <button
+                  type="button"
+                  key={item._id}
+                  className={`media-card${selectedIds.has(item._id) ? ' selected' : ''}`}
+                  onClick={() => toggleSelect(item._id)}
+                >
+                  {previewUrl ? (
+                    item.kind === 'image' ? (
+                      <img src={previewUrl} alt={item.name} />
+                    ) : item.kind === 'video' ? (
+                      <video src={previewUrl} />
+                    ) : (
+                      <div className="media-file">{item.name}</div>
+                    )
+                  ) : (
+                    <div className="media-file">Preview indisponible</div>
+                  )}
+                  <span>{item.name}</span>
+                </button>
+              );
+            })}
           </div>
         )}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, gap: 8 }}>

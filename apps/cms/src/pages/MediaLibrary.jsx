@@ -3,6 +3,7 @@ import { formatDate } from '../lib/format';
 import { useToast } from '../components/ToastProvider';
 import { deleteMedia, fetchMedia, updateMedia, uploadMedia } from '../services/media.service';
 import { useAuth } from '../context/AuthContext';
+import { resolveMediaUrl } from '../lib/mediaUrls';
 
 const CATEGORY_OPTIONS = [
   { value: 'article', label: 'Article' },
@@ -34,6 +35,28 @@ export const MediaLibrary = () => {
   const { addToast } = useToast();
   const { user: currentUser } = useAuth();
   const isAdmin = Boolean(currentUser?.isAdmin);
+
+  const MediaPreview = ({ item }) => {
+    const [failed, setFailed] = useState(false);
+    const previewUrl = resolveMediaUrl(item.url);
+    if (!previewUrl || failed) {
+      return <div className="empty-state">Prévisualisation indisponible</div>;
+    }
+    if (item.kind === 'image') {
+      return (
+        <img
+          src={previewUrl}
+          alt={item.name}
+          onError={() => setFailed(true)}
+          style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6 }}
+        />
+      );
+    }
+    if (item.kind === 'video') {
+      return <video src={previewUrl} style={{ width: 72, height: 48 }} onError={() => setFailed(true)} />;
+    }
+    return <span className="helper">Fichier</span>;
+  };
 
   const loadMedia = useCallback(
     async ({ reset = false } = {}) => {
@@ -88,10 +111,11 @@ export const MediaLibrary = () => {
 
   const handleCopy = async (url) => {
     try {
+      const previewUrl = resolveMediaUrl(url);
       if (!navigator?.clipboard?.writeText) {
         throw new Error('Clipboard non disponible');
       }
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(previewUrl);
       addToast('URL copiée.', { type: 'success' });
     } catch (error) {
       addToast(`Impossible de copier l'URL : ${error.message}`, { type: 'error' });
@@ -220,20 +244,12 @@ export const MediaLibrary = () => {
                 </tr>
               </thead>
               <tbody>
-                {mediaItems.map((item) => (
+                {mediaItems.map((item) => {
+                  const previewUrl = resolveMediaUrl(item.url);
+                  return (
                   <tr key={item._id}>
                     <td>
-                      {item.kind === 'image' ? (
-                        <img
-                          src={item.url}
-                          alt={item.name}
-                          style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6 }}
-                        />
-                      ) : item.kind === 'video' ? (
-                        <video src={item.url} style={{ width: 72, height: 48 }} />
-                      ) : (
-                        '—'
-                      )}
+                      <MediaPreview item={item} />
                     </td>
                     <td>{item.name}</td>
                     <td>{item.category}</td>
@@ -241,13 +257,22 @@ export const MediaLibrary = () => {
                     <td>{formatSize(item.size)}</td>
                     <td>{formatDate(item.createdAt)}</td>
                     <td>
-                      <a href={item.url} target="_blank" rel="noreferrer">
-                        Ouvrir
-                      </a>
+                      {previewUrl ? (
+                        <a href={previewUrl} target="_blank" rel="noreferrer">
+                          Ouvrir
+                        </a>
+                      ) : (
+                        <span className="helper">Lien indisponible</span>
+                      )}
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        <button className="button secondary" type="button" onClick={() => handleCopy(item.url)}>
+                        <button
+                          className="button secondary"
+                          type="button"
+                          onClick={() => handleCopy(item.url)}
+                          disabled={!previewUrl}
+                        >
                           Copier URL
                         </button>
                         <button className="button secondary" type="button" onClick={() => handleRename(item)}>
@@ -264,7 +289,8 @@ export const MediaLibrary = () => {
                       </div>
                     </td>
                   </tr>
-                ))}
+                );
+                })}
               </tbody>
             </table>
             <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
