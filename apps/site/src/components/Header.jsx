@@ -143,11 +143,18 @@ export default function Header() {
             <Dropdown.Item onClick={handleSignout}>Se déconnecter</Dropdown.Item>
           </Dropdown>
         ) : (
-          <Link to='/sign-in'>
-            <Button gradientDuoTone='purpleToBlue' outline>
-              Se connecter
-            </Button>
-          </Link>
+          <div className='flex items-center gap-2'>
+            <Link to='/sign-in'>
+              <Button gradientDuoTone='purpleToBlue' outline>
+                Se connecter
+              </Button>
+            </Link>
+            <Link to='/sign-up'>
+              <Button color='gray' outline>
+                Créer un compte
+              </Button>
+            </Link>
+          </div>
         )}
         <Navbar.Toggle />
       </div>

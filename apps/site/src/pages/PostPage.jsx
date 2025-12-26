@@ -16,7 +16,7 @@ import { logReading } from '../redux/history/historySlice';
 import { getMediaPosts, getPostBySlug, normalizePosts } from '../services/posts.service';
 import { MEDIA_CATEGORY, normalizeSubCategory } from '../utils/categories';
 import { logPageView } from '../lib/analytics';
-import { resolveMediaUrl } from '../lib/mediaUrls';
+import { DEFAULT_MEDIA_PLACEHOLDER, resolveMediaUrl } from '../lib/mediaUrls';
 import { useRubrics } from '../hooks/useRubrics';
 
 export default function PostPage() {
@@ -73,7 +73,7 @@ export default function PostPage() {
           _id: post._id,
           slug: post.slug,
           title: post.title,
-          image: post.image,
+          image: post.imageThumb || post.image,
           subCategory: post.subCategory,
         })
       );
@@ -91,13 +91,27 @@ export default function PostPage() {
     }
   }, [post?.slug, post?.title, post?.subCategory]);
 
-  const imageUrl = resolveMediaUrl(post?.image);
-  const ogImageUrl = resolveMediaUrl(post?.ogImage || post?.image);
-  const withFormatParam = (format) => {
-    if (!imageUrl) return '';
-    const separator = imageUrl.includes('?') ? '&' : '?';
-    return `${imageUrl}${separator}format=${format}`;
+  const resolveVariantUrl = (value, extension) => {
+    if (!value || typeof value !== 'string') return '';
+    if (!value.includes(`.${extension}`)) return '';
+    return resolveMediaUrl(value);
   };
+  const imageAvif = resolveVariantUrl(
+    post?.imageCoverAvif || post?.imageMediumAvif || post?.imageThumbAvif,
+    'avif'
+  );
+  const imageWebp = resolveVariantUrl(
+    post?.imageCover || post?.imageMedium || post?.imageThumb,
+    'webp'
+  );
+  const imageFallback = resolveMediaUrl(
+    post?.imageOriginal || post?.imageCover || post?.imageMedium || post?.image,
+    DEFAULT_MEDIA_PLACEHOLDER
+  );
+  const ogImageUrl = resolveMediaUrl(
+    post?.ogImage || post?.imageCover || post?.imageOriginal || post?.image,
+    DEFAULT_MEDIA_PLACEHOLDER
+  );
 
   const metaDescription = useMemo(
     () => post?.content?.replace(/<[^>]+>/g, '').slice(0, 180) || 'Article Trust Media',
@@ -111,12 +125,13 @@ export default function PostPage() {
     () => (post && siteBase ? `${siteBase}/post/${post.slug}` : undefined),
     [post, siteBase]
   );
+  const imageForSchema = imageWebp || imageFallback;
   const structuredData = post
     ? {
         '@context': 'https://schema.org',
         '@type': 'Article',
         headline: post.title,
-        image: [imageUrl].filter(Boolean),
+        image: [imageForSchema].filter(Boolean),
         datePublished: post.publishedAt || post.createdAt,
         dateModified: post.updatedAt,
         author: post.author || 'Rédaction Trust',
@@ -189,10 +204,10 @@ export default function PostPage() {
           <div className='grid gap-0 lg:grid-cols-5'>
             <div className='relative lg:col-span-3'>
               <picture>
-                <source srcSet={withFormatParam('avif')} type='image/avif' />
-                <source srcSet={withFormatParam('webp')} type='image/webp' />
+                {imageAvif && <source srcSet={imageAvif} type='image/avif' />}
+                {imageWebp && <source srcSet={imageWebp} type='image/webp' />}
                 <img
-                  src={imageUrl}
+                  src={imageFallback}
                   alt={post && post.title}
                   loading='lazy'
                   decoding='async'

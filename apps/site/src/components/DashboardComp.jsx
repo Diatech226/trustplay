@@ -8,7 +8,7 @@ import {
 } from 'react-icons/hi';
 import { Button, Table } from 'flowbite-react';
 import { Link } from 'react-router-dom';
-import { resolveMediaUrl } from '../lib/mediaUrls';
+import { DEFAULT_MEDIA_PLACEHOLDER, resolveMediaUrl } from '../lib/mediaUrls';
 import { apiRequest } from '../lib/apiClient';
 
 export default function DashboardComp() {
@@ -192,7 +192,10 @@ export default function DashboardComp() {
                   <Table.Row className='bg-white dark:border-gray-700 dark:bg-gray-800'>
                     <Table.Cell>
                       <img
-                        src={resolveMediaUrl(post.image)}
+                        src={resolveMediaUrl(
+                          post.imageThumb || post.imageCover || post.imageOriginal || post.image,
+                          DEFAULT_MEDIA_PLACEHOLDER
+                        )}
                         alt='user'
                         className='w-14 h-10 rounded-md bg-gray-500'
                         loading='lazy'

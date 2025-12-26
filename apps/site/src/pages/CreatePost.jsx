@@ -7,7 +7,7 @@ import { uploadImageFile, uploadMediaFile } from '../utils/uploadImage';
 import { apiRequest } from '../lib/apiClient';
 import { normalizeSubCategory } from '../utils/categories';
 import { useRubrics } from '../hooks/useRubrics';
-import { resolveMediaUrl } from '../lib/mediaUrls';
+import { DEFAULT_MEDIA_PLACEHOLDER, resolveMediaUrl } from '../lib/mediaUrls';
 
 const CATEGORY_OPTIONS = [
   { value: 'TrustMedia', label: 'Média' },
@@ -31,6 +31,13 @@ export default function CreatePost() {
     subCategory: '',
     content: '',
     image: '',
+    imageOriginal: '',
+    imageThumb: '',
+    imageCover: '',
+    imageMedium: '',
+    imageThumbAvif: '',
+    imageCoverAvif: '',
+    imageMediumAvif: '',
     eventDate: '',
     location: '',
     isPaid: false,
@@ -80,8 +87,19 @@ export default function CreatePost() {
     try {
       setUploadError('');
       setUploading(true);
-      const imageUrl = await uploadImageFile(file);
-      setFormData((prev) => ({ ...prev, image: imageUrl }));
+      const uploaded = await uploadImageFile(file);
+      const originalUrl = uploaded.originalUrl || uploaded.url;
+      setFormData((prev) => ({
+        ...prev,
+        image: originalUrl || prev.image,
+        imageOriginal: originalUrl || prev.imageOriginal,
+        imageThumb: uploaded.thumbUrl || prev.imageThumb,
+        imageCover: uploaded.coverUrl || prev.imageCover,
+        imageMedium: uploaded.mediumUrl || prev.imageMedium,
+        imageThumbAvif: uploaded.thumbAvifUrl || prev.imageThumbAvif,
+        imageCoverAvif: uploaded.coverAvifUrl || prev.imageCoverAvif,
+        imageMediumAvif: uploaded.mediumAvifUrl || prev.imageMediumAvif,
+      }));
     } catch (error) {
       setUploadError(error.message);
     } finally {
@@ -381,7 +399,10 @@ export default function CreatePost() {
         {uploadError && <Alert color='failure'>{uploadError}</Alert>}
         {formData.image && (
           <img
-            src={resolveMediaUrl(formData.image)}
+            src={resolveMediaUrl(
+              formData.imageCover || formData.imageOriginal || formData.image,
+              DEFAULT_MEDIA_PLACEHOLDER
+            )}
             alt='upload'
             loading='lazy'
             decoding='async'

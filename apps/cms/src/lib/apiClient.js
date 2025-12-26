@@ -172,9 +172,11 @@ export const uploadFile = async (file, options = {}) => {
     headers: {},
   });
 
-  const media = data?.media || data?.data?.media;
+  const payload = data?.data || {};
+  const media = data?.media || payload?.media;
   return {
     ...data,
+    ...payload,
     media,
     url: media?.url || data?.url || data?.location || data?.path,
     name: media?.name || data?.name || data?.filename,

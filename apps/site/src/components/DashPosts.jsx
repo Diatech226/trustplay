@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { HiOutlineExclamationCircle } from 'react-icons/hi';
 import { apiRequest } from '../lib/apiClient';
-import { resolveMediaUrl } from '../lib/mediaUrls';
+import { DEFAULT_MEDIA_PLACEHOLDER, resolveMediaUrl } from '../lib/mediaUrls';
 
 // CMS: posts module table
 export default function DashPosts({ filters = { category: 'all', subCategory: 'all', status: 'all', query: '' } }) {
@@ -97,7 +97,10 @@ export default function DashPosts({ filters = { category: 'all', subCategory: 'a
                   <Table.Cell>
                     <Link to={`/post/${post.slug}`}>
                       <img
-                        src={resolveMediaUrl(post.image)}
+                        src={resolveMediaUrl(
+                          post.imageThumb || post.imageCover || post.imageOriginal || post.image,
+                          DEFAULT_MEDIA_PLACEHOLDER
+                        )}
                         alt={post.title}
                         className='w-20 h-10 object-cover'
                         loading='lazy'

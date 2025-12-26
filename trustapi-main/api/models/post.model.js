@@ -28,6 +28,13 @@ const PostSchema = new mongoose.Schema(
       default:
         "https://www.hostinger.com/tutorials/wp-content/uploads/sites/2/2021/09/how-to-write-a-blog-post.png",
     },
+    imageOriginal: { type: String, trim: true },
+    imageThumb: { type: String, trim: true },
+    imageCover: { type: String, trim: true },
+    imageMedium: { type: String, trim: true },
+    imageThumbAvif: { type: String, trim: true },
+    imageCoverAvif: { type: String, trim: true },
+    imageMediumAvif: { type: String, trim: true },
     category: {
       type: String,
       enum: ["TrustEvent", "TrustMedia", "TrustProduction", "TrustProd", "uncategorized"], // ✅ Restrict to predefined categories

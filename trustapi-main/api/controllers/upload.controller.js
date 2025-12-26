@@ -1,9 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 import multer from 'multer';
+import sharp from 'sharp';
 import Media from '../models/media.model.js';
 
-const uploadsDir = process.env.UPLOAD_DIR || './public/uploads';
+const uploadsDir = process.env.UPLOAD_DIR || './uploads';
 export const absoluteUploadPath = path.isAbsolute(uploadsDir)
   ? uploadsDir
   : path.join(path.resolve(), uploadsDir);
@@ -19,6 +20,11 @@ const ALLOWED_MIME_TYPES = new Set([
 
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10 MB
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100 MB
+const IMAGE_VARIANTS = [
+  { key: 'thumb', width: 400 },
+  { key: 'medium', width: 900 },
+  { key: 'cover', width: 1400 },
+];
 
 const EXTENSION_MIME_MAP = new Map([
   ['.jpg', 'image/jpeg'],
@@ -41,7 +47,8 @@ const storage = multer.diskStorage({
   filename: (_, file, cb) => {
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
     const extension = path.extname(file.originalname) || '.bin';
-    cb(null, `${uniqueSuffix}${extension}`);
+    const baseName = file.mimetype.startsWith('image/') ? `${uniqueSuffix}-original` : uniqueSuffix;
+    cb(null, `${baseName}${extension}`);
   },
 });
 
@@ -79,22 +86,74 @@ const resolveKind = (mime) => {
   return 'file';
 };
 
-const buildResponsePayload = (file, media) => {
+const buildResponsePayload = (file, media, extra = {}) => {
   const isImage = file.mimetype.startsWith('image/');
+  const baseUrl = extra.originalUrl || `/uploads/${file.filename}`;
   return {
     success: true,
     media,
     data: {
-      url: `/uploads/${file.filename}`,
+      url: baseUrl,
       name: file.originalname,
       mime: file.mimetype,
       size: file.size,
       type: isImage ? 'image' : 'video',
       media,
+      ...extra,
     },
-    url: `/uploads/${file.filename}`,
+    url: baseUrl,
     name: file.originalname,
     mime: file.mimetype,
+  };
+};
+
+const getBaseName = (filename) => {
+  const raw = path.basename(filename, path.extname(filename));
+  return raw.endsWith('-original') ? raw.slice(0, -'-original'.length) : raw;
+};
+
+const generateImageVariants = async (filePath, filename) => {
+  const baseName = getBaseName(filename);
+  const metadata = await sharp(filePath).metadata();
+
+  const variants = await Promise.all(
+    IMAGE_VARIANTS.map(async ({ key, width }) => {
+      const webpName = `${baseName}-${key}.webp`;
+      const avifName = `${baseName}-${key}.avif`;
+      const webpPath = path.join(absoluteUploadPath, webpName);
+      const avifPath = path.join(absoluteUploadPath, avifName);
+
+      await sharp(filePath)
+        .resize({ width, withoutEnlargement: true })
+        .webp({ quality: 82 })
+        .toFile(webpPath);
+
+      await sharp(filePath)
+        .resize({ width, withoutEnlargement: true })
+        .avif({ quality: 50 })
+        .toFile(avifPath);
+
+      return {
+        key,
+        webpUrl: `/uploads/${webpName}`,
+        avifUrl: `/uploads/${avifName}`,
+      };
+    })
+  );
+
+  const variantMap = variants.reduce(
+    (acc, item) => {
+      acc[`${item.key}Url`] = item.webpUrl;
+      acc[`${item.key}AvifUrl`] = item.avifUrl;
+      return acc;
+    },
+    {}
+  );
+
+  return {
+    ...variantMap,
+    width: metadata.width,
+    height: metadata.height,
   };
 };
 
@@ -114,11 +173,22 @@ export const handleUpload = async (req, res, next) => {
   }
 
   try {
+    const originalUrl = `/uploads/${uploadedFile.filename}`;
+    const variants = isImage ? await generateImageVariants(uploadedFile.path, uploadedFile.filename) : {};
     const mediaPayload = {
       name: req.body?.name || uploadedFile.originalname,
       category: req.body?.category || 'gallery',
       subCategory: req.body?.subCategory || null,
-      url: `/uploads/${uploadedFile.filename}`,
+      url: originalUrl,
+      originalUrl: isImage ? originalUrl : undefined,
+      thumbUrl: isImage ? variants.thumbUrl : undefined,
+      coverUrl: isImage ? variants.coverUrl : undefined,
+      mediumUrl: isImage ? variants.mediumUrl : undefined,
+      thumbAvifUrl: isImage ? variants.thumbAvifUrl : undefined,
+      coverAvifUrl: isImage ? variants.coverAvifUrl : undefined,
+      mediumAvifUrl: isImage ? variants.mediumAvifUrl : undefined,
+      width: isImage ? variants.width : undefined,
+      height: isImage ? variants.height : undefined,
       mimeType: uploadedFile.mimetype,
       size: uploadedFile.size,
       kind: resolveKind(uploadedFile.mimetype),
@@ -128,7 +198,19 @@ export const handleUpload = async (req, res, next) => {
     };
 
     const media = await Media.create(mediaPayload);
-    return res.status(201).json(buildResponsePayload(uploadedFile, media));
+    return res.status(201).json(
+      buildResponsePayload(uploadedFile, media, {
+        originalUrl,
+        thumbUrl: variants.thumbUrl,
+        coverUrl: variants.coverUrl,
+        mediumUrl: variants.mediumUrl,
+        thumbAvifUrl: variants.thumbAvifUrl,
+        coverAvifUrl: variants.coverAvifUrl,
+        mediumAvifUrl: variants.mediumAvifUrl,
+        width: variants.width,
+        height: variants.height,
+      })
+    );
   } catch (error) {
     return next(error);
   }

@@ -16,7 +16,7 @@ import { useDispatch } from 'react-redux';
 import { HiOutlineExclamationCircle } from 'react-icons/hi';
 import { Link } from 'react-router-dom';
 import { uploadImageFile } from '../utils/uploadImage';
-import { API_BASE_URL, apiRequest, getAuthToken } from '../lib/apiClient';
+import { apiRequest, getAuthToken } from '../lib/apiClient';
 import { resolveMediaUrl } from '../lib/mediaUrls';
 
 export default function DashProfile() {
@@ -52,7 +52,8 @@ export default function DashProfile() {
     setImageFileUploadError(null);
     setImageFileUploadProgress(0);
     try {
-      const uploadedUrl = await uploadImageFile(imageFile, API_BASE_URL);
+      const uploaded = await uploadImageFile(imageFile);
+      const uploadedUrl = uploaded.originalUrl || uploaded.url;
       setImageFileUploadProgress(100);
       setImageFileUrl(uploadedUrl);
       setFormData({ ...formData, profilePicture: uploadedUrl });

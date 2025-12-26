@@ -88,7 +88,7 @@ export const EventEditor = () => {
         category: 'Media',
         subCategory: formData.subCategory || undefined,
       });
-      const url = data.media?.url || data.url;
+      const url = data.originalUrl || data.media?.originalUrl || data.media?.url || data.url;
       setFormData((prev) => ({ ...prev, image: url || prev.image }));
       addToast('Fichier uploadé avec succès.', { type: 'success' });
     } catch (err) {

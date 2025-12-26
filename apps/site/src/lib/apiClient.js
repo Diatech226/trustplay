@@ -214,9 +214,11 @@ export async function uploadFile(file, options = {}) {
   });
 
   const data = response?.data || response;
-  const media = data?.media || response?.media;
+  const payload = data?.data || {};
+  const media = data?.media || response?.media || payload?.media;
   return {
     ...data,
+    ...payload,
     media,
     url: media?.url || data?.url || data?.location || data?.path,
     name: media?.name || data?.name || data?.filename,

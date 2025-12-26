@@ -31,6 +31,13 @@ const emptyForm = {
   status: 'draft',
   tags: '',
   image: '',
+  imageOriginal: '',
+  imageThumb: '',
+  imageCover: '',
+  imageMedium: '',
+  imageThumbAvif: '',
+  imageCoverAvif: '',
+  imageMediumAvif: '',
   seoTitle: '',
   seoDescription: '',
   ogImage: '',
@@ -55,7 +62,7 @@ const resolveMediaMetadata = (category, subCategory) => {
 };
 
 const buildMediaHtml = (media) => {
-  const url = resolveMediaUrl(media.url);
+  const url = resolveMediaUrl(media.originalUrl || media.url);
   if (media.kind === 'image') {
     return `<img src="${url}" alt="${media.name || ''}" />`;
   }
@@ -156,6 +163,13 @@ export const PostEditor = () => {
           status: post.status || 'draft',
           tags: (post.tags || []).join(', '),
           image: post.image || '',
+          imageOriginal: post.imageOriginal || '',
+          imageThumb: post.imageThumb || '',
+          imageCover: post.imageCover || '',
+          imageMedium: post.imageMedium || '',
+          imageThumbAvif: post.imageThumbAvif || '',
+          imageCoverAvif: post.imageCoverAvif || '',
+          imageMediumAvif: post.imageMediumAvif || '',
           seoTitle: post.seoTitle || '',
           seoDescription: post.seoDescription || '',
           ogImage: post.ogImage || '',
@@ -210,7 +224,7 @@ export const PostEditor = () => {
   const insertMediaEmbed = (media) => {
     if (!media?.url) return;
     const editor = quillRef.current?.getEditor();
-    const url = resolveMediaUrl(media.url);
+    const url = resolveMediaUrl(media.originalUrl || media.url);
     if (!editor) {
       insertIntoContent(buildMediaHtml(media));
       return;
@@ -232,10 +246,17 @@ export const PostEditor = () => {
     if (!file) return;
     try {
       const data = await uploadMedia(file, resolveMediaMetadata(formData.category, formData.subCategory));
-      const url = data.media?.url || data.url;
+      const originalUrl = data.originalUrl || data.media?.originalUrl || data.media?.url || data.url;
       setFormData((prev) => ({
         ...prev,
-        image: url || prev.image,
+        image: originalUrl || prev.image,
+        imageOriginal: originalUrl || prev.imageOriginal,
+        imageThumb: data.thumbUrl || data.media?.thumbUrl || prev.imageThumb,
+        imageCover: data.coverUrl || data.media?.coverUrl || prev.imageCover,
+        imageMedium: data.mediumUrl || data.media?.mediumUrl || prev.imageMedium,
+        imageThumbAvif: data.thumbAvifUrl || data.media?.thumbAvifUrl || prev.imageThumbAvif,
+        imageCoverAvif: data.coverAvifUrl || data.media?.coverAvifUrl || prev.imageCoverAvif,
+        imageMediumAvif: data.mediumAvifUrl || data.media?.mediumAvifUrl || prev.imageMediumAvif,
         coverMediaId: data.media?._id || prev.coverMediaId,
       }));
       addToast('Fichier uploadé avec succès.', { type: 'success' });
@@ -270,9 +291,17 @@ export const PostEditor = () => {
   const handlePickerSelect = (selected) => {
     if (pickerState.mode === 'cover') {
       const media = selected[0];
+      const originalUrl = media.originalUrl || media.url;
       setFormData((prev) => ({
         ...prev,
-        image: media.url || prev.image,
+        image: originalUrl || prev.image,
+        imageOriginal: originalUrl || prev.imageOriginal,
+        imageThumb: media.thumbUrl || prev.imageThumb,
+        imageCover: media.coverUrl || prev.imageCover,
+        imageMedium: media.mediumUrl || prev.imageMedium,
+        imageThumbAvif: media.thumbAvifUrl || prev.imageThumbAvif,
+        imageCoverAvif: media.coverAvifUrl || prev.imageCoverAvif,
+        imageMediumAvif: media.mediumAvifUrl || prev.imageMediumAvif,
         coverMediaId: media._id,
       }));
       return;

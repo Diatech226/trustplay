@@ -33,6 +33,86 @@ const normalizeSubCategory = (value = '') => {
   return normalized || undefined;
 };
 
+const DEFAULT_IMAGE_PLACEHOLDER =
+  'https://www.hostinger.com/tutorials/wp-content/uploads/sites/2/2021/09/how-to-write-a-blog-post.png';
+
+const normalizeImageFields = (payload = {}) => ({
+  imageOriginal: normalizeMediaUrl(payload.imageOriginal),
+  imageThumb: normalizeMediaUrl(payload.imageThumb),
+  imageCover: normalizeMediaUrl(payload.imageCover),
+  imageMedium: normalizeMediaUrl(payload.imageMedium),
+  imageThumbAvif: normalizeMediaUrl(payload.imageThumbAvif),
+  imageCoverAvif: normalizeMediaUrl(payload.imageCoverAvif),
+  imageMediumAvif: normalizeMediaUrl(payload.imageMediumAvif),
+});
+
+const ensureImageVariants = (post) => {
+  if (!post) return post;
+  const baseImage = post.image || post.imageOriginal || DEFAULT_IMAGE_PLACEHOLDER;
+  return {
+    ...post,
+    image: post.image || baseImage,
+    imageOriginal: post.imageOriginal || baseImage,
+    imageThumb: post.imageThumb || baseImage,
+    imageCover: post.imageCover || baseImage,
+    imageMedium: post.imageMedium || baseImage,
+  };
+};
+
+const buildImageUpdatePayload = (payload = {}) => {
+  const imageKeys = [
+    'image',
+    'imageOriginal',
+    'imageThumb',
+    'imageCover',
+    'imageMedium',
+    'imageThumbAvif',
+    'imageCoverAvif',
+    'imageMediumAvif',
+  ];
+  const hasImageInput = imageKeys.some((key) => payload[key] !== undefined);
+  if (!hasImageInput) return {};
+
+  const normalizedImage = normalizeMediaUrl(payload.image);
+  const variants = normalizeImageFields(payload);
+  const fallbackImage =
+    normalizedImage ||
+    variants.imageOriginal ||
+    variants.imageCover ||
+    variants.imageThumb ||
+    variants.imageMedium ||
+    DEFAULT_IMAGE_PLACEHOLDER;
+  const shouldBackfill = payload.image !== undefined || payload.imageOriginal !== undefined;
+
+  const imagePayload = {};
+  if (payload.image !== undefined) {
+    imagePayload.image = normalizedImage || fallbackImage;
+  }
+  if (payload.imageOriginal !== undefined || shouldBackfill) {
+    imagePayload.imageOriginal = variants.imageOriginal || normalizedImage || fallbackImage;
+  }
+  if (payload.imageThumb !== undefined || shouldBackfill) {
+    imagePayload.imageThumb = variants.imageThumb || normalizedImage || fallbackImage;
+  }
+  if (payload.imageCover !== undefined || shouldBackfill) {
+    imagePayload.imageCover = variants.imageCover || normalizedImage || fallbackImage;
+  }
+  if (payload.imageMedium !== undefined || shouldBackfill) {
+    imagePayload.imageMedium = variants.imageMedium || normalizedImage || fallbackImage;
+  }
+  if (payload.imageThumbAvif !== undefined) {
+    imagePayload.imageThumbAvif = variants.imageThumbAvif;
+  }
+  if (payload.imageCoverAvif !== undefined) {
+    imagePayload.imageCoverAvif = variants.imageCoverAvif;
+  }
+  if (payload.imageMediumAvif !== undefined) {
+    imagePayload.imageMediumAvif = variants.imageMediumAvif;
+  }
+
+  return imagePayload;
+};
+
 const parseTags = (value) => {
   if (!value) return [];
   if (Array.isArray(value)) return value.map((tag) => tag?.toString().trim()).filter(Boolean);
@@ -145,6 +225,14 @@ export const create = async (req, res, next) => {
     }
 
     const normalizedImage = normalizeMediaUrl(image);
+    const normalizedVariants = normalizeImageFields(req.body);
+    const baseImage =
+      normalizedImage ||
+      normalizedVariants.imageOriginal ||
+      normalizedVariants.imageCover ||
+      normalizedVariants.imageThumb ||
+      normalizedVariants.imageMedium ||
+      DEFAULT_IMAGE_PLACEHOLDER;
     const normalizedOgImage = normalizeMediaUrl(req.body.ogImage);
 
     const newPost = new Post({
@@ -154,9 +242,14 @@ export const create = async (req, res, next) => {
       content,
       category,
       subCategory: category === 'TrustMedia' ? normalizedSubCategory : undefined,
-      image:
-        normalizedImage ||
-        'https://www.hostinger.com/tutorials/wp-content/uploads/sites/2/2021/09/how-to-write-a-blog-post.png',
+      image: normalizedImage || baseImage,
+      imageOriginal: normalizedVariants.imageOriginal || normalizedImage || baseImage,
+      imageThumb: normalizedVariants.imageThumb || normalizedImage || baseImage,
+      imageCover: normalizedVariants.imageCover || normalizedImage || baseImage,
+      imageMedium: normalizedVariants.imageMedium || normalizedImage || baseImage,
+      imageThumbAvif: normalizedVariants.imageThumbAvif,
+      imageCoverAvif: normalizedVariants.imageCoverAvif,
+      imageMediumAvif: normalizedVariants.imageMediumAvif,
       status: finalStatus,
       publishedAt: finalPublishedAt,
       tags: tagList,
@@ -253,20 +346,14 @@ export const updatepost = async (req, res, next) => {
       }
     }
 
-    const normalizedImage = normalizeMediaUrl(req.body.image);
     const normalizedOgImage = normalizeMediaUrl(req.body.ogImage);
-    const imageValue =
-      req.body.image === undefined
-        ? undefined
-        : normalizedImage ||
-          'https://www.hostinger.com/tutorials/wp-content/uploads/sites/2/2021/09/how-to-write-a-blog-post.png';
+    const imagePayload = buildImageUpdatePayload(req.body);
 
     const updatePayload = removeUndefined({
       title: req.body.title,
       content: req.body.content,
       category: req.body.category,
       subCategory: nextCategory === 'TrustMedia' ? normalizedSubCategory : undefined,
-      image: imageValue,
       status: finalStatus,
       publishedAt: finalPublishedAt,
       tags: tagList,
@@ -280,6 +367,7 @@ export const updatepost = async (req, res, next) => {
       price: nextCategory === 'TrustEvent' && normalizedPricing === 'paid' ? parsedPrice : undefined,
       coverMediaId: req.body.coverMediaId,
       mediaIds: req.body.mediaIds ? parseMediaIds(req.body.mediaIds) : undefined,
+      ...imagePayload,
     });
 
     const updatedPost = await Post.findByIdAndUpdate(
@@ -310,10 +398,12 @@ export const getpost = async (req, res, next) => {
       return next(errorHandler(403, 'You are not allowed to view this post'));
     }
 
+    const resolvedPost = ensureImageVariants(post.toObject());
+
     res.status(200).json({
       success: true,
-      data: { post },
-      post,
+      data: { post: resolvedPost },
+      post: resolvedPost,
     });
   } catch (error) {
     next(error);
@@ -386,10 +476,13 @@ export const getposts = async (req, res, next) => {
 
     const totalPosts = await Post.countDocuments(query);
 
-    const normalizedPosts = posts.map((post) => ({
-      ...(post.toObject ? post.toObject() : post),
-      subCategory: normalizeSubCategory(post.subCategory),
-    }));
+    const normalizedPosts = posts.map((post) => {
+      const resolvedPost = post.toObject ? post.toObject() : post;
+      return ensureImageVariants({
+        ...resolvedPost,
+        subCategory: normalizeSubCategory(resolvedPost.subCategory),
+      });
+    });
 
     res.status(200).json({
       success: true,

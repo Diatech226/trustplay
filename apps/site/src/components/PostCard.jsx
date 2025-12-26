@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import FavoriteButton from './FavoriteButton';
 import { MEDIA_CATEGORY, normalizeSubCategory } from '../utils/categories';
 import { useRubrics } from '../hooks/useRubrics';
-import { resolveMediaUrl } from '../lib/mediaUrls';
+import { DEFAULT_MEDIA_PLACEHOLDER, resolveMediaUrl } from '../lib/mediaUrls';
 
 export default function PostCard({ post }) {
   const { rubricMap } = useRubrics('TrustMedia');
@@ -13,22 +13,33 @@ export default function PostCard({ post }) {
     subCategoryLabel = `Legacy: ${post.subCategory}`;
   }
   const readingTime = Math.max(1, Math.round((post?.content?.length || 0) / 800));
-  const imageUrl = resolveMediaUrl(post?.image);
-  const withFormatParam = (format) => {
-    if (!imageUrl) return '';
-    const separator = imageUrl.includes('?') ? '&' : '?';
-    return `${imageUrl}${separator}format=${format}`;
+  const resolveVariantUrl = (value, extension) => {
+    if (!value || typeof value !== 'string') return '';
+    if (!value.includes(`.${extension}`)) return '';
+    return resolveMediaUrl(value);
   };
+  const imageAvif = resolveVariantUrl(
+    post?.imageThumbAvif || post?.imageMediumAvif || post?.imageCoverAvif,
+    'avif'
+  );
+  const imageWebp = resolveVariantUrl(
+    post?.imageThumb || post?.imageMedium || post?.imageCover,
+    'webp'
+  );
+  const imageFallback = resolveMediaUrl(
+    post?.imageOriginal || post?.imageCover || post?.imageMedium || post?.image,
+    DEFAULT_MEDIA_PLACEHOLDER
+  );
 
   return (
     <article className='group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-subtle transition hover:-translate-y-1 hover:shadow-card dark:border-slate-700 dark:bg-slate-900'>
       {/* UI improvement: media forward layout */}
       <Link to={`/post/${post.slug}`} className='relative h-56 w-full overflow-hidden sm:h-64'>
         <picture>
-          <source srcSet={withFormatParam('avif')} type='image/avif' />
-          <source srcSet={withFormatParam('webp')} type='image/webp' />
+          {imageAvif && <source srcSet={imageAvif} type='image/avif' />}
+          {imageWebp && <source srcSet={imageWebp} type='image/webp' />}
           <img
-            src={imageUrl}
+            src={imageFallback}
             alt={post.title}
             loading='lazy'
             decoding='async'
