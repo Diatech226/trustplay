@@ -4,10 +4,11 @@ import { AiOutlineSearch } from 'react-icons/ai';
 import { FaMoon, FaSun } from 'react-icons/fa';
 import { useSelector, useDispatch } from 'react-redux';
 import { toggleTheme } from '../redux/theme/themeSlice';
-import { signoutSuccess } from '../redux/user/userSlice';
+import { logoutAndClearPersistedData } from '../redux/store';
 import { useEffect, useMemo, useState } from 'react';
 import { apiRequest } from '../lib/apiClient';
 import { useRubrics } from '../hooks/useRubrics';
+import { resolveMediaUrl } from '../lib/mediaUrls';
 
 export default function Header() {
   const path = useLocation().pathname;
@@ -20,6 +21,7 @@ export default function Header() {
   const [searchTerm, setSearchTerm] = useState('');
   const cmsUrl = import.meta.env?.VITE_CMS_URL || 'http://localhost:5174';
   const { rubrics: trustMediaRubrics } = useRubrics('TrustMedia');
+  const profileImage = resolveMediaUrl(currentUser?.profilePicture);
   const navItems = useMemo(() => {
     const baseNav = [
       { path: '/', label: 'Accueil' },
@@ -57,7 +59,7 @@ export default function Header() {
     } catch (error) {
       console.log(error.message);
     } finally {
-      dispatch(signoutSuccess());
+      dispatch(logoutAndClearPersistedData());
     }
   };
 
@@ -115,7 +117,7 @@ export default function Header() {
             arrowIcon={false}
             inline
             label={
-              <Avatar alt='user' img={currentUser.profilePicture} rounded />
+              <Avatar alt='user' img={profileImage} rounded />
             }
           >
             <Dropdown.Header>

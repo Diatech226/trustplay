@@ -16,6 +16,7 @@ import { logReading } from '../redux/history/historySlice';
 import { getMediaPosts, getPostBySlug, normalizePosts } from '../services/posts.service';
 import { MEDIA_CATEGORY, normalizeSubCategory } from '../utils/categories';
 import { logPageView } from '../lib/analytics';
+import { resolveMediaUrl } from '../lib/mediaUrls';
 import { useRubrics } from '../hooks/useRubrics';
 
 export default function PostPage() {
@@ -90,10 +91,12 @@ export default function PostPage() {
     }
   }, [post?.slug, post?.title, post?.subCategory]);
 
+  const imageUrl = resolveMediaUrl(post?.image);
+  const ogImageUrl = resolveMediaUrl(post?.ogImage || post?.image);
   const withFormatParam = (format) => {
-    if (!post?.image) return '';
-    const separator = post.image.includes('?') ? '&' : '?';
-    return `${post.image}${separator}format=${format}`;
+    if (!imageUrl) return '';
+    const separator = imageUrl.includes('?') ? '&' : '?';
+    return `${imageUrl}${separator}format=${format}`;
   };
 
   const metaDescription = useMemo(
@@ -113,7 +116,7 @@ export default function PostPage() {
         '@context': 'https://schema.org',
         '@type': 'Article',
         headline: post.title,
-        image: [post.image],
+        image: [imageUrl].filter(Boolean),
         datePublished: post.publishedAt || post.createdAt,
         dateModified: post.updatedAt,
         author: post.author || 'Rédaction Trust',
@@ -169,7 +172,7 @@ export default function PostPage() {
       <Seo
         title={`${post?.seoTitle || post?.title || 'Article'} | Trust Media`}
         description={post?.seoDescription || metaDescription}
-        image={post?.ogImage || post?.image}
+        image={ogImageUrl}
         url={articleUrl}
         canonical={articleUrl}
         type='article'
@@ -189,7 +192,7 @@ export default function PostPage() {
                 <source srcSet={withFormatParam('avif')} type='image/avif' />
                 <source srcSet={withFormatParam('webp')} type='image/webp' />
                 <img
-                  src={post && post.image}
+                  src={imageUrl}
                   alt={post && post.title}
                   loading='lazy'
                   decoding='async'

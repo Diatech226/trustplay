@@ -75,6 +75,8 @@ const parseMediaIds = (value) => {
   return [];
 };
 
+const STATUS_OPTIONS = new Set(['draft', 'published', 'archived']);
+
 const removeUndefined = (payload) => {
   const cleaned = { ...payload };
   Object.keys(cleaned).forEach((key) => {
@@ -389,6 +391,42 @@ export const getposts = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+};
+
+export const updatePostStatus = async (req, res, next) => {
+  try {
+    const postId = req.params.postId;
+    const status = typeof req.body?.status === 'string' ? req.body.status.trim().toLowerCase() : '';
+
+    if (!STATUS_OPTIONS.has(status)) {
+      return next(errorHandler(400, 'Invalid status value'));
+    }
+
+    const post = await Post.findById(postId);
+    if (!post) {
+      return next(errorHandler(404, 'Post not found'));
+    }
+
+    if (req.user?.role !== 'ADMIN' && post.userId?.toString() !== req.user?.id) {
+      return next(errorHandler(403, 'You are not allowed to update this post'));
+    }
+
+    post.status = status;
+    if (status === 'published' && !post.publishedAt) {
+      post.publishedAt = new Date();
+    }
+
+    await post.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Post status updated successfully',
+      data: { post },
+      post,
+    });
+  } catch (error) {
+    return next(error);
   }
 };
 

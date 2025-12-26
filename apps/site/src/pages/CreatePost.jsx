@@ -7,6 +7,7 @@ import { uploadImageFile, uploadMediaFile } from '../utils/uploadImage';
 import { apiRequest } from '../lib/apiClient';
 import { normalizeSubCategory } from '../utils/categories';
 import { useRubrics } from '../hooks/useRubrics';
+import { resolveMediaUrl } from '../lib/mediaUrls';
 
 const CATEGORY_OPTIONS = [
   { value: 'TrustMedia', label: 'Média' },
@@ -380,7 +381,7 @@ export default function CreatePost() {
         {uploadError && <Alert color='failure'>{uploadError}</Alert>}
         {formData.image && (
           <img
-            src={formData.image}
+            src={resolveMediaUrl(formData.image)}
             alt='upload'
             loading='lazy'
             decoding='async'

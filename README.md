@@ -33,6 +33,8 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
   - `GET /api/rubrics?scope=TrustMedia`, `POST /api/rubrics`, `PUT /api/rubrics/:id`, `DELETE /api/rubrics/:id` (taxonomie rubriques).
   - `POST /api/post/create`, `GET /api/post/getposts`, `GET /api/post/:postId`, `PUT /api/post/updatepost/:postId/:userId`, `DELETE /api/post/deletepost/:postId/:userId`.
   - `GET /api/posts/:postId` (CMS : lecture par `_id`).
+  - `PATCH /api/posts/:postId/status` (admin/author) pour mise à jour rapide du statut (`draft|published|archived`).
+  - `PATCH /api/post/:postId/status` (alias legacy).
   - `GET /api/events` (liste TrustEvent côté CMS).
   - `POST /api/comment/create`, likes/édition/suppression et listing admin.
   - `POST /api/uploads` (Multer) avec filtrage MIME et quotas (10 Mo image, 100 Mo vidéo).
@@ -45,6 +47,7 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 - **JWT payload** : `{ id, email, role }` est signé à la connexion/inscription.
 - **Admin flag** : `isAdmin: true` est ajouté au JWT pour compatibilité legacy.
 - **Session CMS** : le CMS hydrate le profil via `GET /api/user/me` et vérifie `currentUser.role === 'ADMIN'`.
+- **Logout** : `POST /api/auth/signout` efface le cookie `access_token`; le front doit purger le token local (localStorage / redux-persist).
 - **Identifiants** : le CMS utilise `_id` pour l'édition/suppression, le site public utilise `slug` pour la lecture (`/post/:slug`).
 
 ## Fonctionnalités actuelles
@@ -147,6 +150,10 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 2. Le backend crée un `Media` → retour `{ media, url }`.
 3. Le CMS liste via `/api/media` et permet la sélection dans l’éditeur.
 4. Les posts stockent `coverMediaId`, `mediaIds[]` + HTML avec URLs.
+
+### Convention URLs média
+- **Stockage** : privilégier un chemin relatif `/uploads/<filename>` en base.
+- **Front** : construire l'URL publique via `API_BASE_URL` (helper `resolveMediaUrl` dans le site et `apps/cms/src/lib/mediaUrls.js`).
 
 ## QA checklist (Users & Rubriques)
 - **Users** : liste / création / édition / suppression ok (CMS → `/api/admin/users`).

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import FavoriteButton from './FavoriteButton';
 import { MEDIA_CATEGORY, normalizeSubCategory } from '../utils/categories';
 import { useRubrics } from '../hooks/useRubrics';
+import { resolveMediaUrl } from '../lib/mediaUrls';
 
 export default function PostCard({ post }) {
   const { rubricMap } = useRubrics('TrustMedia');
@@ -12,10 +13,11 @@ export default function PostCard({ post }) {
     subCategoryLabel = `Legacy: ${post.subCategory}`;
   }
   const readingTime = Math.max(1, Math.round((post?.content?.length || 0) / 800));
+  const imageUrl = resolveMediaUrl(post?.image);
   const withFormatParam = (format) => {
-    if (!post?.image) return '';
-    const separator = post.image.includes('?') ? '&' : '?';
-    return `${post.image}${separator}format=${format}`;
+    if (!imageUrl) return '';
+    const separator = imageUrl.includes('?') ? '&' : '?';
+    return `${imageUrl}${separator}format=${format}`;
   };
 
   return (
@@ -26,7 +28,7 @@ export default function PostCard({ post }) {
           <source srcSet={withFormatParam('avif')} type='image/avif' />
           <source srcSet={withFormatParam('webp')} type='image/webp' />
           <img
-            src={post.image}
+            src={imageUrl}
             alt={post.title}
             loading='lazy'
             decoding='async'

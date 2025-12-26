@@ -1,12 +1,13 @@
 import moment from 'moment';
 import { FaThumbsUp } from 'react-icons/fa';
 import { useSelector } from 'react-redux';
+import { resolveMediaUrl } from '../lib/mediaUrls';
 
 export default function Comment({ comment, onDelete }) {
   const { currentUser } = useSelector((state) => state.user);
   const commentId = comment._id || comment.id;
   const displayName = comment.userName || comment.username || 'Utilisateur';
-  const avatar = comment.profilePicture || '/default-avatar.png';
+  const avatar = resolveMediaUrl(comment.profilePicture) || '/default-avatar.png';
   const createdAt = comment.createdAt || comment.created_on;
 
   return (

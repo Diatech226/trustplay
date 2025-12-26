@@ -7,6 +7,7 @@ import PostCardSkeleton from '../components/skeletons/PostCardSkeleton';
 import Seo from '../components/Seo';
 import { getMediaPosts, normalizePosts } from '../services/posts.service';
 import { useRubrics } from '../hooks/useRubrics';
+import { resolveMediaUrl } from '../lib/mediaUrls';
 import { MEDIA_CATEGORY, normalizeSubCategory } from '../utils/categories';
 
 export default function Home() {
@@ -97,7 +98,7 @@ export default function Home() {
               className='group relative flex w-full max-w-xl overflow-hidden rounded-2xl border border-subtle bg-white shadow-card transition hover:-translate-y-1 dark:border-slate-800 dark:bg-slate-900'
             >
               <img
-                src={featuredPost.image}
+                src={resolveMediaUrl(featuredPost.image)}
                 alt={featuredPost.title}
                 loading='lazy'
                 decoding='async'
@@ -157,7 +158,7 @@ export default function Home() {
                   <Link to={`/post/${post.slug}`} className='flex items-start gap-3'>
                     <div className='h-20 w-24 overflow-hidden rounded-xl'>
                       <img
-                        src={post.image}
+                        src={resolveMediaUrl(post.image)}
                         alt={post.title}
                         loading='lazy'
                         decoding='async'

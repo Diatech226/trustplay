@@ -1,10 +1,12 @@
 import { Link } from "react-router-dom";
+import { resolveMediaUrl } from "../lib/mediaUrls";
 
 const EventCard = ({ event }) => {
+  const imageUrl = resolveMediaUrl(event?.image) || "/default-event.jpg";
   return (
     <div className="bg-white shadow-md rounded-lg overflow-hidden">
       <img
-        src={event.image || "/default-event.jpg"}
+        src={imageUrl}
         alt={event.title}
         className="w-full h-48 object-cover"
         loading="lazy"

@@ -9,7 +9,7 @@ import {
 } from 'react-icons/hi';
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { signoutSuccess } from '../redux/user/userSlice';
+import { logoutAndClearPersistedData } from '../redux/store';
 import { useDispatch } from 'react-redux';
 import { useSelector } from 'react-redux';
 import { apiRequest } from '../lib/apiClient';
@@ -33,7 +33,7 @@ export default function DashSidebar() {
     } catch (error) {
       console.log(error.message);
     } finally {
-      dispatch(signoutSuccess());
+      dispatch(logoutAndClearPersistedData());
     }
   };
   return (
