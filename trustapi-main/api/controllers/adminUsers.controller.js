@@ -9,7 +9,9 @@ const sanitizeUser = (userDoc = {}) => {
   delete userObj.passwordHash;
   delete userObj.passwordResetTokenHash;
   delete userObj.passwordResetExpiresAt;
-  userObj.role = resolveUserRole(userObj) || 'USER';
+  const resolvedRole = resolveUserRole(userObj) || 'USER';
+  userObj.role = resolvedRole;
+  userObj.isAdmin = resolvedRole === 'ADMIN';
   return userObj;
 };
 

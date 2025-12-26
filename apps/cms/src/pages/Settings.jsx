@@ -54,7 +54,7 @@ export const Settings = () => {
   const [error, setError] = useState(null);
   const [categoryInput, setCategoryInput] = useState('');
 
-  const isAdmin = useMemo(() => user?.role === 'ADMIN', [user]);
+  const isAdmin = useMemo(() => user?.role === 'ADMIN' || user?.isAdmin === true, [user]);
 
   const loadSettings = async () => {
     setLoading(true);

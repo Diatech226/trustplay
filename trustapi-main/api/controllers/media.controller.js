@@ -1,5 +1,6 @@
 import Media from '../models/media.model.js';
 import { errorHandler } from '../utils/error.js';
+import { normalizeMediaUrl } from '../utils/media.js';
 
 const parseTags = (value) => {
   if (!value) return [];
@@ -30,7 +31,7 @@ export const createMedia = async (req, res, next) => {
       name,
       category,
       subCategory,
-      url,
+      url: normalizeMediaUrl(url),
       mimeType,
       size,
       kind: kind || resolveKind(mimeType),

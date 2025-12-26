@@ -215,6 +215,9 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 ### Installation (root)
 ```bash
 npm install
+cp trustapi-main/.env.example trustapi-main/.env
+cp apps/cms/.env.example apps/cms/.env
+cp apps/site/.env.example apps/site/.env
 npm run dev       # lance site + CMS + API (concurrently)
 npm run dev:site  # Vite site public (apps/site)
 npm run dev:cms   # Vite CMS v2 (apps/cms)
