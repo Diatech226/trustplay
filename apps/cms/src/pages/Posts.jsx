@@ -42,7 +42,10 @@ export const Posts = () => {
     return posts.filter((post) => post.title?.toLowerCase().includes(lower));
   }, [posts, query]);
 
+  const resolvePostId = (post) => post?._id || post?.id;
+
   const handleDelete = async (postId) => {
+    if (!postId) return;
     const accepted = await confirm({
       title: 'Supprimer le post',
       message: 'Cette action est définitive. Voulez-vous supprimer ce contenu ?',
@@ -52,7 +55,7 @@ export const Posts = () => {
 
     try {
       await deletePost(postId);
-      setPosts((prev) => prev.filter((post) => post._id !== postId));
+      setPosts((prev) => prev.filter((post) => resolvePostId(post) !== postId));
       addToast('Post supprimé avec succès.', { type: 'success' });
     } catch (error) {
       addToast(`Suppression impossible : ${error.message}`, { type: 'error' });
@@ -93,8 +96,10 @@ export const Posts = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredPosts.map((post) => (
-              <tr key={post._id}>
+            {filteredPosts.map((post) => {
+              const postId = resolvePostId(post);
+              return (
+              <tr key={postId}>
                 <td>{post.title}</td>
                 <td>{post.category}</td>
                 <td>
@@ -103,16 +108,17 @@ export const Posts = () => {
                 <td>{formatDate(post.updatedAt)}</td>
                 <td>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <Link className="button secondary" to={`/posts/${post._id}/edit`}>
+                    <Link className="button secondary" to={`/posts/${postId}/edit`}>
                       Éditer
                     </Link>
-                    <button className="button danger" onClick={() => handleDelete(post._id)}>
+                    <button className="button danger" onClick={() => handleDelete(postId)}>
                       Supprimer
                     </button>
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       )}

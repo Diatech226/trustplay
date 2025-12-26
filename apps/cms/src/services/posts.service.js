@@ -18,8 +18,8 @@ export const fetchPosts = async (params = {}) => {
 };
 
 export const fetchPostById = async (postId) => {
-  if (!postId) return null;
-  const response = await apiClient.get(`/api/posts/${postId}`);
+  if (!postId || postId === 'undefined' || postId === 'null') return null;
+  const response = await apiClient.get(`/api/post/${postId}`);
   return response?.post || response?.data?.post || null;
 };
 

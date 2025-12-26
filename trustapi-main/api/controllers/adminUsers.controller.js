@@ -25,6 +25,15 @@ const normalizeRole = (value, { allowDefault = false } = {}) => {
   return USER_ROLES.includes(role) ? role : null;
 };
 
+const resolveRoleInput = (roleValue, isAdminValue, options = {}) => {
+  const normalizedRole = normalizeRole(roleValue, options);
+  if (normalizedRole) return normalizedRole;
+  if (typeof isAdminValue === 'boolean') {
+    return isAdminValue ? 'ADMIN' : 'USER';
+  }
+  return options.allowDefault ? 'USER' : null;
+};
+
 const ensureNotLastAdmin = async (user) => {
   if (user?.role !== 'ADMIN') return;
   const adminCount = await User.countDocuments({ role: 'ADMIN' });
@@ -37,7 +46,7 @@ export const createAdminUser = async (req, res, next) => {
   const username = normalizeString(req.body?.username);
   const email = normalizeString(req.body?.email).toLowerCase();
   const password = normalizeString(req.body?.password);
-  const role = normalizeRole(req.body?.role, { allowDefault: true });
+  const role = resolveRoleInput(req.body?.role, req.body?.isAdmin, { allowDefault: true });
 
   if (!username || !email || !password) {
     return next(errorHandler(400, 'Username, email and password are required'));
@@ -143,7 +152,7 @@ export const updateAdminUser = async (req, res, next) => {
   const updates = {};
   const username = normalizeString(req.body?.username);
   const email = normalizeString(req.body?.email).toLowerCase();
-  const role = normalizeRole(req.body?.role);
+  const role = resolveRoleInput(req.body?.role, req.body?.isAdmin);
   const password = normalizeString(req.body?.password);
   const profilePicture = normalizeString(req.body?.profilePicture);
 
@@ -159,7 +168,7 @@ export const updateAdminUser = async (req, res, next) => {
     }
     updates.email = email;
   }
-  if (req.body?.role !== undefined) {
+  if (req.body?.role !== undefined || req.body?.isAdmin !== undefined) {
     if (!role) {
       return next(errorHandler(400, 'Invalid role provided'));
     }
