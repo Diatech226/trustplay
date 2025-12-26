@@ -4,6 +4,7 @@ import PageHeader from '../components/layout/PageHeader';
 import Seo from '../components/Seo';
 import { getEvents } from '../services/events.service';
 import { logEventSignup } from '../lib/analytics';
+import { resolveMediaUrl } from '../lib/mediaUrls';
 
 export default function TrustEvent() {
   const [events, setEvents] = useState([]);
@@ -90,7 +91,7 @@ export default function TrustEvent() {
             return (
             <div key={event._id} className="flex h-full flex-col rounded-2xl bg-white shadow-card ring-1 ring-subtle transition hover:-translate-y-1 hover:shadow-lg dark:bg-slate-900 dark:ring-slate-800">
               <img
-                src={event.image}
+                src={resolveMediaUrl(event.image)}
                 alt={event.title}
                 loading="lazy"
                 decoding="async"

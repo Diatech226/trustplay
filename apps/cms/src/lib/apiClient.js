@@ -145,6 +145,7 @@ export const apiClient = {
   get: (path, options) => request('GET', path, options),
   post: (path, options) => request('POST', path, options),
   put: (path, options) => request('PUT', path, options),
+  patch: (path, options) => request('PATCH', path, options),
   del: (path, options) => request('DELETE', path, options),
   getToken: getStoredToken,
   setToken: setStoredToken,

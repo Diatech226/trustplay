@@ -8,8 +8,9 @@ import ScrollToTop from './components/ScrollToTop';
 import LoadingScreen from './components/LoadingScreen';
 import { HelmetProvider } from "react-helmet-async";
 import { useDispatch, useSelector } from 'react-redux';
-import { restoreSession, setUser, signoutSuccess } from './redux/user/userSlice';
+import { restoreSession, setUser } from './redux/user/userSlice';
 import { apiRequest, authUtils, getAuthToken } from './lib/apiClient';
+import { logoutAndClearPersistedData } from './redux/store';
 
 const Home = lazy(() => import('./pages/Home'));
 const About = lazy(() => import('./pages/About'));
@@ -76,7 +77,7 @@ export default function App() {
         }
       } catch (error) {
         if (error?.status === 401 && authUtils.isInvalidTokenResponse(error?.data)) {
-          dispatch(signoutSuccess());
+          dispatch(logoutAndClearPersistedData());
         } else {
           console.error('Unable to refresh session', error.message);
         }

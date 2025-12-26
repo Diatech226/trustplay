@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import AdminSidebar from '../../admin/components/AdminSidebar';
 import AdminHeader from '../../admin/components/AdminHeader';
 import Breadcrumbs from '../../admin/components/Breadcrumbs';
-import { signoutSuccess } from '../../redux/user/userSlice';
+import { logoutAndClearPersistedData } from '../../redux/store';
 import { apiRequest } from '../../lib/apiClient';
 import { navSections } from '../../admin/config/navigation';
 
@@ -43,7 +43,7 @@ export default function AdminLayout() {
     } catch (error) {
       // ignore
     } finally {
-      dispatch(signoutSuccess());
+      dispatch(logoutAndClearPersistedData());
       navigate('/sign-in');
     }
   };

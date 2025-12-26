@@ -1,6 +1,5 @@
 import asyncStorage from './asyncStorage';
-import { store } from '../redux/store';
-import { signoutSuccess } from '../redux/user/userSlice';
+import { store, logoutAndClearPersistedData } from '../redux/store';
 
 export const API_BASE_URL =
   import.meta.env?.VITE_API_URL ||
@@ -34,7 +33,7 @@ const buildReturnTo = () => {
 const handleUnauthorized = async () => {
   await asyncStorage.removeItem('auth');
   try {
-    store.dispatch(signoutSuccess());
+    store.dispatch(logoutAndClearPersistedData());
   } catch (error) {
     // store not ready
   }

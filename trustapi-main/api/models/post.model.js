@@ -61,7 +61,7 @@ const PostSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["draft", "review", "published", "scheduled"],
+      enum: ["draft", "review", "published", "scheduled", "archived"],
       default: "draft",
       index: true,
     },

@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import { HiOutlineExclamationCircle } from 'react-icons/hi';
 import { FaCheck, FaTimes } from 'react-icons/fa';
 import { apiRequest } from '../lib/apiClient';
+import { resolveMediaUrl } from '../lib/mediaUrls';
 
 export default function DashUsers() {
   const { currentUser } = useSelector((state) => state.user);
@@ -76,7 +77,7 @@ export default function DashUsers() {
                   </Table.Cell>
                   <Table.Cell>
                     <img
-                      src={user.profilePicture}
+                      src={resolveMediaUrl(user.profilePicture)}
                       alt={user.username}
                       className='w-10 h-10 object-cover bg-gray-500 rounded-full'
                       loading='lazy'

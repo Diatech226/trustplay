@@ -28,3 +28,6 @@ export const createPost = async (payload) => apiClient.post('/api/posts', { body
 export const updatePost = async (postId, payload) => apiClient.put(`/api/posts/${postId}`, { body: payload });
 
 export const deletePost = async (postId) => apiClient.del(`/api/posts/${postId}`);
+
+export const updatePostStatus = async (postId, status) =>
+  apiClient.patch(`/api/posts/${postId}/status`, { body: { status } });

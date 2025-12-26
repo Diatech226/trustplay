@@ -10,13 +10,14 @@ import {
   deleteUserStart,
   deleteUserSuccess,
   deleteUserFailure,
-  signoutSuccess,
 } from '../redux/user/userSlice';
+import { logoutAndClearPersistedData } from '../redux/store';
 import { useDispatch } from 'react-redux';
 import { HiOutlineExclamationCircle } from 'react-icons/hi';
 import { Link } from 'react-router-dom';
 import { uploadImageFile } from '../utils/uploadImage';
 import { API_BASE_URL, apiRequest, getAuthToken } from '../lib/apiClient';
+import { resolveMediaUrl } from '../lib/mediaUrls';
 
 export default function DashProfile() {
   const { currentUser, error, loading } = useSelector((state) => state.user);
@@ -31,6 +32,7 @@ export default function DashProfile() {
   const [formData, setFormData] = useState({});
   const filePickerRef = useRef();
   const dispatch = useDispatch();
+  const profileImage = resolveMediaUrl(imageFileUrl || currentUser?.profilePicture);
   
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -117,7 +119,7 @@ export default function DashProfile() {
     } catch (error) {
       console.log(error.message);
     } finally {
-      dispatch(signoutSuccess());
+      dispatch(logoutAndClearPersistedData());
     }
   };
   return (
@@ -157,7 +159,7 @@ export default function DashProfile() {
             />
           )}
           <img
-            src={imageFileUrl || currentUser.profilePicture}
+            src={profileImage}
             alt='user'
             loading='lazy'
             decoding='async'

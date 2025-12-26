@@ -117,12 +117,19 @@ export const listAdminUsers = async (req, res, next) => {
       .skip((page - 1) * limit)
       .limit(limit);
 
+    const now = new Date();
+    const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+    const lastMonthUsers = await User.countDocuments({
+      createdAt: { $gte: oneMonthAgo },
+    });
+
     return res.status(200).json({
       success: true,
       message: 'Users fetched successfully',
       data: {
         users: users.map(sanitizeUser),
         totalUsers,
+        lastMonthUsers,
         page,
         limit,
       },

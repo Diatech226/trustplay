@@ -2,6 +2,7 @@ import { Button, FileInput, Label, TextInput } from 'flowbite-react';
 import { useState } from 'react';
 import PageShell from '../../admin/components/PageShell';
 import { uploadMediaFile } from '../../utils/uploadImage';
+import { resolveMediaUrl } from '../../lib/mediaUrls';
 
 export default function AdminMedia() {
   const [file, setFile] = useState();
@@ -86,23 +87,26 @@ export default function AdminMedia() {
             Aucun média uploadé pour le moment. Ajoutez un fichier pour commencer.
           </div>
         ) : (
-          uploads.map((item) => (
-            <div
-              key={item.url}
-              className='flex items-center justify-between rounded-xl border border-slate-200 bg-white/60 p-4 dark:border-slate-800 dark:bg-slate-900/60'
-            >
+          uploads.map((item) => {
+            const resolvedUrl = resolveMediaUrl(item.url);
+            return (
+              <div
+                key={item.url}
+                className='flex items-center justify-between rounded-xl border border-slate-200 bg-white/60 p-4 dark:border-slate-800 dark:bg-slate-900/60'
+              >
               <div className='space-y-1'>
                 <p className='font-semibold text-slate-900 dark:text-white'>{item.name}</p>
                 <p className='text-xs text-slate-500'>{item.mime} · {item.size}</p>
-                <a href={item.url} className='text-xs text-primary underline' target='_blank' rel='noreferrer'>
+                <a href={resolvedUrl} className='text-xs text-primary underline' target='_blank' rel='noreferrer'>
                   Ouvrir dans un nouvel onglet
                 </a>
               </div>
               {item.mime?.startsWith('image/') && (
-                <img src={item.url} alt={item.name} className='h-16 w-20 rounded-lg object-cover' />
+                <img src={resolvedUrl} alt={item.name} className='h-16 w-20 rounded-lg object-cover' />
               )}
-            </div>
-          ))
+              </div>
+            );
+          })
         )}
       </div>
     </PageShell>

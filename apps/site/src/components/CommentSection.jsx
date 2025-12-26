@@ -6,6 +6,7 @@ import Comment from './Comment';
 import { HiOutlineExclamationCircle } from 'react-icons/hi';
 import { apiRequest } from '../lib/apiClient';
 import { getPostComments } from '../services/comments.service';
+import { resolveMediaUrl } from '../lib/mediaUrls';
 
 export default function CommentSection({ postId }) {
   const { currentUser } = useSelector((state) => state.user);
@@ -94,7 +95,7 @@ export default function CommentSection({ postId }) {
           <p>Connecté en tant que</p>
           <img
             className="h-5 w-5 object-cover rounded-full"
-            src={currentUser.profilePicture}
+            src={resolveMediaUrl(currentUser.profilePicture)}
             alt=""
             loading='lazy'
             decoding='async'
