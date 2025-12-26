@@ -25,8 +25,11 @@
 | GET | `/api/user/test` | Non | Ping API | `{ success: true, message }` |
 | GET | `/api/user/me` | Oui | Profil depuis le token | `{ success, data: { user }, user }` |
 | GET | `/api/user/getusers` | Oui (admin) | Query: `startIndex` (offset, défaut 0), `limit` (défaut 9), `sort` (`asc`/`desc`) | `{ success, users, totalUsers, lastMonthUsers, data: {...} }` |
+| POST | `/api/user/create` | Oui (admin) | `{ username, email, password, role/isAdmin }` | `{ success, data: { user }, message }` |
 | GET | `/api/user/:userId` | Non | Récupérer un utilisateur par id | `{ success, data: { user }, user }` |
+| PUT | `/api/user/:userId` | Oui (admin) | `{ username?, email?, role/isAdmin?, password? }` | `{ success, data: { user }, message }` |
 | PUT | `/api/user/update/:userId` | Oui (proprio) | Corps optionnel : `username`, `email`, `profilePicture`, `password` | `{ success, data: { user }, user }` |
+| PUT | `/api/user/:userId/toggle-admin` | Oui (admin) | – | `{ success, data: { user }, message }` |
 | DELETE | `/api/user/delete/:userId` | Oui (proprio ou admin) | – | `{ success, message }` |
 | POST | `/api/user/signout` | Facultatif | – | Équivaut à `/api/auth/signout` |
 
@@ -38,6 +41,7 @@
 | GET | `/api/admin/users/:id` | Oui (admin) | Détail user | `{ success, data: { user }, message }` |
 | PUT | `/api/admin/users/:id` | Oui (admin) | Update profil + rôle + reset password | `{ success, data: { user }, message }` |
 | PUT | `/api/admin/users/:id/role` | Oui (admin) | `{ role }` | `{ success, data: { user }, message }` |
+| PUT | `/api/admin/users/:id/toggle-admin` | Oui (admin) | – | `{ success, data: { user }, message }` |
 | DELETE | `/api/admin/users/:id` | Oui (admin) | – | `{ success, data: { id }, message }` |
 
 ### Posts & Événements
@@ -45,10 +49,12 @@
 | --- | --- | --- | --- | --- |
 | POST | `/api/post/create` | Oui | JSON : `title*`, `content*`, `category*` (`TrustMedia`, `TrustEvent`, `TrustProd`, `uncategorized`), `subCategory`, `image`, `eventDate`, `location` | `201 { success, message, data: { post }, post, slug }` |
 | GET | `/api/post/getposts` | Non | Query : `userId`, `category`, `subCategory`, `slug`, `postId`, `searchTerm`, `startIndex` (offset), `limit` (défaut 9), `order` (`asc`/`desc`) | `{ success, data: { posts, totalPosts }, posts, totalPosts }` |
+| GET | `/api/post/:postId` | Non | Post par id | `{ success, data: { post }, post }` |
 | PUT | `/api/post/updatepost/:postId/:userId` | Oui (proprio ou admin) | Corps identique à la création | `{ success, data: post, post, slug }` |
 | DELETE | `/api/post/deletepost/:postId/:userId` | Oui (proprio ou admin) | – | `{ success, message }` |
 
-> Les événements sont des posts avec `category = TrustEvent` et champs optionnels `eventDate`, `location`. Les anciennes routes `/api/post/*` sont conservées ; filtre `category=TrustEvent` pour une vue "Events".
+> Les événements sont des posts avec `category = TrustEvent` et champs optionnels `eventDate`, `location`. Les anciennes routes `/api/post/*` sont conservées ; filtre `category=TrustEvent` pour une vue "Events".  
+> Alias REST : `/api/posts` (GET liste, GET `/:postId`, POST, PUT `/:postId`, DELETE `/:postId`) mirrora les routes `/api/post/*`.
 
 ### Commentaires
 | Méthode | Route | Auth | Corps / Query | Réponse |

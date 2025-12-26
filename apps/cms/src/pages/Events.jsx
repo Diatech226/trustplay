@@ -39,7 +39,10 @@ export const Events = () => {
     return events.filter((event) => event.title?.toLowerCase().includes(lower));
   }, [events, query]);
 
+  const resolveEventId = (event) => event?._id || event?.id;
+
   const handleDelete = async (eventId) => {
+    if (!eventId) return;
     const accepted = await confirm({
       title: "Supprimer l'événement",
       message: 'Cette action est définitive. Voulez-vous supprimer cet événement ?',
@@ -49,7 +52,7 @@ export const Events = () => {
 
     try {
       await deletePost(eventId);
-      setEvents((prev) => prev.filter((eventItem) => eventItem._id !== eventId));
+      setEvents((prev) => prev.filter((eventItem) => resolveEventId(eventItem) !== eventId));
       addToast('Événement supprimé.', { type: 'success' });
     } catch (error) {
       addToast(`Suppression impossible : ${error.message}`, { type: 'error' });
@@ -93,8 +96,10 @@ export const Events = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredEvents.map((event) => (
-              <tr key={event._id}>
+            {filteredEvents.map((event) => {
+              const eventId = resolveEventId(event);
+              return (
+              <tr key={eventId}>
                 <td>{event.title}</td>
                 <td>{formatDate(event.eventDate || event.publishedAt)}</td>
                 <td>{event.location || '—'}</td>
@@ -106,16 +111,17 @@ export const Events = () => {
                 <td>{event.slug}</td>
                 <td>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <Link className="button secondary" to={`/events/${event._id}/edit`}>
+                    <Link className="button secondary" to={`/events/${eventId}/edit`}>
                       Éditer
                     </Link>
-                    <button className="button danger" onClick={() => handleDelete(event._id)}>
+                    <button className="button danger" onClick={() => handleDelete(eventId)}>
                       Supprimer
                     </button>
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       )}

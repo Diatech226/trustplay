@@ -37,6 +37,7 @@ export const Users = () => {
   const { user: currentUser, status } = useAuth();
   const { confirm } = useConfirm();
   const isAdmin = currentUser?.role === 'ADMIN';
+  const resolveUserId = (user) => user?._id || user?.id;
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(totalUsers / limit)), [totalUsers, limit]);
 
@@ -101,7 +102,11 @@ export const Users = () => {
         if (resetPassword && form.password) {
           payload.password = form.password;
         }
-        await updateUser(editingUser._id, payload);
+        const editingUserId = resolveUserId(editingUser);
+        if (!editingUserId) {
+          throw new Error("Impossible d'identifier l'utilisateur.");
+        }
+        await updateUser(editingUserId, payload);
         addToast('Utilisateur mis à jour.', { type: 'success' });
       } else {
         await createUser(form);
@@ -143,7 +148,11 @@ export const Users = () => {
     });
     if (!accepted) return;
     try {
-      await deleteUser(user._id);
+      const targetUserId = resolveUserId(user);
+      if (!targetUserId) {
+        throw new Error("Impossible d'identifier l'utilisateur.");
+      }
+      await deleteUser(targetUserId);
       addToast('Utilisateur supprimé.', { type: 'success' });
       await loadUsers();
     } catch (err) {
@@ -154,7 +163,11 @@ export const Users = () => {
   const handleToggleAdmin = async (user) => {
     const nextRole = user.role === 'ADMIN' ? 'USER' : 'ADMIN';
     try {
-      await toggleAdminUser(user._id);
+      const targetUserId = resolveUserId(user);
+      if (!targetUserId) {
+        throw new Error("Impossible d'identifier l'utilisateur.");
+      }
+      await toggleAdminUser(targetUserId);
       addToast(
         nextRole === 'ADMIN'
           ? 'Utilisateur promu en admin.'
@@ -334,7 +347,7 @@ export const Users = () => {
               </thead>
               <tbody>
                 {users.map((user) => (
-                  <tr key={user._id}>
+                  <tr key={resolveUserId(user)}>
                     <td>{user.username || '—'}</td>
                     <td>{user.email}</td>
                     <td>
