@@ -83,8 +83,8 @@ export default function SignIn() {
   };
 
   return (
-    <div className='min-h-screen bg-gray-50 dark:bg-gray-900 flex items-start sm:items-center justify-center px-4 py-10 sm:py-12 overflow-y-auto'>
-      <div className='w-full max-w-md pb-6'>
+    <div className='min-h-[100dvh] bg-gray-50 dark:bg-gray-900 flex items-start sm:items-center justify-center px-4 py-10 sm:py-12 overflow-y-auto'>
+      <div className='w-full max-w-md pb-10'>
         <div className='mb-8 text-center'>
           <Link to='/' className='inline-flex items-center justify-center font-bold text-3xl'>
             <span className='px-3 py-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-lg text-white'>
@@ -97,7 +97,7 @@ export default function SignIn() {
           </p>
         </div>
 
-        <div className='rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-6 sm:p-8'>
+        <div className='relative z-10 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-6 sm:p-8'>
           <div className='text-center mb-6'>
             <h1 className='text-2xl font-semibold text-gray-900 dark:text-white'>Se connecter</h1>
             <p className='mt-2 text-sm text-gray-500 dark:text-gray-400'>
@@ -111,7 +111,7 @@ export default function SignIn() {
             </Alert>
           )}
 
-          <form className='space-y-4' onSubmit={handleSubmit}>
+          <form className='flex flex-col gap-4' onSubmit={handleSubmit}>
             <div>
               <Label htmlFor='email' value='Adresse email' />
               <TextInput
