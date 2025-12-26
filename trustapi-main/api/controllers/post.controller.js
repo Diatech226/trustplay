@@ -1,6 +1,7 @@
 import Post from '../models/post.model.js';
 import { errorHandler } from '../utils/error.js';
 import slugify from 'slugify';
+import { normalizeMediaUrl } from '../utils/media.js';
 
 const allowedCategories = new Set(['TrustMedia', 'TrustEvent', 'TrustProduction', 'TrustProd']);
 const trustMediaSubCategories = new Set(['news', 'politique', 'science-tech', 'sport', 'cinema']);
@@ -143,6 +144,9 @@ export const create = async (req, res, next) => {
       }
     }
 
+    const normalizedImage = normalizeMediaUrl(image);
+    const normalizedOgImage = normalizeMediaUrl(req.body.ogImage);
+
     const newPost = new Post({
       userId: req.user.id || req.user._id,
       title,
@@ -151,13 +155,14 @@ export const create = async (req, res, next) => {
       category,
       subCategory: category === 'TrustMedia' ? normalizedSubCategory : undefined,
       image:
-        image || 'https://www.hostinger.com/tutorials/wp-content/uploads/sites/2/2021/09/how-to-write-a-blog-post.png',
+        normalizedImage ||
+        'https://www.hostinger.com/tutorials/wp-content/uploads/sites/2/2021/09/how-to-write-a-blog-post.png',
       status: finalStatus,
       publishedAt: finalPublishedAt,
       tags: tagList,
       seoTitle: req.body.seoTitle,
       seoDescription: req.body.seoDescription,
-      ogImage: req.body.ogImage,
+      ogImage: normalizedOgImage,
       featured: Boolean(req.body.featured),
       ...(category === 'TrustEvent' && {
         eventDate,
@@ -248,20 +253,26 @@ export const updatepost = async (req, res, next) => {
       }
     }
 
+    const normalizedImage = normalizeMediaUrl(req.body.image);
+    const normalizedOgImage = normalizeMediaUrl(req.body.ogImage);
+    const imageValue =
+      req.body.image === undefined
+        ? undefined
+        : normalizedImage ||
+          'https://www.hostinger.com/tutorials/wp-content/uploads/sites/2/2021/09/how-to-write-a-blog-post.png';
+
     const updatePayload = removeUndefined({
       title: req.body.title,
       content: req.body.content,
       category: req.body.category,
       subCategory: nextCategory === 'TrustMedia' ? normalizedSubCategory : undefined,
-      image:
-        req.body.image ||
-        'https://www.hostinger.com/tutorials/wp-content/uploads/sites/2/2021/09/how-to-write-a-blog-post.png',
+      image: imageValue,
       status: finalStatus,
       publishedAt: finalPublishedAt,
       tags: tagList,
       seoTitle: req.body.seoTitle,
       seoDescription: req.body.seoDescription,
-      ogImage: req.body.ogImage,
+      ogImage: req.body.ogImage === undefined ? undefined : normalizedOgImage,
       featured: req.body.featured !== undefined ? Boolean(req.body.featured) : undefined,
       eventDate: req.body.eventDate,
       location: req.body.location,

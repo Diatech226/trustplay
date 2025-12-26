@@ -7,7 +7,9 @@ const sanitizeUser = (userDoc = {}) => {
   const userObj = userDoc.toObject ? userDoc.toObject() : { ...userDoc };
   delete userObj.password;
   delete userObj.passwordHash;
-  userObj.role = resolveUserRole(userObj) || 'USER';
+  const resolvedRole = resolveUserRole(userObj) || 'USER';
+  userObj.role = resolvedRole;
+  userObj.isAdmin = resolvedRole === 'ADMIN';
   return userObj;
 };
 

@@ -12,7 +12,7 @@ export const Comments = () => {
   const { confirm } = useConfirm();
   const { addToast } = useToast();
   const { user, status } = useAuth();
-  const isAdmin = user?.role === 'ADMIN';
+  const isAdmin = user?.role === 'ADMIN' || user?.isAdmin === true;
 
   const loadComments = useCallback(async () => {
     if (!isAdmin) {
