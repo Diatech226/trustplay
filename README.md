@@ -15,6 +15,7 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 ### apps/site (Vite/React)
 - **Routage** : routes publiques (home, recherche, rubriques, article) et routes protégées (dashboard historique) déclarées dans `apps/site/src/App.jsx`.
 - **État & session** : Redux Toolkit avec persistance asynchrone pour l'utilisateur, thème, favoris/historique et préférences de notifications. Le profil est rafraîchi via `/api/user/me` si un token est disponible.
+- **Auth UI** : pages `/sign-in`, `/sign-up`, `/forgot-password` avec formulaire Flowbite/Tailwind, états loading/erreur et redirections (`returnTo` + rôle admin → `/dashboard`, sinon `/`).
 - **UI** : composants réutilisables + Flowbite/Tailwind.
 - **Librairies clés** : `react-router-dom`, `redux-persist`, `flowbite-react`, `react-quill`, `react-helmet-async`, Tailwind CSS.
 

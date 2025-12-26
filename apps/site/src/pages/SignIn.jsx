@@ -7,6 +7,8 @@ import { apiRequest } from '../lib/apiClient';
 
 export default function SignIn() {
   const [formData, setFormData] = useState({ email: '', password: '' });
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
   const { loading, error: errorMessage } = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -15,13 +17,29 @@ export default function SignIn() {
   const returnToParam = searchParams.get('returnTo');
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.id]: e.target.value.trim() });
+    const { id, value } = e.target;
+    setFormData({ ...formData, [id]: value.trim() });
+    if (fieldErrors[id]) {
+      setFieldErrors((prev) => ({ ...prev, [id]: '' }));
+    }
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    if (!formData.email) {
+      errors.email = 'Veuillez renseigner votre email.';
+    }
+    if (!formData.password) {
+      errors.password = 'Veuillez renseigner votre mot de passe.';
+    }
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.email || !formData.password) {
-      return dispatch(signInFailure('Please fill all the fields'));
+    if (!validateForm()) {
+      return;
     }
 
     try {
@@ -65,77 +83,112 @@ export default function SignIn() {
   };
 
   return (
-    <div className='min-h-screen mt-20'>
-      <div className='flex p-3 max-w-3xl mx-auto flex-col md:flex-row md:items-center gap-5'>
-        {/* Left Side */}
-        <div className='flex-1'>
-          <Link to='/' className='font-bold dark:text-white text-4xl'>
-            <span className='px-2 py-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-lg text-white'>
+    <div className='min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4 py-12'>
+      <div className='w-full max-w-md'>
+        <div className='mb-8 text-center'>
+          <Link to='/' className='inline-flex items-center justify-center font-bold text-3xl'>
+            <span className='px-3 py-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-lg text-white'>
               Trust
             </span>
-            Blog
+            <span className='ml-2 text-gray-900 dark:text-white'>Media</span>
           </Link>
-          <p className='text-sm mt-5'>
-            This is a demo project. You can sign in with your email and password.
+          <p className='mt-3 text-sm text-gray-500 dark:text-gray-400'>
+            Connectez-vous pour accéder à votre espace.
           </p>
         </div>
 
-        {/* Right Side */}
-        <div className='flex-1'>
-          <form className='flex flex-col gap-4' onSubmit={handleSubmit}>
+        <div className='rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-6 sm:p-8'>
+          <div className='text-center mb-6'>
+            <h1 className='text-2xl font-semibold text-gray-900 dark:text-white'>Se connecter</h1>
+            <p className='mt-2 text-sm text-gray-500 dark:text-gray-400'>
+              Accédez à vos contenus et à votre tableau de bord.
+            </p>
+          </div>
+
+          {errorMessage && (
+            <Alert className='mb-4' color='failure'>
+              {errorMessage}
+            </Alert>
+          )}
+
+          <form className='space-y-4' onSubmit={handleSubmit}>
             <div>
-              <Label value='Your email' />
+              <Label htmlFor='email' value='Adresse email' />
               <TextInput
                 type='email'
-                placeholder='name@company.com'
+                placeholder='vous@entreprise.com'
                 id='email'
+                name='email'
                 onChange={handleChange}
                 required
+                disabled={loading}
                 value={formData.email}
+                autoComplete='email'
+                color={fieldErrors.email ? 'failure' : 'gray'}
               />
+              {fieldErrors.email && (
+                <p className='mt-1 text-xs text-red-600'>{fieldErrors.email}</p>
+              )}
             </div>
             <div>
-              <Label value='Your password' />
-              <TextInput
-                type='password'
-                placeholder='**********'
-                id='password'
-                onChange={handleChange}
-                required
-                value={formData.password}
-              />
-              <div className='text-right mt-1'>
-                <Link to='/forgot-password' className='text-sm text-blue-500'>
+              <Label htmlFor='password' value='Mot de passe' />
+              <div className='relative'>
+                <TextInput
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder='••••••••'
+                  id='password'
+                  name='password'
+                  onChange={handleChange}
+                  required
+                  disabled={loading}
+                  value={formData.password}
+                  autoComplete='current-password'
+                  className='pr-16'
+                  color={fieldErrors.password ? 'failure' : 'gray'}
+                />
+                <button
+                  type='button'
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className='absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-blue-600 hover:text-blue-700'
+                  aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                  aria-pressed={showPassword}
+                >
+                  {showPassword ? 'Masquer' : 'Afficher'}
+                </button>
+              </div>
+              {fieldErrors.password && (
+                <p className='mt-1 text-xs text-red-600'>{fieldErrors.password}</p>
+              )}
+              <div className='text-right mt-2'>
+                <Link to='/forgot-password' className='text-sm text-blue-500 hover:underline'>
                   Mot de passe oublié ?
                 </Link>
               </div>
             </div>
+
             <Button
               gradientDuoTone='purpleToPink'
               type='submit'
               disabled={loading}
+              className='w-full'
             >
               {loading ? (
-                <>
+                <span className='flex items-center justify-center gap-2'>
                   <Spinner size='sm' />
-                  <span className='pl-3'>Loading...</span>
-                </>
+                  Connexion...
+                </span>
               ) : (
-                'Sign In'
+                'Se connecter'
               )}
             </Button>
           </form>
-          <div className='flex gap-2 text-sm mt-5'>
-            <span>Don't have an account?</span>
-            <Link to='/sign-up' className='text-blue-500'>
-              Sign Up
+
+          <div className='flex flex-col sm:flex-row sm:items-center sm:justify-center gap-2 text-sm mt-6'>
+            <span className='text-gray-600 dark:text-gray-300'>Pas encore de compte ?</span>
+            <Link to='/sign-up' className='text-blue-500 hover:underline'>
+              Créer un compte
             </Link>
           </div>
-          {errorMessage && (
-            <Alert className='mt-5' color='failure'>
-              {errorMessage}
-            </Alert>
-          )}
         </div>
       </div>
     </div>
