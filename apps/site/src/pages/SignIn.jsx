@@ -1,4 +1,4 @@
-import { Alert, Button, Label, Spinner, TextInput } from 'flowbite-react';
+import { Alert, Label, Spinner, TextInput } from 'flowbite-react';
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -9,7 +9,8 @@ export default function SignIn() {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [fieldErrors, setFieldErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
-  const { loading, error: errorMessage } = useSelector((state) => state.user);
+  const [loading, setLoading] = useState(false);
+  const { loading: authLoading, error: errorMessage } = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -42,6 +43,11 @@ export default function SignIn() {
       return;
     }
 
+    if (loading) {
+      return;
+    }
+
+    setLoading(true);
     try {
       dispatch(signInStart());
       const authResponse = await apiRequest('/api/auth/signin', {
@@ -79,12 +85,14 @@ export default function SignIn() {
       navigate(redirectTarget, { replace: true });
     } catch (error) {
       dispatch(signInFailure(error?.message || 'Impossible de se connecter'));
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className='min-h-[100dvh] bg-gray-50 dark:bg-gray-900 flex items-start sm:items-center justify-center px-4 py-10 sm:py-12 overflow-y-auto'>
-      <div className='w-full max-w-md pb-10'>
+    <div className='min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4 py-10'>
+      <div className='w-full max-w-md'>
         <div className='mb-8 text-center'>
           <Link to='/' className='inline-flex items-center justify-center font-bold text-3xl'>
             <span className='px-3 py-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-lg text-white'>
@@ -111,7 +119,7 @@ export default function SignIn() {
             </Alert>
           )}
 
-          <form className='flex flex-col gap-4' onSubmit={handleSubmit}>
+          <form className='space-y-4' onSubmit={handleSubmit}>
             <div>
               <Label htmlFor='email' value='Adresse email' />
               <TextInput
@@ -121,7 +129,7 @@ export default function SignIn() {
                 name='email'
                 onChange={handleChange}
                 required
-                disabled={loading}
+                disabled={loading || authLoading}
                 value={formData.email}
                 autoComplete='email'
                 color={fieldErrors.email ? 'failure' : 'gray'}
@@ -140,7 +148,7 @@ export default function SignIn() {
                   name='password'
                   onChange={handleChange}
                   required
-                  disabled={loading}
+                  disabled={loading || authLoading}
                   value={formData.password}
                   autoComplete='current-password'
                   className='pr-16'
@@ -159,20 +167,13 @@ export default function SignIn() {
               {fieldErrors.password && (
                 <p className='mt-1 text-xs text-red-600'>{fieldErrors.password}</p>
               )}
-              <div className='text-right mt-2'>
-                <Link to='/forgot-password' className='text-sm text-blue-500 hover:underline'>
-                  Mot de passe oublié ?
-                </Link>
-              </div>
             </div>
 
-            <Button
-              gradientDuoTone='purpleToPink'
+            <button
               type='submit'
-              disabled={loading}
-              className='w-full'
+              className='w-full rounded-lg bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400'
             >
-              {loading ? (
+              {loading || authLoading ? (
                 <span className='flex items-center justify-center gap-2'>
                   <Spinner size='sm' />
                   Connexion...
@@ -180,7 +181,13 @@ export default function SignIn() {
               ) : (
                 'Se connecter'
               )}
-            </Button>
+            </button>
+
+            <div className='text-right'>
+              <Link to='/forgot-password' className='text-sm text-blue-500 hover:underline'>
+                Mot de passe oublié ?
+              </Link>
+            </div>
           </form>
 
           <div className='flex flex-col sm:flex-row sm:items-center sm:justify-center gap-2 text-sm mt-6'>
