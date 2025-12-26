@@ -66,8 +66,17 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
   "category": "Media | event | gallery | branding",
   "subCategory": "string",
   "url": "/uploads/xxx.jpg",
+  "originalUrl": "/uploads/<id>-original.jpg",
+  "thumbUrl": "/uploads/<id>-thumb.webp",
+  "coverUrl": "/uploads/<id>-cover.webp",
+  "mediumUrl": "/uploads/<id>-medium.webp",
+  "thumbAvifUrl": "/uploads/<id>-thumb.avif",
+  "coverAvifUrl": "/uploads/<id>-cover.avif",
+  "mediumAvifUrl": "/uploads/<id>-medium.avif",
   "mimeType": "image/jpeg",
   "size": 123456,
+  "width": 1400,
+  "height": 900,
   "kind": "image | video | file",
   "uploadedBy": "userId",
   "altText": "string",
@@ -78,7 +87,7 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 ```
 
 ### Endpoints Media/Upload
-- `POST /api/uploads` : upload fichier (multipart) + création automatique du Media.
+- `POST /api/uploads` : upload fichier (multipart) + création automatique du Media et génération des variantes image.
 - `GET /api/media?search=&category=&subCategory=&kind=&startIndex=&limit=&order=` : liste + filtres + pagination.
 - `POST /api/media` : créer une entrée metadata si besoin.
 - `PUT /api/media/:id` : rename / changer catégorie / sous-catégorie.
@@ -146,14 +155,20 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 - `PUT /api/settings` : mise à jour (admin only).
 
 ### Workflow
-1. Upload fichier via `/api/uploads` → stockage `UPLOAD_DIR`.
-2. Le backend crée un `Media` → retour `{ media, url }`.
+1. Upload fichier via `/api/uploads` → stockage `UPLOAD_DIR` (défaut `./uploads`).
+2. Le backend crée un `Media` + variantes `thumb/medium/cover` en WebP + AVIF.
 3. Le CMS liste via `/api/media` et permet la sélection dans l’éditeur.
 4. Les posts stockent `coverMediaId`, `mediaIds[]` + HTML avec URLs.
 
 ### Convention URLs média
 - **Stockage** : privilégier un chemin relatif `/uploads/<filename>` en base.
 - **Front** : construire l'URL publique via `API_BASE_URL` (helper `resolveMediaUrl` dans le site et `apps/cms/src/lib/mediaUrls.js`).
+
+### Variantes images (Blog)
+- `thumb` : 400px (home, listes)
+- `medium` : 900px (sections intermédiaires)
+- `cover` : 1400px (page article)
+- Formats générés : WebP + AVIF (si source image).
 
 ## QA checklist (Users & Rubriques)
 - **Users** : liste / création / édition / suppression ok (CMS → `/api/admin/users`).

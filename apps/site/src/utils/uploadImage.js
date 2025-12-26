@@ -15,7 +15,7 @@ export const uploadImageFile = async (file) => {
   }
 
   const uploaded = await uploadFile(file, 'file');
-  return uploaded.url;
+  return uploaded;
 };
 
 export const uploadMediaFile = async (file) => {

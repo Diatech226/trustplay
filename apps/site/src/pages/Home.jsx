@@ -7,7 +7,7 @@ import PostCardSkeleton from '../components/skeletons/PostCardSkeleton';
 import Seo from '../components/Seo';
 import { getMediaPosts, normalizePosts } from '../services/posts.service';
 import { useRubrics } from '../hooks/useRubrics';
-import { resolveMediaUrl } from '../lib/mediaUrls';
+import { DEFAULT_MEDIA_PLACEHOLDER, resolveMediaUrl } from '../lib/mediaUrls';
 import { MEDIA_CATEGORY, normalizeSubCategory } from '../utils/categories';
 
 export default function Home() {
@@ -98,7 +98,10 @@ export default function Home() {
               className='group relative flex w-full max-w-xl overflow-hidden rounded-2xl border border-subtle bg-white shadow-card transition hover:-translate-y-1 dark:border-slate-800 dark:bg-slate-900'
             >
               <img
-                src={resolveMediaUrl(featuredPost.image)}
+                src={resolveMediaUrl(
+                  featuredPost.imageCover || featuredPost.imageOriginal || featuredPost.image,
+                  DEFAULT_MEDIA_PLACEHOLDER
+                )}
                 alt={featuredPost.title}
                 loading='lazy'
                 decoding='async'
@@ -158,7 +161,10 @@ export default function Home() {
                   <Link to={`/post/${post.slug}`} className='flex items-start gap-3'>
                     <div className='h-20 w-24 overflow-hidden rounded-xl'>
                       <img
-                        src={resolveMediaUrl(post.image)}
+                        src={resolveMediaUrl(
+                          post.imageThumb || post.imageMedium || post.imageCover || post.imageOriginal || post.image,
+                          DEFAULT_MEDIA_PLACEHOLDER
+                        )}
                         alt={post.title}
                         loading='lazy'
                         decoding='async'

@@ -58,7 +58,7 @@ Variables utilisées par le code :
 
 ## Modèles de données
 - **User** : `username`, `email`, `passwordHash` (obligatoire uniquement pour `authProvider=local`), `authProvider` (`local` par défaut, compat `google`/`firebase`), `role` (`USER` par défaut, `ADMIN`, `EDITOR`, `AUTHOR`), `profilePicture`, timestamps.
-- **Post** : `userId`, `title`, `slug` (slugify lowercase/strict), `content`, `image`, `category` (`TrustMedia`, `TrustEvent`, `TrustProd`, `uncategorized`), `subCategory`, `eventDate?`, `location?`, timestamps.
+- **Post** : `userId`, `title`, `slug` (slugify lowercase/strict), `content`, `image`, `imageOriginal`, `imageThumb`, `imageCover`, `imageMedium`, `imageThumbAvif`, `imageCoverAvif`, `imageMediumAvif`, `category` (`TrustMedia`, `TrustEvent`, `TrustProd`, `uncategorized`), `subCategory`, `eventDate?`, `location?`, timestamps.
 - **Comment** : `userId`, `postId`, `content`, `likes[]`, `numberOfLikes`, timestamps.
 - **Client** : `name`, `contacts[]` (`name/email/phone/role`), `notes`, `status` (`prospect/onboarding/active/paused/archived`), `tags`, timestamps.
 - **Project** : `clientId`, `title`, `brief`, `status` (`planning/in_progress/delivered/on_hold/archived`), `deadline`, `attachments[]` (médias liés), `tags`, timestamps.
@@ -123,7 +123,9 @@ Alias admin (compat CMS) :
 
 ### Upload
 - `POST /api/uploads` — `multipart/form-data` avec champ `file` (recommandé) ou `image` (compat)
-- `GET /uploads/<filename>` — fichiers statiques servis depuis `UPLOAD_DIR`
+  - Si fichier image : génération automatique des variantes `thumb` (400px), `medium` (900px), `cover` (1400px) en WebP + AVIF.
+  - Retour : `{ originalUrl, thumbUrl, mediumUrl, coverUrl, thumbAvifUrl, mediumAvifUrl, coverAvifUrl, width, height }`.
+- `GET /uploads/<filename>` — fichiers statiques servis depuis `UPLOAD_DIR` (défaut `./uploads`)
 
 ### Settings
 - `GET /api/settings` — lecture publique des paramètres du site.

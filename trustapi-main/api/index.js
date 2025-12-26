@@ -131,6 +131,7 @@ app.use(
     maxAge: '30d',
     setHeaders: (res) => {
       res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+      res.setHeader('Access-Control-Allow-Origin', '*');
     },
   })
 );

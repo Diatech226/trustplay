@@ -41,7 +41,7 @@ export const MediaLibrary = () => {
 
   const MediaPreview = ({ item }) => {
     const [failed, setFailed] = useState(false);
-    const previewUrl = resolveMediaUrl(item.url);
+    const previewUrl = resolveMediaUrl(item.thumbUrl || item.coverUrl || item.url);
     if (!previewUrl || failed) {
       return <div className="empty-state">Prévisualisation indisponible</div>;
     }
@@ -291,7 +291,7 @@ export const MediaLibrary = () => {
               </thead>
               <tbody>
                 {mediaItems.map((item) => {
-                  const previewUrl = resolveMediaUrl(item.url);
+                  const previewUrl = resolveMediaUrl(item.thumbUrl || item.coverUrl || item.url);
                   return (
                   <tr key={item._id}>
                     <td>

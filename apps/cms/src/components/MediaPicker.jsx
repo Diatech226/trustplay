@@ -129,7 +129,7 @@ export const MediaPicker = ({ open, onClose, onSelect, multiple = false, title =
         ) : (
           <div className="media-grid" style={{ marginTop: 16 }}>
             {mediaItems.map((item) => {
-              const previewUrl = resolveMediaUrl(item.url);
+              const previewUrl = resolveMediaUrl(item.thumbUrl || item.coverUrl || item.url);
               return (
                 <button
                   type="button"

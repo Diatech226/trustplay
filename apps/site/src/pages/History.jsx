@@ -1,7 +1,7 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { clearHistory, removeHistoryItem } from '../redux/history/historySlice';
 import { Link } from 'react-router-dom';
-import { resolveMediaUrl } from '../lib/mediaUrls';
+import { DEFAULT_MEDIA_PLACEHOLDER, resolveMediaUrl } from '../lib/mediaUrls';
 
 export default function History() {
   const history = useSelector((state) => state.history.items);
@@ -35,8 +35,11 @@ export default function History() {
             {history.map((item) => (
               <div key={item._id} className='flex flex-col gap-2 rounded-2xl bg-white/80 p-4 shadow-subtle ring-1 ring-subtle backdrop-blur dark:bg-slate-900/80 dark:ring-slate-800 sm:flex-row sm:items-center sm:justify-between'>
                 <div className='flex items-center gap-4'>
-                  <img
-                    src={resolveMediaUrl(item.image)}
+                    <img
+                      src={resolveMediaUrl(
+                        item.imageThumb || item.imageCover || item.imageOriginal || item.image,
+                        DEFAULT_MEDIA_PLACEHOLDER
+                      )}
                     alt={item.title}
                     loading='lazy'
                     decoding='async'
