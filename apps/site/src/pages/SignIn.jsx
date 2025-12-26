@@ -83,8 +83,8 @@ export default function SignIn() {
   };
 
   return (
-    <div className='min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4 py-12'>
-      <div className='w-full max-w-md'>
+    <div className='min-h-screen bg-gray-50 dark:bg-gray-900 flex items-start sm:items-center justify-center px-4 py-10 sm:py-12 overflow-y-auto'>
+      <div className='w-full max-w-md pb-6'>
         <div className='mb-8 text-center'>
           <Link to='/' className='inline-flex items-center justify-center font-bold text-3xl'>
             <span className='px-3 py-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-lg text-white'>
