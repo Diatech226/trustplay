@@ -10,6 +10,7 @@ import FavoriteButton from '../components/FavoriteButton';
 import ShareButtons from '../components/ShareButtons';
 import PageContainer from '../components/layout/PageContainer';
 import Seo from '../components/Seo';
+import { ResponsiveImage } from '../components/ResponsiveImage';
 import ArticleHeroSkeleton from '../components/skeletons/ArticleHeroSkeleton';
 import PostCardSkeleton from '../components/skeletons/PostCardSkeleton';
 import { logReading } from '../redux/history/historySlice';
@@ -73,7 +74,7 @@ export default function PostPage() {
           _id: post._id,
           slug: post.slug,
           title: post.title,
-          image: post.imageThumb || post.image,
+          image: post.featuredMedia?.variants?.thumb?.url || post.imageThumb || post.image,
           subCategory: post.subCategory,
         })
       );
@@ -91,25 +92,17 @@ export default function PostPage() {
     }
   }, [post?.slug, post?.title, post?.subCategory]);
 
-  const resolveVariantUrl = (value, extension) => {
-    if (!value || typeof value !== 'string') return '';
-    if (!value.includes(`.${extension}`)) return '';
-    return resolveMediaUrl(value);
-  };
-  const imageAvif = resolveVariantUrl(
-    post?.imageCoverAvif || post?.imageMediumAvif || post?.imageThumbAvif,
-    'avif'
-  );
-  const imageWebp = resolveVariantUrl(
-    post?.imageCover || post?.imageMedium || post?.imageThumb,
-    'webp'
-  );
   const imageFallback = resolveMediaUrl(
-    post?.imageOriginal || post?.imageCover || post?.imageMedium || post?.image,
+    post?.imageLegacy || post?.imageCover || post?.imageOriginal || post?.image,
     DEFAULT_MEDIA_PLACEHOLDER
   );
   const ogImageUrl = resolveMediaUrl(
-    post?.ogImage || post?.imageCover || post?.imageOriginal || post?.image,
+    post?.ogImage ||
+      post?.featuredMedia?.variants?.og?.url ||
+      post?.featuredMedia?.variants?.cover?.url ||
+      post?.imageCover ||
+      post?.imageOriginal ||
+      post?.image,
     DEFAULT_MEDIA_PLACEHOLDER
   );
 
@@ -125,7 +118,7 @@ export default function PostPage() {
     () => (post && siteBase ? `${siteBase}/post/${post.slug}` : undefined),
     [post, siteBase]
   );
-  const imageForSchema = imageWebp || imageFallback;
+  const imageForSchema = ogImageUrl || imageFallback;
   const structuredData = post
     ? {
         '@context': 'https://schema.org',
@@ -203,19 +196,20 @@ export default function PostPage() {
         <section className='overflow-hidden rounded-3xl border border-subtle bg-white shadow-card dark:border-slate-800 dark:bg-slate-900'>
           <div className='grid gap-0 lg:grid-cols-5'>
             <div className='relative lg:col-span-3'>
-              <picture>
-                {imageAvif && <source srcSet={imageAvif} type='image/avif' />}
-                {imageWebp && <source srcSet={imageWebp} type='image/webp' />}
-                <img
-                  src={imageFallback}
-                  alt={post && post.title}
-                  loading='lazy'
-                  decoding='async'
-                  width='960'
-                  height='540'
-                  className='h-full w-full object-cover'
-                />
-              </picture>
+              <ResponsiveImage
+                media={post?.featuredMedia}
+                fallbackUrl={imageFallback}
+                alt={post && post.title}
+                variantPreference="cover"
+                sizes="(max-width: 768px) 100vw, 1200px"
+                className="h-full w-full object-cover"
+              />
+              {(post?.featuredMedia?.caption || post?.featuredMedia?.credit) && (
+                <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-4 py-2 text-xs text-white">
+                  <span>{post?.featuredMedia?.caption}</span>
+                  {post?.featuredMedia?.credit ? <span className="ml-2">© {post.featuredMedia.credit}</span> : null}
+                </div>
+              )}
               {(subCategoryMeta || legacyLabel) && (
                 <Link
                   to={subCategoryMeta?.path || '#'}

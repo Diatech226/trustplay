@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { fetchMedia } from '../services/media.service';
 import { useToast } from './ToastProvider';
 import { resolveMediaUrl } from '../lib/mediaUrls';
+import { resolveMediaUrlFromAsset } from '../utils/media';
+import { uploadMedia } from '../services/media.service';
 
 const KIND_OPTIONS = [
   { value: '', label: 'Tous' },
@@ -15,6 +17,7 @@ export const MediaPicker = ({ open, onClose, onSelect, multiple = false, title =
   const [filters, setFilters] = useState({ search: '', category: '', subCategory: '', kind: '' });
   const [loading, setLoading] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
+  const [uploading, setUploading] = useState(false);
   const { addToast } = useToast();
 
   useEffect(() => {
@@ -73,6 +76,25 @@ export const MediaPicker = ({ open, onClose, onSelect, multiple = false, title =
 
   if (!open) return null;
 
+  const handleInlineUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const response = await uploadMedia(file);
+      const media = response?.media;
+      if (media) {
+        setMediaItems((prev) => [media, ...prev]);
+        addToast('Média ajouté.', { type: 'success' });
+      }
+    } catch (error) {
+      addToast(`Upload impossible : ${error.message}`, { type: 'error' });
+    } finally {
+      setUploading(false);
+      event.target.value = '';
+    }
+  };
+
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true">
       <div className="modal modal-large">
@@ -117,6 +139,10 @@ export const MediaPicker = ({ open, onClose, onSelect, multiple = false, title =
               ))}
             </select>
           </label>
+          <label>
+            Upload
+            <input type="file" onChange={handleInlineUpload} disabled={uploading} />
+          </label>
         </div>
         {loading ? (
           <div className="loader" style={{ marginTop: 16 }}>
@@ -129,7 +155,7 @@ export const MediaPicker = ({ open, onClose, onSelect, multiple = false, title =
         ) : (
           <div className="media-grid" style={{ marginTop: 16 }}>
             {mediaItems.map((item) => {
-              const previewUrl = resolveMediaUrl(item.thumbUrl || item.coverUrl || item.url);
+              const previewUrl = resolveMediaUrlFromAsset(item, 'thumb') || resolveMediaUrl(item.url);
               return (
                 <button
                   type="button"
@@ -138,9 +164,9 @@ export const MediaPicker = ({ open, onClose, onSelect, multiple = false, title =
                   onClick={() => toggleSelect(item._id)}
                 >
                   {previewUrl ? (
-                    item.kind === 'image' ? (
-                      <img src={previewUrl} alt={item.name} />
-                    ) : item.kind === 'video' ? (
+                    item.type === 'image' || item.kind === 'image' ? (
+                      <img src={previewUrl} alt={item.title || item.name} />
+                    ) : item.type === 'video' || item.kind === 'video' ? (
                       <video src={previewUrl} />
                     ) : (
                       <div className="media-file">{item.name}</div>
@@ -148,7 +174,7 @@ export const MediaPicker = ({ open, onClose, onSelect, multiple = false, title =
                   ) : (
                     <div className="media-file">Preview indisponible</div>
                   )}
-                  <span>{item.name}</span>
+                  <span>{item.title || item.name}</span>
                 </button>
               );
             })}
