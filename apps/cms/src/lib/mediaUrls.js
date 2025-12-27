@@ -1,4 +1,5 @@
 const API_BASE_URL = (import.meta.env?.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '');
+const MEDIA_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, '');
 
 export const DEFAULT_MEDIA_PLACEHOLDER =
   'https://www.hostinger.com/tutorials/wp-content/uploads/sites/2/2021/09/how-to-write-a-blog-post.png';
@@ -67,7 +68,7 @@ const resolveFallback = (fallback) => {
   if (!fallbackValue) return '';
   if (isAbsoluteUrl(fallbackValue)) return fallbackValue;
   const normalized = normalizePath(fallbackValue);
-  return `${API_BASE_URL}${normalized || ''}`;
+  return `${MEDIA_BASE_URL}${normalized || ''}`;
 };
 
 export const resolveMediaUrl = (value, fallback = '') => {
@@ -75,5 +76,5 @@ export const resolveMediaUrl = (value, fallback = '') => {
   if (!resolved) return resolveFallback(fallback);
   if (isAbsoluteUrl(resolved)) return resolved;
   const normalized = normalizePath(resolved);
-  return `${API_BASE_URL}${normalized || ''}`;
+  return `${MEDIA_BASE_URL}${normalized || ''}`;
 };
