@@ -5,6 +5,21 @@ const AuthContext = createContext(null);
 
 const parseUserResponse = (payload) => payload?.user || payload?.data?.user || payload?.data || payload;
 
+const normalizeUser = (payload) => {
+  if (!payload || typeof payload !== 'object') return payload;
+  const nextUser = { ...payload };
+  if (typeof nextUser.role === 'string') {
+    nextUser.role = nextUser.role.trim().toUpperCase();
+  }
+  if (!nextUser.role && nextUser.isAdmin === true) {
+    nextUser.role = 'ADMIN';
+  }
+  if (nextUser.role && nextUser.isAdmin === undefined) {
+    nextUser.isAdmin = nextUser.role === 'ADMIN';
+  }
+  return nextUser;
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => apiClient.getUser());
   const [status, setStatus] = useState('loading');
@@ -26,7 +41,7 @@ export const AuthProvider = ({ children }) => {
     setStatus('loading');
     try {
       const data = await apiClient.get('/api/user/me', { skipAuthRedirect: true });
-      const nextUser = parseUserResponse(data);
+      const nextUser = normalizeUser(parseUserResponse(data));
       setUser(nextUser);
       apiClient.setUser(nextUser);
       setStatus('authenticated');
@@ -44,7 +59,7 @@ export const AuthProvider = ({ children }) => {
       auth: false,
     });
     const token = data?.token || data?.data?.token;
-    const nextUser = parseUserResponse(data?.data || data);
+    const nextUser = normalizeUser(parseUserResponse(data?.data || data));
     if (token) {
       apiClient.setToken(token);
     }

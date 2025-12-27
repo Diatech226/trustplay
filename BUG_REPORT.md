@@ -1,33 +1,65 @@
-# Trust Media — Bug report & fixes
+# BUG_REPORT — Trust Media Monorepo
 
-## Bug #1 — CMS Users: “Accès admin requis”
+## 1. Résumé exécutif
+L’audit a isolé deux causes racines majeures : un décalage entre le rôle en base et le rôle porté par les JWT, et une normalisation incomplète des chemins médias. Résultat : le CMS refuse l’accès admin malgré un compte admin, et les images chargées via l’API apparaissent cassées selon les formats stockés. Les corrections appliquées harmonisent la source de vérité côté auth (rôle DB) et standardisent les chemins médias en `/uploads/...` côté back et front. Un audit des variables d’environnement indique l’absence de fichiers `.env` actifs, ce qui doit être corrigé avant déploiement.
+
+## 2. Bugs critiques (table)
+| ID | Symptôme | Impact | Cause racine | Fix | Fichiers modifiés | Comment tester |
+| --- | --- | --- | --- | --- | --- | --- |
+| AUTH-01 | CMS > Users affiche “Accès admin requis” alors que l’admin est connecté | Blocage de la gestion des utilisateurs | JWT peut porter un rôle obsolète (USER) alors que la base est ADMIN, et le front ne normalise pas toujours les rôles | Le middleware auth recharge le rôle depuis la base et le CMS normalise `role/isAdmin` en session | `trustapi-main/api/utils/verifyUser.js`, `apps/cms/src/context/AuthContext.jsx` | Se connecter en admin → `/api/user/me` renvoie `role=ADMIN`; ouvrir `/users` dans le CMS → liste chargée |
+| MEDIA-01 | Images non affichées (site + CMS) malgré upload | Contenu visuel manquant, expérience dégradée | Chemins médias stockés sous des formats hétérogènes (nom de fichier seul, `public/uploads`, `uploads/`) non résolus côté front | Normalisation stricte vers `/uploads/...` côté back + helper front robuste | `trustapi-main/api/utils/media.js`, `apps/cms/src/lib/mediaUrls.js`, `apps/site/src/lib/mediaUrls.js` | Uploader une image, vérifier `url` en DB (préfixe `/uploads/`), puis afficher Home/CMS Media Library |
+
+## 3. Détails par bug
+### AUTH-01 — CMS Users bloqué malgré admin
+**Reproduction**
+1. Se connecter au CMS avec un compte admin existant.
+2. Aller sur `/users`.
+3. Observer le message “Accès admin requis”.
+
 **Cause racine**
-- Les réponses API utilisateur ne renvoyaient pas systématiquement un indicateur `isAdmin`, et le CMS n’acceptait que `role === 'ADMIN'`. Les comptes legacy (ou tokens existants) pouvaient donc être considérés comme non admin côté UI.
+- Le token JWT peut contenir un rôle obsolète (USER) qui prime sur le rôle stocké en base. Les guards backend utilisent ce rôle sans revalidation en base.
+- Le CMS ne normalise pas systématiquement la casse du rôle lors de l’hydratation du profil.
 
-**Fix appliqué**
-- Ajout de `isAdmin` (dérivé du rôle) dans les réponses utilisateur (`signin`, `me`, admin users).
-- Le CMS accepte `role === 'ADMIN'` **ou** `isAdmin === true` pour les écrans admin.
+**Correction**
+- Le middleware `verifyToken` recharge systématiquement l’utilisateur en base et utilise `User.role` comme source de vérité.
+- Le CMS normalise `role`/`isAdmin` à l’hydratation et à la connexion.
 
-## Bug #2 — Images non affichées (site + CMS)
+**Validation**
+- `GET /api/user/me` renvoie `{ role: "ADMIN", isAdmin: true }`.
+- `GET /api/admin/users` répond 200 et affiche la liste côté CMS.
+
+### MEDIA-01 — Images cassées
+**Reproduction**
+1. Uploader une image via `/api/uploads`.
+2. Consulter le post ou la médiathèque CMS.
+3. Observer des images manquantes selon la forme du chemin stocké.
+
 **Cause racine**
-- Les URLs médias pouvaient être stockées sous différentes formes (URL absolue, `/uploads/...`, `uploads/...`), ce qui cassait la résolution selon les environnements.
+- `url` pouvait être stocké sous différentes formes (ex: `image.jpg`, `public/uploads/xxx.jpg`, `uploads/xxx.jpg`), sans conversion robuste.
 
-**Fix appliqué**
-- Normalisation backend : stockage standardisé sur `/uploads/...` pour les médias/posts.
-- Résolution front renforcée : `resolveMediaUrl` nettoie la base URL, accepte des objets `{ url }`, et reconstruit correctement l’URL publique.
+**Correction**
+- Normalisation backend pour convertir systématiquement vers `/uploads/...`.
+- Normalisation front (CMS + site) pour résoudre les chemins relatifs/bare filenames.
 
-## Bug #3 — Audit .env
-**Cause racine**
-- Aucun fichier `.env`/`.env.example` n’était présent pour guider les valeurs critiques (`DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN`, `UPLOAD_DIR`, `VITE_API_URL`).
+**Validation**
+- Les cartes Home et la Media Library affichent les images avec un URL public résolu.
 
-**Fix appliqué**
-- Ajout de `.env.example` pour `trustapi-main`, `apps/cms`, `apps/site`.
-- README mis à jour avec les copies à effectuer avant le démarrage.
+## 4. Audit .env
+> Statut détecté : aucun fichier `.env` actif dans le repo. S’appuyer sur les `.env.example` pour créer les valeurs.
 
----
+| Variable | Attendue | Présente | Impact si manquante |
+| --- | --- | --- | --- |
+| `DATABASE_URL` (trustapi-main) | URI MongoDB | Non (`.env` absent) | API ne démarre pas, connexion DB impossible |
+| `JWT_SECRET` (trustapi-main) | Secret JWT non vide | Non (`.env` absent) | Auth KO, tokens invalides |
+| `CORS_ORIGIN` (trustapi-main) | `http://localhost:5173,http://localhost:5174` | Non (`.env` absent) | Bloque le site/CMS selon l’origine |
+| `FRONTEND_URL` (trustapi-main) | `http://localhost:5173` | Non (`.env` absent) | Liens reset password erronés |
+| `UPLOAD_DIR` (trustapi-main) | `./uploads` | Non (`.env` absent) | Média non servibles si mauvais chemin |
+| `VITE_API_URL` (apps/site) | `http://localhost:3000` | Non (`.env` absent) | Requêtes vers API incorrectes |
+| `VITE_API_URL` (apps/cms) | `http://localhost:3000` | Non (`.env` absent) | Requêtes CMS vers API incorrectes |
 
-## QA checklist
-- [ ] Login admin → `/api/user/me` renvoie `role=ADMIN` et `isAdmin=true`.
-- [ ] CMS → Users : `GET /api/admin/users` → 200 + liste non vide.
-- [ ] CMS → Users : `POST /api/admin/users` → 201.
-- [ ] Site + CMS : images `post.image` & médias visibles (URLs `/uploads/...`).
+## 5. Checklist QA finale
+- [ ] Auth admin : `GET /api/user/me` renvoie `role=ADMIN`.
+- [ ] CMS `/users` accessible et liste affichée.
+- [ ] Création / édition / suppression d’utilisateur en admin OK.
+- [ ] Upload image → URL stockée en `/uploads/...`.
+- [ ] Images visibles sur le site (Home/Post) et la Media Library CMS.
