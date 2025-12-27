@@ -38,6 +38,7 @@ export const getPosts = async ({
   limit,
   order,
   userId,
+  populateMedia = true,
 } = {}) => {
   const params = new URLSearchParams();
   setParam(params, 'category', category);
@@ -49,6 +50,9 @@ export const getPosts = async ({
   setParam(params, 'limit', limit);
   setParam(params, 'order', order);
   setParam(params, 'userId', userId);
+  if (populateMedia) {
+    setParam(params, 'populateMedia', '1');
+  }
 
   const query = params.toString();
   const data = await apiRequest(`${POSTS_ENDPOINT}${query ? `?${query}` : ''}`, {

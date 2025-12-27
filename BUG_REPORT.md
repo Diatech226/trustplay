@@ -1,48 +1,61 @@
 # BUG_REPORT — Trust Media Monorepo
 
 ## 1. Résumé exécutif
-L’audit a isolé deux causes racines majeures : un décalage entre le rôle en base et le rôle porté par les JWT, et une normalisation incomplète des chemins médias. Résultat : le CMS refuse l’accès admin malgré un compte admin, et les images chargées via l’API apparaissent cassées selon les formats stockés. Les corrections appliquées harmonisent la source de vérité côté auth (rôle DB) et standardisent les chemins médias en `/uploads/...` côté back et front. Un audit des variables d’environnement indique l’absence de fichiers `.env` actifs, ce qui doit être corrigé avant déploiement.
+Deux familles de bugs ont été identifiées : (1) l’accès admin parfois refusé lorsque le rôle n’est pas correctement normalisé entre JWT, DB et front CMS, et (2) l’affichage des médias (CMS + site) qui casse dès que l’API retourne des variantes ou chemins hétérogènes. Les corrections consolident l’auth (rôle canonique via `/api/user/me`) et la médiathèque (MediaAsset + `resolveMediaUrl` + `ResponsiveImage`).
 
 ## 2. Bugs critiques (table)
 | ID | Symptôme | Impact | Cause racine | Fix | Fichiers modifiés | Comment tester |
 | --- | --- | --- | --- | --- | --- | --- |
-| AUTH-01 | CMS > Users affiche “Accès admin requis” alors que l’admin est connecté | Blocage de la gestion des utilisateurs | JWT peut porter un rôle obsolète (USER) alors que la base est ADMIN, et le front ne normalise pas toujours les rôles | Le middleware auth recharge le rôle depuis la base et le CMS normalise `role/isAdmin` en session | `trustapi-main/api/utils/verifyUser.js`, `apps/cms/src/context/AuthContext.jsx` | Se connecter en admin → `/api/user/me` renvoie `role=ADMIN`; ouvrir `/users` dans le CMS → liste chargée |
-| MEDIA-01 | Images non affichées (site + CMS) malgré upload | Contenu visuel manquant, expérience dégradée | Chemins médias stockés sous des formats hétérogènes (nom de fichier seul, `public/uploads`, `uploads/`) non résolus côté front | Normalisation stricte vers `/uploads/...` côté back + helper front robuste | `trustapi-main/api/utils/media.js`, `apps/cms/src/lib/mediaUrls.js`, `apps/site/src/lib/mediaUrls.js` | Uploader une image, vérifier `url` en DB (préfixe `/uploads/`), puis afficher Home/CMS Media Library |
+| AUTH-01 | CMS > Users affiche “Accès admin requis” alors que l’admin est connecté | Blocage de la gestion des utilisateurs | Rôle potentiellement incohérent entre JWT, base et session front | Normalisation `role/isAdmin` côté CMS + rôle canonique via `/api/user/me` | `trustapi-main/api/utils/verifyUser.js`, `apps/cms/src/context/AuthContext.jsx` | Se connecter en admin → `/api/user/me` renvoie `role=ADMIN`; ouvrir `/users` dans le CMS → liste chargée |
+| MEDIA-01 | Prévisualisations cassées dans la médiathèque | Perte de visibilité des médias, UX dégradée | UI CMS utilisait des champs legacy (`thumbUrl`, `coverUrl`) alors que le modèle renvoie des variantes `variants.*` | Ajouter un resolver `resolveMediaUrlFromAsset` + mise à jour Media Library/Picker | `apps/cms/src/pages/MediaLibrary.jsx`, `apps/cms/src/components/MediaPicker.jsx`, `apps/cms/src/utils/media.js` | Ouvrir la médiathèque → thumbnails visibles |
+| MEDIA-02 | Images de posts absentes sur Home/PostPage quand `featuredMedia` est utilisé | Articles sans visuels | Front site utilisait uniquement `post.image*` (legacy) | `ResponsiveImage` + `populateMedia=1` + fallback legacy | `apps/site/src/components/ResponsiveImage.jsx`, `apps/site/src/pages/Home.jsx`, `apps/site/src/pages/PostPage.jsx`, `apps/site/src/components/PostCard.jsx`, `apps/site/src/services/posts.service.js` | Home/PostPage affichent les visuels (thumb/cover) |
 
 ## 3. Détails par bug
 ### AUTH-01 — CMS Users bloqué malgré admin
 **Reproduction**
-1. Se connecter au CMS avec un compte admin existant.
+1. Se connecter au CMS avec un compte admin.
 2. Aller sur `/users`.
-3. Observer le message “Accès admin requis”.
+3. Observer un refus d’accès.
 
 **Cause racine**
-- Le token JWT peut contenir un rôle obsolète (USER) qui prime sur le rôle stocké en base. Les guards backend utilisent ce rôle sans revalidation en base.
-- Le CMS ne normalise pas systématiquement la casse du rôle lors de l’hydratation du profil.
+- Le rôle peut être obsolète dans le token ou mal normalisé côté front.
 
 **Correction**
-- Le middleware `verifyToken` recharge systématiquement l’utilisateur en base et utilise `User.role` comme source de vérité.
-- Le CMS normalise `role`/`isAdmin` à l’hydratation et à la connexion.
+- Le backend et le CMS s’alignent sur le rôle canonique renvoyé par `/api/user/me`.
 
 **Validation**
 - `GET /api/user/me` renvoie `{ role: "ADMIN", isAdmin: true }`.
-- `GET /api/admin/users` répond 200 et affiche la liste côté CMS.
+- `/users` charge la liste.
 
-### MEDIA-01 — Images cassées
+### MEDIA-01 — Prévisualisations médias cassées
 **Reproduction**
-1. Uploader une image via `/api/uploads`.
-2. Consulter le post ou la médiathèque CMS.
-3. Observer des images manquantes selon la forme du chemin stocké.
+1. Uploader un média.
+2. Ouvrir la page Media Library.
+3. Observer un thumbnail vide.
 
 **Cause racine**
-- `url` pouvait être stocké sous différentes formes (ex: `image.jpg`, `public/uploads/xxx.jpg`, `uploads/xxx.jpg`), sans conversion robuste.
+- Les anciennes URLs (thumb/cover) n’étaient plus alignées avec `variants`.
 
 **Correction**
-- Normalisation backend pour convertir systématiquement vers `/uploads/...`.
-- Normalisation front (CMS + site) pour résoudre les chemins relatifs/bare filenames.
+- Utilisation d’un helper pour résoudre `variants.*` + fallback URL.
 
 **Validation**
-- Les cartes Home et la Media Library affichent les images avec un URL public résolu.
+- Thumbnails visibles et clic “Ouvrir” fonctionnel.
+
+### MEDIA-02 — Images de posts absentes
+**Reproduction**
+1. Assigner un `featuredMediaId`.
+2. Ouvrir Home ou PostPage.
+3. Le visuel n’apparaît pas.
+
+**Cause racine**
+- Le front ne récupérait pas `featuredMedia` et utilisait uniquement `image` legacy.
+
+**Correction**
+- `populateMedia=1` + composant `ResponsiveImage` avec `srcSet`.
+
+**Validation**
+- Home affiche le thumb, PostPage affiche le cover.
 
 ## 4. Audit .env
 > Statut détecté : aucun fichier `.env` actif dans le repo. S’appuyer sur les `.env.example` pour créer les valeurs.
@@ -60,6 +73,8 @@ L’audit a isolé deux causes racines majeures : un décalage entre le rôle en
 ## 5. Checklist QA finale
 - [ ] Auth admin : `GET /api/user/me` renvoie `role=ADMIN`.
 - [ ] CMS `/users` accessible et liste affichée.
-- [ ] Création / édition / suppression d’utilisateur en admin OK.
-- [ ] Upload image → URL stockée en `/uploads/...`.
-- [ ] Images visibles sur le site (Home/Post) et la Media Library CMS.
+- [ ] Upload image → MediaAsset créé + variants générés.
+- [ ] Media Library affiche les thumbs.
+- [ ] Home/PostPage affichent les images (thumb/cover).
+- [ ] Legacy posts avec `image` s’affichent encore.
+- [ ] `/uploads/<file>` accessible en direct.

@@ -59,6 +59,16 @@ const ensureImageVariants = (post) => {
   };
 };
 
+const attachFeaturedMedia = (post) => {
+  if (!post) return post;
+  const featuredMedia = post.featuredMedia || post.featuredMediaId || null;
+  return {
+    ...post,
+    featuredMedia: featuredMedia && featuredMedia._id ? featuredMedia : null,
+    imageLegacy: post.image,
+  };
+};
+
 const buildImageUpdatePayload = (payload = {}) => {
   const imageKeys = [
     'image',
@@ -185,6 +195,7 @@ export const create = async (req, res, next) => {
       tags,
       coverMediaId,
       mediaIds,
+      featuredMediaId,
     } = req.body;
     if (!title || !content || !category) {
       return next(errorHandler(400, 'Missing required fields'));
@@ -265,6 +276,7 @@ export const create = async (req, res, next) => {
       }),
       coverMediaId,
       mediaIds: parseMediaIds(mediaIds),
+      featuredMediaId,
     });
 
     await newPost.save();
@@ -367,6 +379,7 @@ export const updatepost = async (req, res, next) => {
       price: nextCategory === 'TrustEvent' && normalizedPricing === 'paid' ? parsedPrice : undefined,
       coverMediaId: req.body.coverMediaId,
       mediaIds: req.body.mediaIds ? parseMediaIds(req.body.mediaIds) : undefined,
+      featuredMediaId: req.body.featuredMediaId,
       ...imagePayload,
     });
 
@@ -387,7 +400,9 @@ export const updatepost = async (req, res, next) => {
 export const getpost = async (req, res, next) => {
   try {
     const postId = req.params.postId;
-    const post = await Post.findById(postId);
+    const shouldPopulateMedia = req.query.populateMedia === '1' || req.query.populateMedia === 'true';
+    const query = Post.findById(postId);
+    const post = shouldPopulateMedia ? await query.populate('featuredMediaId') : await query;
     if (!post) {
       return next(errorHandler(404, 'Post not found'));
     }
@@ -398,7 +413,7 @@ export const getpost = async (req, res, next) => {
       return next(errorHandler(403, 'You are not allowed to view this post'));
     }
 
-    const resolvedPost = ensureImageVariants(post.toObject());
+    const resolvedPost = attachFeaturedMedia(ensureImageVariants(post.toObject()));
 
     res.status(200).json({
       success: true,
@@ -469,19 +484,23 @@ export const getposts = async (req, res, next) => {
       (hasStatusFilter && statusList.every((value) => ['published', 'scheduled'].includes(value))) ||
       (!hasStatusFilter && !userId && !isAdmin);
     const sortField = sortBy || (usesPublishedAt ? 'publishedAt' : 'updatedAt');
-    const posts = await Post.find(query)
+    const shouldPopulateMedia = req.query.populateMedia === '1' || req.query.populateMedia === 'true';
+    const baseQuery = Post.find(query)
       .sort({ [sortField]: order === 'asc' ? 1 : -1 })
       .skip(parseInt(startIndex) || 0)
       .limit(parseInt(limit) || 9);
+    const posts = shouldPopulateMedia ? await baseQuery.populate('featuredMediaId') : await baseQuery;
 
     const totalPosts = await Post.countDocuments(query);
 
     const normalizedPosts = posts.map((post) => {
       const resolvedPost = post.toObject ? post.toObject() : post;
-      return ensureImageVariants({
+      return attachFeaturedMedia(
+        ensureImageVariants({
         ...resolvedPost,
         subCategory: normalizeSubCategory(resolvedPost.subCategory),
-      });
+      })
+      );
     });
 
     res.status(200).json({

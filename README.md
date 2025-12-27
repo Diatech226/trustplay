@@ -33,7 +33,7 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 ### apps/cms (Vite/React)
 - **Routage** : CMS v2 standalone (Overview, Posts, Events, Media, Comments, Users, Settings) avec layout pro et breadcrumbs.
 - **Auth** : client API unifié + Bearer token, validation `/api/user/me` au boot, redirection `returnTo` sur login.
-- **Modules branchés** : CRUD posts, upload via `/api/uploads`, modération commentaires, listing utilisateurs.
+- **Modules branchés** : CRUD posts, upload via `/api/media/upload`, modération commentaires, listing utilisateurs.
 
 ### Backend (Express/MongoDB)
 - **Entrée** : `trustapi-main/api/index.js` démarre Express, MongoDB, CORS, routes REST et sert le dossier `/uploads`.
@@ -49,8 +49,9 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
   - `PATCH /api/post/:postId/status` (alias legacy).
   - `GET /api/events` (liste TrustEvent côté CMS).
   - `POST /api/comment/create`, likes/édition/suppression et listing admin.
-  - `POST /api/uploads` (Multer) avec filtrage MIME et quotas (10 Mo image, 100 Mo vidéo).
-  - `GET /api/media`, `POST /api/media`, `PUT /api/media/:id`, `DELETE /api/media/:id` (métadonnées Media).
+  - `POST /api/uploads` (Multer legacy) avec filtrage MIME et quotas (10 Mo image, 100 Mo vidéo).
+  - `POST /api/media/upload` (Multer + Sharp) pour MediaAsset.
+  - `GET /api/media`, `POST /api/media`, `PUT /api/media/:id`, `DELETE /api/media/:id` (bibliothèque média).
   - `GET /api/settings` (public) et `PUT /api/settings` (admin) pour les réglages globaux du site.
 - **Auth & permissions** : middleware JWT `verifyToken` + contrôle `requireAdmin` sur les routes critiques (liste users, commentaires). Les autres permissions (ownership) sont gérées dans les contrôleurs.
 
@@ -77,36 +78,31 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 ```json
 {
   "_id": "ObjectId",
-  "name": "string",
-  "category": "Media | event | gallery | branding",
-  "subCategory": "string",
-  "url": "/uploads/xxx.jpg",
-  "originalUrl": "/uploads/<id>-original.jpg",
-  "thumbUrl": "/uploads/<id>-thumb.webp",
-  "coverUrl": "/uploads/<id>-cover.webp",
-  "mediumUrl": "/uploads/<id>-medium.webp",
-  "thumbAvifUrl": "/uploads/<id>-thumb.avif",
-  "coverAvifUrl": "/uploads/<id>-cover.avif",
-  "mediumAvifUrl": "/uploads/<id>-medium.avif",
-  "mimeType": "image/jpeg",
-  "size": 123456,
-  "width": 1400,
-  "height": 900,
-  "kind": "image | video | file",
-  "uploadedBy": "userId",
-  "altText": "string",
+  "type": "image | video",
+  "title": "string",
+  "alt": "string",
+  "caption": "string",
+  "credit": "string",
+  "category": "news | politique | science-tech | sport | cinema",
   "tags": ["string"],
-  "createdAt": "date",
-  "updatedAt": "date"
+  "status": "draft | published | archived",
+  "original": { "url": "/uploads/<id>-original.jpg", "width": 1600, "height": 900, "format": "jpeg", "size": 123456 },
+  "variants": {
+    "thumb": { "url": "/uploads/<id>-thumb.webp", "width": 400, "height": 225 },
+    "card": { "url": "/uploads/<id>-card.webp", "width": 800, "height": 450 },
+    "cover": { "url": "/uploads/<id>-cover.webp", "width": 1600, "height": 900 },
+    "og": { "url": "/uploads/<id>-og.webp", "width": 1200, "height": 630 }
+  },
+  "createdBy": "userId"
 }
 ```
 
 ### Endpoints Media/Upload
-- `POST /api/uploads` : upload fichier (multipart) + création automatique du Media et génération des variantes image.
-- `GET /api/media?search=&category=&subCategory=&kind=&startIndex=&limit=&order=` : liste + filtres + pagination.
+- `POST /api/media/upload` : upload fichier (multipart) + création automatique du MediaAsset et variantes.
+- `GET /api/media?search=&category=&type=&status=&page=&limit=` : liste + filtres + pagination.
 - `POST /api/media` : créer une entrée metadata si besoin.
-- `PUT /api/media/:id` : rename / changer catégorie / sous-catégorie.
-- `DELETE /api/media/:id` : suppression (admin ou owner).
+- `PUT /api/media/:id` : metadata (titre/alt/caption/credit/tags/status).
+- `DELETE /api/media/:id` : suppression (admin).
 
 ## Rubriques / Taxonomie
 ### Schéma Rubric (Mongo)
@@ -170,10 +166,10 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 - `PUT /api/settings` : mise à jour (admin only).
 
 ### Workflow
-1. Upload fichier via `/api/uploads` → stockage `UPLOAD_DIR` (défaut `./uploads`).
-2. Le backend crée un `Media` + variantes `thumb/medium/cover` en WebP + AVIF.
+1. Upload fichier via `/api/media/upload` → stockage `UPLOAD_DIR` (défaut `./uploads`).
+2. Le backend crée un `Media` + variantes `thumb/card/cover/og` en WebP.
 3. Le CMS liste via `/api/media` et permet la sélection dans l’éditeur.
-4. Les posts stockent `coverMediaId`, `mediaIds[]` + HTML avec URLs.
+4. Les posts stockent `featuredMediaId` et continuent de supporter `image` legacy.
 
 ### Convention URLs média
 - **Stockage** : chemin relatif `/uploads/<filename>` en base (normalisé côté API).
@@ -182,9 +178,10 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 
 ### Variantes images (Blog)
 - `thumb` : 400px (home, listes)
-- `medium` : 900px (sections intermédiaires)
-- `cover` : 1400px (page article)
-- Formats générés : WebP + AVIF (si source image).
+- `card` : 800px (cartes)
+- `cover` : 1600px (page article)
+- `og` : 1200x630 (partage)
+- Formats générés : WebP (AVIF optionnel).
 
 ## QA checklist (Users & Rubriques)
 - **Users** : liste / création / édition / suppression ok (CMS → `/api/admin/users`).

@@ -85,6 +85,10 @@ const PostSchema = new mongoose.Schema(
     seoDescription: { type: String, trim: true },
     ogImage: { type: String, trim: true },
     featured: { type: Boolean, default: false },
+    featuredMediaId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Media",
+    },
     coverMediaId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Media",
@@ -96,8 +100,15 @@ const PostSchema = new mongoose.Schema(
       },
     ],
   },
-  { timestamps: true }
+  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
+
+PostSchema.virtual("featuredMedia", {
+  ref: "Media",
+  localField: "featuredMediaId",
+  foreignField: "_id",
+  justOne: true,
+});
 
 // ✅ Auto-generate `slug` before saving
 PostSchema.pre("save", function (next) {

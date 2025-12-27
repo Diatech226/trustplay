@@ -4,10 +4,11 @@ import CallToAction from '../components/CallToAction';
 import PageContainer from '../components/layout/PageContainer';
 import PostCard from '../components/PostCard';
 import PostCardSkeleton from '../components/skeletons/PostCardSkeleton';
+import { ResponsiveImage } from '../components/ResponsiveImage';
 import Seo from '../components/Seo';
 import { getMediaPosts, normalizePosts } from '../services/posts.service';
 import { useRubrics } from '../hooks/useRubrics';
-import { DEFAULT_MEDIA_PLACEHOLDER, resolveMediaUrl } from '../lib/mediaUrls';
+import { DEFAULT_MEDIA_PLACEHOLDER } from '../lib/mediaUrls';
 import { MEDIA_CATEGORY, normalizeSubCategory } from '../utils/categories';
 
 export default function Home() {
@@ -97,17 +98,19 @@ export default function Home() {
               to={`/post/${featuredPost.slug}`}
               className='group relative flex w-full max-w-xl overflow-hidden rounded-2xl border border-subtle bg-white shadow-card transition hover:-translate-y-1 dark:border-slate-800 dark:bg-slate-900'
             >
-              <img
-                src={resolveMediaUrl(
-                  featuredPost.imageCover || featuredPost.imageOriginal || featuredPost.image,
+              <ResponsiveImage
+                media={featuredPost.featuredMedia}
+                fallbackUrl={
+                  featuredPost.imageLegacy ||
+                  featuredPost.imageCover ||
+                  featuredPost.imageOriginal ||
+                  featuredPost.image ||
                   DEFAULT_MEDIA_PLACEHOLDER
-                )}
+                }
                 alt={featuredPost.title}
-                loading='lazy'
-                decoding='async'
-                width='720'
-                height='384'
-                className='h-64 w-2/3 object-cover transition duration-500 group-hover:scale-105'
+                variantPreference="cover"
+                sizes="(max-width: 768px) 100vw, 720px"
+                className="h-64 w-2/3 object-cover transition duration-500 group-hover:scale-105"
               />
               <div className='flex flex-1 flex-col gap-3 p-6'>
                 <span className='self-start rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-accent'>Dernière heure</span>
@@ -160,17 +163,21 @@ export default function Home() {
                 >
                   <Link to={`/post/${post.slug}`} className='flex items-start gap-3'>
                     <div className='h-20 w-24 overflow-hidden rounded-xl'>
-                      <img
-                        src={resolveMediaUrl(
-                          post.imageThumb || post.imageMedium || post.imageCover || post.imageOriginal || post.image,
+                      <ResponsiveImage
+                        media={post.featuredMedia}
+                        fallbackUrl={
+                          post.imageLegacy ||
+                          post.imageThumb ||
+                          post.imageMedium ||
+                          post.imageCover ||
+                          post.imageOriginal ||
+                          post.image ||
                           DEFAULT_MEDIA_PLACEHOLDER
-                        )}
+                        }
                         alt={post.title}
-                        loading='lazy'
-                        decoding='async'
-                        width='192'
-                        height='120'
-                        className='h-full w-full object-cover'
+                        variantPreference="thumb"
+                        sizes="(max-width: 768px) 100vw, 400px"
+                        className="h-full w-full object-cover"
                       />
                     </div>
                     <div className='space-y-2'>

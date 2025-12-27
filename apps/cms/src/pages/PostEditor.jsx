@@ -44,6 +44,7 @@ const emptyForm = {
   featured: false,
   publishedAt: '',
   coverMediaId: '',
+  featuredMediaId: '',
   mediaIds: [],
 };
 
@@ -62,11 +63,11 @@ const resolveMediaMetadata = (category, subCategory) => {
 };
 
 const buildMediaHtml = (media) => {
-  const url = resolveMediaUrl(media.originalUrl || media.url);
-  if (media.kind === 'image') {
-    return `<img src="${url}" alt="${media.name || ''}" />`;
+  const url = resolveMediaUrl(media.original?.url || media.originalUrl || media.url);
+  if (media.type === 'image' || media.kind === 'image') {
+    return `<img src="${url}" alt="${media.alt || media.name || ''}" />`;
   }
-  if (media.kind === 'video') {
+  if (media.type === 'video' || media.kind === 'video') {
     return `<video src="${url}" controls></video>`;
   }
   return `<a href="${url}" target="_blank" rel="noreferrer">${media.name || url}</a>`;
@@ -176,6 +177,7 @@ export const PostEditor = () => {
           featured: Boolean(post.featured),
           publishedAt: post.publishedAt ? post.publishedAt.slice(0, 16) : '',
           coverMediaId: post.coverMediaId || '',
+          featuredMediaId: post.featuredMediaId || '',
           mediaIds: post.mediaIds || [],
         });
       } catch (err) {
@@ -224,15 +226,15 @@ export const PostEditor = () => {
   const insertMediaEmbed = (media) => {
     if (!media?.url) return;
     const editor = quillRef.current?.getEditor();
-    const url = resolveMediaUrl(media.originalUrl || media.url);
+    const url = resolveMediaUrl(media.original?.url || media.originalUrl || media.url);
     if (!editor) {
       insertIntoContent(buildMediaHtml(media));
       return;
     }
     const range = editor.getSelection(true) || { index: editor.getLength(), length: 0 };
-    if (media.kind === 'image') {
+    if (media.type === 'image' || media.kind === 'image') {
       editor.insertEmbed(range.index, 'image', url, 'user');
-    } else if (media.kind === 'video') {
+    } else if (media.type === 'video' || media.kind === 'video') {
       editor.insertEmbed(range.index, 'video', url, 'user');
     } else {
       const label = media.name || url;
@@ -246,18 +248,20 @@ export const PostEditor = () => {
     if (!file) return;
     try {
       const data = await uploadMedia(file, resolveMediaMetadata(formData.category, formData.subCategory));
-      const originalUrl = data.originalUrl || data.media?.originalUrl || data.media?.url || data.url;
+      const originalUrl =
+        data.originalUrl || data.media?.original?.url || data.media?.originalUrl || data.media?.url || data.url;
       setFormData((prev) => ({
         ...prev,
         image: originalUrl || prev.image,
         imageOriginal: originalUrl || prev.imageOriginal,
-        imageThumb: data.thumbUrl || data.media?.thumbUrl || prev.imageThumb,
-        imageCover: data.coverUrl || data.media?.coverUrl || prev.imageCover,
-        imageMedium: data.mediumUrl || data.media?.mediumUrl || prev.imageMedium,
+        imageThumb: data.thumbUrl || data.media?.variants?.thumb?.url || data.media?.thumbUrl || prev.imageThumb,
+        imageCover: data.coverUrl || data.media?.variants?.cover?.url || data.media?.coverUrl || prev.imageCover,
+        imageMedium: data.mediumUrl || data.media?.variants?.card?.url || data.media?.mediumUrl || prev.imageMedium,
         imageThumbAvif: data.thumbAvifUrl || data.media?.thumbAvifUrl || prev.imageThumbAvif,
         imageCoverAvif: data.coverAvifUrl || data.media?.coverAvifUrl || prev.imageCoverAvif,
         imageMediumAvif: data.mediumAvifUrl || data.media?.mediumAvifUrl || prev.imageMediumAvif,
         coverMediaId: data.media?._id || prev.coverMediaId,
+        featuredMediaId: data.media?._id || prev.featuredMediaId,
       }));
       addToast('Fichier uploadé avec succès.', { type: 'success' });
     } catch (err) {
@@ -291,18 +295,19 @@ export const PostEditor = () => {
   const handlePickerSelect = (selected) => {
     if (pickerState.mode === 'cover') {
       const media = selected[0];
-      const originalUrl = media.originalUrl || media.url;
+      const originalUrl = media.original?.url || media.originalUrl || media.url;
       setFormData((prev) => ({
         ...prev,
         image: originalUrl || prev.image,
         imageOriginal: originalUrl || prev.imageOriginal,
-        imageThumb: media.thumbUrl || prev.imageThumb,
-        imageCover: media.coverUrl || prev.imageCover,
-        imageMedium: media.mediumUrl || prev.imageMedium,
+        imageThumb: media.variants?.thumb?.url || media.thumbUrl || prev.imageThumb,
+        imageCover: media.variants?.cover?.url || media.coverUrl || prev.imageCover,
+        imageMedium: media.variants?.card?.url || media.mediumUrl || prev.imageMedium,
         imageThumbAvif: media.thumbAvifUrl || prev.imageThumbAvif,
         imageCoverAvif: media.coverAvifUrl || prev.imageCoverAvif,
         imageMediumAvif: media.mediumAvifUrl || prev.imageMediumAvif,
         coverMediaId: media._id,
+        featuredMediaId: media._id,
       }));
       return;
     }
@@ -338,6 +343,7 @@ export const PostEditor = () => {
       publishedAt: formData.publishedAt || undefined,
       mediaIds: formData.mediaIds,
       coverMediaId: formData.coverMediaId || undefined,
+      featuredMediaId: formData.featuredMediaId || undefined,
     };
 
     try {
@@ -474,7 +480,7 @@ export const PostEditor = () => {
         <label>
           Image de couverture
           <input name="image" value={formData.image} onChange={handleChange} placeholder="https://..." />
-          <span className="helper">Vous pouvez coller une URL ou sélectionner un média.</span>
+          <span className="helper">Vous pouvez coller une URL ou sélectionner un média (legacy).</span>
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
             <button
               className="button secondary"
@@ -488,7 +494,9 @@ export const PostEditor = () => {
               <input type="file" onChange={handleUpload} style={{ display: 'none' }} />
             </label>
           </div>
-          {formData.coverMediaId ? <span className="helper">Cover media ID: {formData.coverMediaId}</span> : null}
+          {formData.featuredMediaId ? (
+            <span className="helper">Featured media ID: {formData.featuredMediaId}</span>
+          ) : null}
         </label>
         <label>
           SEO Title

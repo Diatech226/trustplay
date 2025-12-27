@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
 import FavoriteButton from './FavoriteButton';
+import { ResponsiveImage } from './ResponsiveImage';
 import { MEDIA_CATEGORY, normalizeSubCategory } from '../utils/categories';
 import { useRubrics } from '../hooks/useRubrics';
-import { DEFAULT_MEDIA_PLACEHOLDER, resolveMediaUrl } from '../lib/mediaUrls';
+import { DEFAULT_MEDIA_PLACEHOLDER } from '../lib/mediaUrls';
 
 export default function PostCard({ post }) {
   const { rubricMap } = useRubrics('TrustMedia');
@@ -13,41 +14,26 @@ export default function PostCard({ post }) {
     subCategoryLabel = `Legacy: ${post.subCategory}`;
   }
   const readingTime = Math.max(1, Math.round((post?.content?.length || 0) / 800));
-  const resolveVariantUrl = (value, extension) => {
-    if (!value || typeof value !== 'string') return '';
-    if (!value.includes(`.${extension}`)) return '';
-    return resolveMediaUrl(value);
-  };
-  const imageAvif = resolveVariantUrl(
-    post?.imageThumbAvif || post?.imageMediumAvif || post?.imageCoverAvif,
-    'avif'
-  );
-  const imageWebp = resolveVariantUrl(
-    post?.imageThumb || post?.imageMedium || post?.imageCover,
-    'webp'
-  );
-  const imageFallback = resolveMediaUrl(
-    post?.imageOriginal || post?.imageCover || post?.imageMedium || post?.image,
-    DEFAULT_MEDIA_PLACEHOLDER
-  );
-
   return (
     <article className='group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-subtle transition hover:-translate-y-1 hover:shadow-card dark:border-slate-700 dark:bg-slate-900'>
       {/* UI improvement: media forward layout */}
       <Link to={`/post/${post.slug}`} className='relative h-56 w-full overflow-hidden sm:h-64'>
-        <picture>
-          {imageAvif && <source srcSet={imageAvif} type='image/avif' />}
-          {imageWebp && <source srcSet={imageWebp} type='image/webp' />}
-          <img
-            src={imageFallback}
-            alt={post.title}
-            loading='lazy'
-            decoding='async'
-            width='640'
-            height='384'
-            className='h-full w-full object-cover transition duration-500 group-hover:scale-105'
-          />
-        </picture>
+        <ResponsiveImage
+          media={post.featuredMedia}
+          fallbackUrl={
+            post.imageLegacy ||
+            post.imageThumb ||
+            post.imageMedium ||
+            post.imageCover ||
+            post.imageOriginal ||
+            post.image ||
+            DEFAULT_MEDIA_PLACEHOLDER
+          }
+          alt={post.title}
+          variantPreference="card"
+          sizes="(max-width: 768px) 100vw, 640px"
+          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+        />
         {subCategoryLabel && (
           <span className='absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-primary shadow-subtle dark:bg-slate-800/90'>
             {subCategoryLabel}

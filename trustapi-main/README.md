@@ -59,6 +59,7 @@ Variables utilisées par le code :
 ## Modèles de données
 - **User** : `username`, `email`, `passwordHash` (obligatoire uniquement pour `authProvider=local`), `authProvider` (`local` par défaut, compat `google`/`firebase`), `role` (`USER` par défaut, `ADMIN`, `EDITOR`, `AUTHOR`), `profilePicture`, timestamps.
 - **Post** : `userId`, `title`, `slug` (slugify lowercase/strict), `content`, `image`, `imageOriginal`, `imageThumb`, `imageCover`, `imageMedium`, `imageThumbAvif`, `imageCoverAvif`, `imageMediumAvif`, `category` (`TrustMedia`, `TrustEvent`, `TrustProd`, `uncategorized`), `subCategory`, `eventDate?`, `location?`, timestamps.
+- **Media** : `type` (`image`/`video`), `title`, `alt`, `caption`, `credit`, `category`, `tags`, `status`, `original`, `variants` (`thumb`, `card`, `cover`, `og`), `createdBy`, timestamps. (Champs legacy conservés pour compatibilité.)
 - **Comment** : `userId`, `postId`, `content`, `likes[]`, `numberOfLikes`, timestamps.
 - **Client** : `name`, `contacts[]` (`name/email/phone/role`), `notes`, `status` (`prospect/onboarding/active/paused/archived`), `tags`, timestamps.
 - **Project** : `clientId`, `title`, `brief`, `status` (`planning/in_progress/delivered/on_hold/archived`), `deadline`, `attachments[]` (médias liés), `tags`, timestamps.
@@ -106,8 +107,8 @@ Alias admin (compat CMS) :
 > ⚙️ **Promotion admin** : utilisez le script `npm run make-admin -- --email someone@mail.com` pour attribuer le rôle `ADMIN` si aucun admin n’existe.
 
 ### Posts / Events
-- `POST /api/post/create` (auth) — crée un article/événement (`title`, `content`, `category`, `subCategory`, `image`, `eventDate`, `location`)
-- `GET /api/post/getposts` — filtre par `userId`, `category`, `subCategory`, `slug`, `postId`, `searchTerm`, `startIndex`, `limit`, `order`
+- `POST /api/post/create` (auth) — crée un article/événement (`title`, `content`, `category`, `subCategory`, `image`, `eventDate`, `location`, `featuredMediaId`)
+- `GET /api/post/getposts` — filtre par `userId`, `category`, `subCategory`, `slug`, `postId`, `searchTerm`, `startIndex`, `limit`, `order` + `populateMedia=1`
 - `GET /api/posts/:postId` et `GET /api/post/:postId` — lecture d'un post par `_id` (admin voit tous les statuts)
 - `PUT /api/post/updatepost/:postId/:userId` (auth proprio/admin)
 - `DELETE /api/post/deletepost/:postId/:userId` (auth proprio/admin)
@@ -125,6 +126,10 @@ Alias admin (compat CMS) :
 - `POST /api/uploads` — `multipart/form-data` avec champ `file` (recommandé) ou `image` (compat)
   - Si fichier image : génération automatique des variantes `thumb` (400px), `medium` (900px), `cover` (1400px) en WebP + AVIF.
   - Retour : `{ originalUrl, thumbUrl, mediumUrl, coverUrl, thumbAvifUrl, mediumAvifUrl, coverAvifUrl, width, height }`.
+- `POST /api/media/upload` (admin) — upload MediaAsset (variants `thumb`, `card`, `cover`, `og`)
+- `GET /api/media` (admin) — liste paginée + filtres `search`, `category`, `type`, `status`
+- `PUT /api/media/:id` (admin) — update metadata
+- `DELETE /api/media/:id` (admin) — suppression DB + fichiers
 - `GET /uploads/<filename>` — fichiers statiques servis depuis `UPLOAD_DIR` (défaut `./uploads`)
 
 ### Settings

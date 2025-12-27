@@ -4,6 +4,7 @@ import { useToast } from '../components/ToastProvider';
 import { deleteMedia, fetchMedia, updateMedia, uploadMedia } from '../services/media.service';
 import { useAuth } from '../context/AuthContext';
 import { resolveMediaUrl } from '../lib/mediaUrls';
+import { resolveMediaUrlFromAsset } from '../utils/media';
 import { useRubrics } from '../hooks/useRubrics';
 
 const CATEGORY_OPTIONS = [
@@ -30,7 +31,7 @@ export const MediaLibrary = () => {
   const [mediaItems, setMediaItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [filters, setFilters] = useState({ search: '', category: '', subCategory: '', kind: '' });
+  const [filters, setFilters] = useState({ search: '', category: '', subCategory: '', kind: '', status: '' });
   const [pagination, setPagination] = useState({ startIndex: 0, limit: 20, total: 0 });
   const [uploadCategory, setUploadCategory] = useState('Media');
   const [uploadSubCategory, setUploadSubCategory] = useState('');
@@ -38,24 +39,34 @@ export const MediaLibrary = () => {
   const { user: currentUser } = useAuth();
   const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.isAdmin === true;
   const { rubrics: mediaRubrics } = useRubrics('Media');
+  const [editingMedia, setEditingMedia] = useState(null);
+  const [editForm, setEditForm] = useState({
+    title: '',
+    alt: '',
+    caption: '',
+    credit: '',
+    category: '',
+    tags: '',
+    status: 'published',
+  });
 
   const MediaPreview = ({ item }) => {
     const [failed, setFailed] = useState(false);
-    const previewUrl = resolveMediaUrl(item.thumbUrl || item.coverUrl || item.url);
+    const previewUrl = resolveMediaUrlFromAsset(item, 'thumb');
     if (!previewUrl || failed) {
       return <div className="empty-state">Prévisualisation indisponible</div>;
     }
-    if (item.kind === 'image') {
+    if (item.type === 'image' || item.kind === 'image') {
       return (
         <img
           src={previewUrl}
-          alt={item.name}
+          alt={item.alt || item.title || item.name}
           onError={() => setFailed(true)}
           style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6 }}
         />
       );
     }
-    if (item.kind === 'video') {
+    if (item.type === 'video' || item.kind === 'video') {
       return <video src={previewUrl} style={{ width: 72, height: 48 }} onError={() => setFailed(true)} />;
     }
     return <span className="helper">Fichier</span>;
@@ -72,6 +83,7 @@ export const MediaLibrary = () => {
           category: filters.category,
           subCategory: filters.subCategory,
           kind: filters.kind,
+          status: filters.status,
           startIndex,
           limit: pagination.limit,
           order: 'desc',
@@ -141,40 +153,36 @@ export const MediaLibrary = () => {
     }
   };
 
-  const handleRename = async (media) => {
-    const name = window.prompt('Nouveau nom du média', media.name);
-    if (!name || name === media.name) return;
-    try {
-      const response = await updateMedia(media._id, { name });
-      const updated = response?.media || response?.data?.media;
-      setMediaItems((prev) => prev.map((item) => (item._id === media._id ? updated : item)));
-      addToast('Nom mis à jour.', { type: 'success' });
-    } catch (error) {
-      addToast(`Mise à jour impossible : ${error.message}`, { type: 'error' });
-    }
+  const openEditModal = (media) => {
+    setEditingMedia(media);
+    setEditForm({
+      title: media.title || media.name || '',
+      alt: media.alt || media.altText || '',
+      caption: media.caption || '',
+      credit: media.credit || '',
+      category: media.category || '',
+      tags: (media.tags || []).join(', '),
+      status: media.status || 'published',
+    });
   };
 
-  const handleUpdateCategory = async (media) => {
-    const category = window.prompt('Nouvelle catégorie', media.category);
-    if (!category || category === media.category) return;
+  const handleUpdateMedia = async (event) => {
+    event.preventDefault();
+    if (!editingMedia) return;
     try {
-      const response = await updateMedia(media._id, { category });
+      const response = await updateMedia(editingMedia._id, {
+        title: editForm.title,
+        alt: editForm.alt,
+        caption: editForm.caption,
+        credit: editForm.credit,
+        category: editForm.category,
+        tags: editForm.tags,
+        status: editForm.status,
+      });
       const updated = response?.media || response?.data?.media;
-      setMediaItems((prev) => prev.map((item) => (item._id === media._id ? updated : item)));
-      addToast('Catégorie mise à jour.', { type: 'success' });
-    } catch (error) {
-      addToast(`Mise à jour impossible : ${error.message}`, { type: 'error' });
-    }
-  };
-
-  const handleUpdateSubCategory = async (media) => {
-    const subCategory = window.prompt('Nouvelle sous-catégorie', media.subCategory || '');
-    if (subCategory === null || subCategory === media.subCategory) return;
-    try {
-      const response = await updateMedia(media._id, { subCategory });
-      const updated = response?.media || response?.data?.media;
-      setMediaItems((prev) => prev.map((item) => (item._id === media._id ? updated : item)));
-      addToast('Sous-catégorie mise à jour.', { type: 'success' });
+      setMediaItems((prev) => prev.map((item) => (item._id === editingMedia._id ? updated : item)));
+      setEditingMedia(null);
+      addToast('Média mis à jour.', { type: 'success' });
     } catch (error) {
       addToast(`Mise à jour impossible : ${error.message}`, { type: 'error' });
     }
@@ -219,7 +227,7 @@ export const MediaLibrary = () => {
             <input type="file" onChange={handleUpload} />
           </label>
           {loading ? <div className="loader">Upload en cours…</div> : null}
-          <p className="helper">Formats acceptés : images/vidéos via /api/uploads.</p>
+          <p className="helper">Formats acceptés : images/vidéos via /api/media/upload.</p>
         </div>
       </div>
 
@@ -265,6 +273,18 @@ export const MediaLibrary = () => {
               ))}
             </select>
           </label>
+          <label>
+            Statut
+            <select
+              value={filters.status}
+              onChange={(event) => setFilters((prev) => ({ ...prev, status: event.target.value }))}
+            >
+              <option value="">Tous</option>
+              <option value="draft">Draft</option>
+              <option value="published">Publié</option>
+              <option value="archived">Archivé</option>
+            </select>
+          </label>
         </div>
 
         {loading && mediaItems.length === 0 ? (
@@ -291,16 +311,16 @@ export const MediaLibrary = () => {
               </thead>
               <tbody>
                 {mediaItems.map((item) => {
-                  const previewUrl = resolveMediaUrl(item.thumbUrl || item.coverUrl || item.url);
+                  const previewUrl = resolveMediaUrlFromAsset(item, 'thumb');
                   return (
                   <tr key={item._id}>
                     <td>
                       <MediaPreview item={item} />
                     </td>
-                    <td>{item.name}</td>
+                    <td>{item.title || item.name}</td>
                     <td>{item.category}</td>
                     <td>{item.subCategory || '—'}</td>
-                    <td>{item.mimeType || item.kind}</td>
+                    <td>{item.type || item.kind || item.mimeType}</td>
                     <td>{formatSize(item.size)}</td>
                     <td>{formatDate(item.createdAt)}</td>
                     <td>
@@ -322,14 +342,8 @@ export const MediaLibrary = () => {
                         >
                           Copier URL
                         </button>
-                        <button className="button secondary" type="button" onClick={() => handleRename(item)}>
-                          Renommer
-                        </button>
-                        <button className="button secondary" type="button" onClick={() => handleUpdateCategory(item)}>
-                          Catégorie
-                        </button>
-                        <button className="button secondary" type="button" onClick={() => handleUpdateSubCategory(item)}>
-                          Sous-catégorie
+                        <button className="button secondary" type="button" onClick={() => openEditModal(item)}>
+                          Éditer
                         </button>
                         {isAdmin ? (
                           <button className="button danger" type="button" onClick={() => handleDelete(item._id)}>
@@ -356,6 +370,84 @@ export const MediaLibrary = () => {
           </>
         )}
       </div>
+      {editingMedia ? (
+        <div className="modal-backdrop" role="dialog" aria-modal="true">
+          <div className="modal">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3>Éditer le média</h3>
+              <button className="button secondary" type="button" onClick={() => setEditingMedia(null)}>
+                Fermer
+              </button>
+            </div>
+            <form className="form-grid" onSubmit={handleUpdateMedia} style={{ marginTop: 12 }}>
+              <label>
+                Titre
+                <input
+                  value={editForm.title}
+                  onChange={(event) => setEditForm((prev) => ({ ...prev, title: event.target.value }))}
+                />
+              </label>
+              <label>
+                Texte alternatif (obligatoire)
+                <input
+                  value={editForm.alt}
+                  onChange={(event) => setEditForm((prev) => ({ ...prev, alt: event.target.value }))}
+                  required
+                />
+              </label>
+              <label>
+                Légende
+                <textarea
+                  value={editForm.caption}
+                  onChange={(event) => setEditForm((prev) => ({ ...prev, caption: event.target.value }))}
+                />
+              </label>
+              <label>
+                Crédit
+                <input
+                  value={editForm.credit}
+                  onChange={(event) => setEditForm((prev) => ({ ...prev, credit: event.target.value }))}
+                />
+              </label>
+              <label>
+                Catégorie
+                <input
+                  value={editForm.category}
+                  onChange={(event) => setEditForm((prev) => ({ ...prev, category: event.target.value }))}
+                  required
+                />
+              </label>
+              <label>
+                Tags
+                <input
+                  value={editForm.tags}
+                  onChange={(event) => setEditForm((prev) => ({ ...prev, tags: event.target.value }))}
+                  placeholder="news, politics"
+                />
+              </label>
+              <label>
+                Statut
+                <select
+                  value={editForm.status}
+                  onChange={(event) => setEditForm((prev) => ({ ...prev, status: event.target.value }))}
+                >
+                  <option value="draft">Draft</option>
+                  <option value="published">Publié</option>
+                  <option value="archived">Archivé</option>
+                </select>
+              </label>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                <button className="button secondary" type="button" onClick={() => setEditingMedia(null)}>
+                  Annuler
+                </button>
+                <button className="button" type="submit">
+                  Enregistrer
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };
