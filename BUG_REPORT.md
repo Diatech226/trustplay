@@ -1,81 +1,35 @@
 # BUG_REPORT — Trust Media Monorepo
 
 ## 1. Résumé exécutif
-Deux familles de bugs ont été identifiées : (1) l’accès admin parfois refusé lorsque le rôle n’est pas correctement normalisé entre JWT, DB et front CMS, et (2) l’affichage des médias (CMS + site) qui casse dès que l’API retourne des variantes ou chemins hétérogènes. Les corrections consolident l’auth (rôle canonique via `/api/user/me`, gestion 401/403 côté CMS, logs auth en dev) et la médiathèque (MediaAsset + `resolveMediaUrl` + `ResponsiveImage`).
+Les actions admin échouaient avec un `403 "Admin connection required"` alors que la connexion semblait valide côté CMS/site. La cause racine était un mélange de sources d'autorité (rôle vs flag admin) et un token bearer non systématiquement considéré comme vérité unique. La correction unifie l'admin sur `User.isAdmin`, synchronise `role=ADMIN`, impose le bearer en transport principal et ajoute une promotion admin contrôlée.
 
 ## 2. Bugs critiques (table)
 | ID | Symptôme | Impact | Cause racine | Fix | Fichiers modifiés | Comment tester |
 | --- | --- | --- | --- | --- | --- | --- |
-| AUTH-01 | CMS > Users affiche “Accès admin requis” alors que l’admin est connecté | Blocage de la gestion des utilisateurs | Rôle potentiellement incohérent entre JWT, base et session front | Normalisation `role/isAdmin` côté CMS + rôle canonique via `/api/user/me` | `trustapi-main/api/utils/verifyUser.js`, `apps/cms/src/context/AuthContext.jsx` | Se connecter en admin → `/api/user/me` renvoie `role=ADMIN`; ouvrir `/users` dans le CMS → liste chargée |
-| AUTH-02 | `/api/media` renvoie 403 dans le CMS même connecté admin | Blocage de la médiathèque | Source de token non visible + contrôle admin strictement basé sur `role` | Journalisation auth en dev + contrôle admin basé sur `role` ou `isAdmin` + redirection 401/403 côté CMS | `trustapi-main/api/utils/verifyUser.js`, `apps/cms/src/lib/apiClient.js` | Ouvrir le CMS admin → `/api/media` passe en 200; non-admin reçoit 403 |
-| MEDIA-01 | Prévisualisations cassées dans la médiathèque | Perte de visibilité des médias, UX dégradée | UI CMS utilisait des champs legacy (`thumbUrl`, `coverUrl`) alors que le modèle renvoie des variantes `variants.*` | Ajouter un resolver `resolveMediaUrlFromAsset` + mise à jour Media Library/Picker | `apps/cms/src/pages/MediaLibrary.jsx`, `apps/cms/src/components/MediaPicker.jsx`, `apps/cms/src/utils/media.js` | Ouvrir la médiathèque → thumbnails visibles |
-| MEDIA-02 | Images de posts absentes sur Home/PostPage quand `featuredMedia` est utilisé | Articles sans visuels | Front site utilisait uniquement `post.image*` (legacy) | `ResponsiveImage` + `populateMedia=1` + fallback legacy | `apps/site/src/components/ResponsiveImage.jsx`, `apps/site/src/pages/Home.jsx`, `apps/site/src/pages/PostPage.jsx`, `apps/site/src/components/PostCard.jsx`, `apps/site/src/services/posts.service.js` | Home/PostPage affichent les visuels (thumb/cover) |
+| AUTH-CRIT | Login admin ok mais endpoints admin 403 | CMS/site inutilisables pour la gestion | Incohérence `role`/`isAdmin` entre DB/JWT + garde admin basée sur le mauvais champ | `User.isAdmin` canonique + synchronisation `role=ADMIN`, bearer unique côté clients, route de promotion admin | `trustapi-main/api/models/user.model.js`, `trustapi-main/api/utils/roles.js`, `trustapi-main/api/utils/verifyUser.js`, `trustapi-main/api/controllers/*`, `apps/cms/src/lib/apiClient.js`, `apps/site/src/components/OnlyAdminPrivateRoute.jsx` | Se connecter en admin → `/api/user/me` renvoie `isAdmin=true`; `/api/user/getusers` et `/api/media` passent en 200 |
 
 ## 3. Détails par bug
-### AUTH-01 — CMS Users bloqué malgré admin
+### AUTH-CRIT — Admin 403 malgré connexion
 **Reproduction**
 1. Se connecter au CMS avec un compte admin.
-2. Aller sur `/users`.
-3. Observer un refus d’accès.
+2. Appeler `/api/user/getusers` ou `/api/media`.
+3. Observer un 403 `"Admin connection required"`.
 
 **Cause racine**
-- Le rôle peut être obsolète dans le token ou mal normalisé côté front.
+- La vérité admin était déduite du rôle au lieu d'un flag canonique, ce qui casse quand `role`/JWT sont incohérents.
+- Certains clients redirigeaient sur 403 au lieu de signaler un accès refusé.
 
 **Correction**
-- Le backend et le CMS s’alignent sur le rôle canonique renvoyé par `/api/user/me`.
-
-**Validation**
-- `GET /api/user/me` renvoie `{ role: "ADMIN", isAdmin: true }`.
-- `/users` charge la liste.
-
-### MEDIA-01 — Prévisualisations médias cassées
-**Reproduction**
-1. Uploader un média.
-2. Ouvrir la page Media Library.
-3. Observer un thumbnail vide.
-
-**Cause racine**
-- Les anciennes URLs (thumb/cover) n’étaient plus alignées avec `variants`.
-
 **Correction**
-- Utilisation d’un helper pour résoudre `variants.*` + fallback URL.
+- `User.isAdmin` est la source de vérité admin, synchronisée avec `role=ADMIN`.
+- Le JWT expose `isAdmin` et `/api/user/me` renvoie le profil canonique.
+- Le CMS redirige uniquement sur 401 (403 = accès refusé), et la route guard admin du site affiche un message.
+- Ajout d'une route `PATCH /api/user/:id/promote` + support `ADMIN_EMAILS`.
 
 **Validation**
-- Thumbnails visibles et clic “Ouvrir” fonctionnel.
-
-### MEDIA-02 — Images de posts absentes
-**Reproduction**
-1. Assigner un `featuredMediaId`.
-2. Ouvrir Home ou PostPage.
-3. Le visuel n’apparaît pas.
-
-**Cause racine**
-- Le front ne récupérait pas `featuredMedia` et utilisait uniquement `image` legacy.
-
-**Correction**
-- `populateMedia=1` + composant `ResponsiveImage` avec `srcSet`.
-
-**Validation**
-- Home affiche le thumb, PostPage affiche le cover.
-
-### AUTH-02 — `/api/media` refusé malgré admin
-**Reproduction**
-1. Se connecter au CMS en admin.
-2. Ouvrir Media Library (`/media`).
-3. Observer un 403 sur `GET /api/media`.
-
-**Cause racine**
-- Contrôle `requireAdmin` dépendait uniquement de `role` (pas de fallback sur `isAdmin`).
-- Manque de diagnostic sur la source du token; le CMS ne redirigeait pas sur 403.
-
-**Correction**
-- `requireAdmin` accepte `role=ADMIN` ou `isAdmin=true`.
-- Ajout de logs `[AUTH]` en dev avec route, source du token, userId, rôle.
-- CMS redirige vers `/login` sur 401/403.
-
-**Validation**
-- Admin: `GET /api/media` retourne 200.
-- Non-admin: `GET /api/media` retourne 403.
+- `GET /api/user/me` renvoie `{ isAdmin: true }` pour un admin.
+- `/api/user/getusers`, `/api/media`, `/api/comment/getcomments` passent en 200 pour l'admin.
+- Un non-admin reçoit toujours 403.
 
 ## 4. Audit .env
 > Statut détecté : aucun fichier `.env` actif dans le repo. S’appuyer sur les `.env.example` pour créer les valeurs.
@@ -91,10 +45,8 @@ Deux familles de bugs ont été identifiées : (1) l’accès admin parfois refu
 | `VITE_API_URL` (apps/cms) | `http://localhost:3000` | Non (`.env` absent) | Requêtes CMS vers API incorrectes |
 
 ## 5. Checklist QA finale
-- [ ] Auth admin : `GET /api/user/me` renvoie `role=ADMIN`.
+- [ ] Auth admin : `GET /api/user/me` renvoie `isAdmin=true`.
 - [ ] CMS `/users` accessible et liste affichée.
-- [ ] Upload image → MediaAsset créé + variants générés.
-- [ ] Media Library affiche les thumbs.
-- [ ] Home/PostPage affichent les images (thumb/cover).
-- [ ] Legacy posts avec `image` s’affichent encore.
-- [ ] `/uploads/<file>` accessible en direct.
+- [ ] CMS Overview + Media + Comments chargent sans 403.
+- [ ] `PATCH /api/user/:id/promote` fonctionne (admin only).
+- [ ] Non-admin reçoit 403 sur routes admin.

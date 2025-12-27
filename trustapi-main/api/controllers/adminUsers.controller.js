@@ -37,11 +37,18 @@ const resolveRoleInput = (roleValue, isAdminValue, options = {}) => {
 };
 
 const ensureNotLastAdmin = async (user) => {
-  if (user?.role !== 'ADMIN') return;
-  const adminCount = await User.countDocuments({ role: 'ADMIN' });
+  if (resolveUserRole(user) !== 'ADMIN') return;
+  const adminCount = await User.countDocuments({
+    $or: [{ isAdmin: true }, { role: 'ADMIN' }],
+  });
   if (adminCount <= 1) {
     throw errorHandler(400, 'Cannot remove the last admin');
   }
+};
+
+const applyRole = (user, role) => {
+  user.role = role;
+  user.isAdmin = role === 'ADMIN';
 };
 
 export const createAdminUser = async (req, res, next) => {
@@ -77,6 +84,7 @@ export const createAdminUser = async (req, res, next) => {
       email,
       passwordHash,
       role,
+      isAdmin: role === 'ADMIN',
       authProvider: 'local',
     });
 
@@ -217,6 +225,9 @@ export const updateAdminUser = async (req, res, next) => {
     }
 
     Object.assign(user, updates);
+    if (updates.role) {
+      user.isAdmin = updates.role === 'ADMIN';
+    }
     await user.save();
 
     return res.status(200).json({
@@ -263,7 +274,7 @@ export const updateAdminUserRole = async (req, res, next) => {
       await ensureNotLastAdmin(user);
     }
 
-    user.role = role;
+    applyRole(user, role);
     await user.save();
 
     return res.status(200).json({
@@ -288,7 +299,7 @@ export const toggleAdminUser = async (req, res, next) => {
       await ensureNotLastAdmin(user);
     }
 
-    user.role = nextRole;
+    applyRole(user, nextRole);
     await user.save();
 
     return res.status(200).json({

@@ -18,8 +18,10 @@ export const resolveUserRole = (user) => {
 export const ensureUserRole = async (user) => {
   if (!user) return null;
   const resolved = resolveUserRole(user) || 'USER';
-  if (user.role !== resolved) {
+  const nextIsAdmin = resolved === 'ADMIN';
+  if (user.role !== resolved || user.isAdmin !== nextIsAdmin) {
     user.role = resolved;
+    user.isAdmin = nextIsAdmin;
     await user.save({ validateBeforeSave: false });
   }
   return resolved;

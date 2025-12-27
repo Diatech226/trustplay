@@ -56,15 +56,21 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 - **Auth & permissions** : middleware JWT `verifyToken` + contrôle `requireAdmin` sur les routes critiques (liste users, commentaires). Les autres permissions (ownership) sont gérées dans les contrôleurs.
 
 ### Auth/RBAC — source de vérité
-- **Champ unique** : `User.role` (`ADMIN` | `EDITOR` | `AUTHOR` | `USER`) est la source unique de permissions.
-- **JWT payload** : `{ id, email, role }` est signé à la connexion/inscription.
-- **Admin flag** : `isAdmin: true` est ajouté au JWT pour compatibilité legacy.
+- **Champ canonique** : `User.isAdmin` (boolean) est la source de vérité pour l'accès admin.
+- **Rôles éditoriaux** : `User.role` reste utilisé pour `EDITOR`/`AUTHOR`/`USER` (admin synchronisé sur `role=ADMIN`).
+- **JWT payload** : `{ id, email, role, isAdmin }` est signé à la connexion/inscription.
 - **Source de vérité** : `GET /api/user/me` retourne le profil canonique (rôle + `isAdmin`).
 - **Transport** : l’API attend `Authorization: Bearer <token>` (cookie `access_token` accepté en fallback).
 - **Session CMS** : token stocké en `localStorage` (`cms_token`) + hydratation via `/api/user/me`.
 - **Session site** : token stocké via Redux/asyncStorage, revalidation via `/api/user/me`.
 - **Logout** : `POST /api/auth/signout` efface le cookie `access_token`; le front doit purger le token local (localStorage / redux-persist).
 - **Identifiants** : le CMS utilise `_id` pour l'édition/suppression, le site public utilise `slug` pour la lecture (`/post/:slug`).
+
+### Admin emails & promotion
+- **ADMIN_EMAILS** : définir `ADMIN_EMAILS=admin1@mail.com,admin2@mail.com` dans `trustapi-main/.env` pour promouvoir automatiquement ces comptes en admin à l'inscription/connexion.
+- **Promotion manuelle** :
+  - API : `PATCH /api/user/:id/promote` (admin requis).
+  - Script : `npm run make-admin -- --email someone@mail.com`.
 
 ## Fonctionnalités actuelles
 - **Site média** : pages éditoriales par rubrique, page article avec commentaires, recherche multi-critères et pagination incrémentale, pages événement/production/projets.

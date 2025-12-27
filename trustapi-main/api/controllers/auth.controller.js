@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import { generatePasswordResetToken, hashResetToken } from '../utils/passwordReset.js';
 import { sendResetPasswordEmail } from '../utils/mailer.js';
 import { ensureUserRole, resolveUserRole } from '../utils/roles.js';
+import { getAdminEmailSet, isAdminEmail } from '../utils/adminEmails.js';
 
 const authCookieOptions = {
   httpOnly: true,
@@ -12,11 +13,6 @@ const authCookieOptions = {
   secure: process.env.NODE_ENV === 'production',
   maxAge: 7 * 24 * 60 * 60 * 1000,
   path: '/',
-};
-
-const persistSessionCookie = (res, token) => {
-  if (!token) return;
-  res.cookie('access_token', token, authCookieOptions);
 };
 
 const clearSessionCookie = (res) => {
@@ -37,6 +33,7 @@ const sanitizeUser = (userDoc = {}) => {
 
 export const signup = async (req, res, next) => {
   const { username, email, password } = req.body;
+  const adminEmails = getAdminEmailSet();
 
   if (!username || !email || !password) {
     return next(errorHandler(400, 'All fields are required'));
@@ -57,12 +54,14 @@ export const signup = async (req, res, next) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    const shouldBeAdmin = isAdminEmail(email, adminEmails);
     const newUser = new User({
       username,
       email,
       passwordHash: hashedPassword,
       authProvider: 'local',
-      role: 'USER',
+      role: shouldBeAdmin ? 'ADMIN' : 'USER',
+      isAdmin: shouldBeAdmin,
     });
 
     await newUser.save();
@@ -85,7 +84,6 @@ export const signup = async (req, res, next) => {
     );
 
     const userProfile = sanitizeUser(newUser);
-    persistSessionCookie(res, token);
 
     res.status(201).json({
       success: true,
@@ -98,6 +96,7 @@ export const signup = async (req, res, next) => {
 
 export const signin = async (req, res) => {
   const { email, password } = req.body || {};
+  const adminEmails = getAdminEmailSet();
 
   if (!email || !password || email === '' || password === '') {
     return res.status(400).json({ success: false, message: 'Email and password are required' });
@@ -129,6 +128,12 @@ export const signin = async (req, res) => {
       return res.status(500).json({ success: false, message: 'Internal server error' });
     }
 
+    if (isAdminEmail(validUser.email, adminEmails)) {
+      validUser.isAdmin = true;
+      validUser.role = 'ADMIN';
+      await validUser.save({ validateBeforeSave: false });
+    }
+
     const resolvedRole = await ensureUserRole(validUser);
     const token = jwt.sign(
       {
@@ -142,7 +147,6 @@ export const signin = async (req, res) => {
     );
 
     const userProfile = sanitizeUser(validUser);
-    persistSessionCookie(res, token);
 
     return res.status(200).json({
       success: true,

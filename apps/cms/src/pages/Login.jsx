@@ -11,6 +11,7 @@ export const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const { addToast } = useToast();
+  const reason = searchParams.get('reason');
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -39,6 +40,9 @@ export const Login = () => {
       <div className="login-card">
         <h1>CMS v2</h1>
         <p>Connectez-vous pour accéder au backoffice Trust Media.</p>
+        {reason === 'unauthorized' ? (
+          <div className="notice">Session expirée, reconnectez-vous pour continuer.</div>
+        ) : null}
         {error ? <div className="notice">{error}</div> : null}
         <form className="form-grid" onSubmit={handleSubmit}>
           <label>

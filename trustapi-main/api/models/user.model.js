@@ -36,6 +36,10 @@ const userSchema = new mongoose.Schema(
       default: "USER",
       set: (value) => (typeof value === 'string' ? value.toUpperCase() : value),
     },
+    isAdmin: {
+      type: Boolean,
+      default: false,
+    },
     profilePicture: {
       type: String,
       default:
