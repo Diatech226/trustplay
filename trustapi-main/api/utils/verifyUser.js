@@ -12,17 +12,30 @@ const extractBearer = (value = "") => {
 const getTokenFromRequest = (req) => {
   const authorization = req.headers.authorization || req.headers.Authorization;
   const headerToken = extractBearer(authorization);
-  if (headerToken) return headerToken;
+  if (headerToken) return { token: headerToken, source: "header" };
 
   const cookieToken = req.cookies?.access_token;
-  if (cookieToken && typeof cookieToken === "string") return cookieToken;
+  if (cookieToken && typeof cookieToken === "string") {
+    return { token: cookieToken, source: "cookie" };
+  }
 
-  return null;
+  return { token: null, source: "none" };
+};
+
+const logAuth = (req, { tokenSource, user } = {}) => {
+  if (process.env.NODE_ENV === "production") return;
+  const route = `${req.method} ${req.originalUrl}`;
+  console.log("[AUTH]", route, {
+    tokenSource,
+    userId: user?.id,
+    role: user?.role,
+    isAdmin: user?.isAdmin,
+  });
 };
 
 export const verifyToken = async (req, res, next) => {
   try {
-    const token = getTokenFromRequest(req);
+    const { token, source } = getTokenFromRequest(req);
 
     if (!token) {
       return res
@@ -61,6 +74,8 @@ export const verifyToken = async (req, res, next) => {
     };
 
     req.token = token;
+    req.tokenSource = source;
+    logAuth(req, { tokenSource: source, user: req.user });
     next();
   } catch (error) {
     next(errorHandler(500, "Internal Server Error"));
@@ -68,7 +83,9 @@ export const verifyToken = async (req, res, next) => {
 };
 
 export const requireAdmin = (req, res, next) => {
-  if (req.user?.role !== "ADMIN") {
+  const isAdmin = req.user?.isAdmin === true || req.user?.role === "ADMIN";
+  if (!isAdmin) {
+    logAuth(req, { tokenSource: req.tokenSource, user: req.user });
     return res
       .status(403)
       .json({ success: false, message: "Forbidden: Admin access required" });
@@ -78,7 +95,7 @@ export const requireAdmin = (req, res, next) => {
 
 export const verifyTokenOptional = async (req, res, next) => {
   try {
-    const token = getTokenFromRequest(req);
+    const { token, source } = getTokenFromRequest(req);
     if (!token) return next();
 
     let decodedUser;
@@ -116,6 +133,8 @@ export const verifyTokenOptional = async (req, res, next) => {
 
     if (req.user) {
       req.token = token;
+      req.tokenSource = source;
+      logAuth(req, { tokenSource: source, user: req.user });
     }
 
     return next();

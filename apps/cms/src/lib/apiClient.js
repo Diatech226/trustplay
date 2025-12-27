@@ -128,6 +128,14 @@ const request = async (
 
   const response = await fetch(buildUrl(path), config);
 
+  if (response.status === 403 && needsAuth && !skipAuthRedirect) {
+    handleUnauthorized();
+  }
+
+  if (response.status === 401 && needsAuth && !token && !skipAuthRedirect) {
+    handleUnauthorized();
+  }
+
   if (response.status === 401 && needsAuth && token && !rest.__retry) {
     const validation = await validateSession(token);
     if (validation.status === 'valid') {
