@@ -11,6 +11,17 @@ Ce dépôt contient désormais un **monorepo** :
 Une analyse détaillée (architecture, benchmark, risques) est disponible dans [`ANALYSIS.md`](./ANALYSIS.md). La roadmap produit/technique détaillée est suivie dans [`ROADMAP.md`](./ROADMAP.md).
 Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 
+## Setup rapide
+1. Installer les dépendances : `npm install` (workspaces actifs).
+2. Copier les variables d’environnement :
+   - `trustapi-main/.env.example` → `trustapi-main/.env`
+   - `apps/site/.env.example` → `apps/site/.env`
+   - `apps/cms/.env.example` → `apps/cms/.env`
+3. Vérifier les valeurs critiques :
+   - `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN`, `UPLOAD_DIR` côté API.
+   - `VITE_API_URL` côté site + CMS.
+4. Démarrer en local : `npm run dev` (site 5173, CMS 5174, API 3000).
+
 ## Architecture monorepo
 ### apps/site (Vite/React)
 - **Routage** : routes publiques (home, recherche, rubriques, article) et routes protégées (dashboard historique) déclarées dans `apps/site/src/App.jsx`.
@@ -47,7 +58,10 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 - **Champ unique** : `User.role` (`ADMIN` | `EDITOR` | `AUTHOR` | `USER`) est la source unique de permissions.
 - **JWT payload** : `{ id, email, role }` est signé à la connexion/inscription.
 - **Admin flag** : `isAdmin: true` est ajouté au JWT pour compatibilité legacy.
-- **Session CMS** : le CMS hydrate le profil via `GET /api/user/me` et vérifie `currentUser.role === 'ADMIN'`.
+- **Source de vérité** : `GET /api/user/me` retourne le profil canonique (rôle + `isAdmin`).
+- **Transport** : l’API attend `Authorization: Bearer <token>` (cookie `access_token` accepté en fallback).
+- **Session CMS** : token stocké en `localStorage` (`cms_token`) + hydratation via `/api/user/me`.
+- **Session site** : token stocké via Redux/asyncStorage, revalidation via `/api/user/me`.
 - **Logout** : `POST /api/auth/signout` efface le cookie `access_token`; le front doit purger le token local (localStorage / redux-persist).
 - **Identifiants** : le CMS utilise `_id` pour l'édition/suppression, le site public utilise `slug` pour la lecture (`/post/:slug`).
 
@@ -162,8 +176,9 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 4. Les posts stockent `coverMediaId`, `mediaIds[]` + HTML avec URLs.
 
 ### Convention URLs média
-- **Stockage** : privilégier un chemin relatif `/uploads/<filename>` en base.
+- **Stockage** : chemin relatif `/uploads/<filename>` en base (normalisé côté API).
 - **Front** : construire l'URL publique via `API_BASE_URL` (helper `resolveMediaUrl` dans le site et `apps/cms/src/lib/mediaUrls.js`).
+- **UPLOAD_DIR** : doit pointer vers le dossier réellement servi par `/uploads` (par défaut `./uploads`).
 
 ### Variantes images (Blog)
 - `thumb` : 400px (home, listes)

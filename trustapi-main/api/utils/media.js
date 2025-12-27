@@ -1,6 +1,6 @@
 export const normalizeMediaUrl = (value) => {
   if (!value || typeof value !== 'string') return value;
-  const trimmed = value.trim();
+  const trimmed = value.trim().replace(/\\/g, '/');
   if (!trimmed) return trimmed;
 
   const lower = trimmed.toLowerCase();
@@ -11,8 +11,21 @@ export const normalizeMediaUrl = (value) => {
     return trimmed.slice(uploadsIndex);
   }
 
+  const publicUploadsIndex = trimmed.indexOf('public/uploads/');
+  if (publicUploadsIndex !== -1) {
+    return `/${trimmed.slice(publicUploadsIndex + 'public/'.length)}`;
+  }
+
   if (trimmed.startsWith('uploads/')) {
     return `/${trimmed}`;
+  }
+
+  if (trimmed.startsWith('./uploads/')) {
+    return `/${trimmed.slice(2)}`;
+  }
+
+  if (!trimmed.includes('/')) {
+    return `/uploads/${trimmed}`;
   }
 
   return trimmed;

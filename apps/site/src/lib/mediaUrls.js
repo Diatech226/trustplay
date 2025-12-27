@@ -39,22 +39,45 @@ const normalizeInput = (value) => {
   return '';
 };
 
+const normalizePath = (value) => {
+  if (!value) return '';
+  const cleaned = value.trim().replace(/\\/g, '/');
+  if (!cleaned) return '';
+  const uploadsIndex = cleaned.indexOf('/uploads/');
+  if (uploadsIndex !== -1) {
+    return cleaned.slice(uploadsIndex);
+  }
+  const publicUploadsIndex = cleaned.indexOf('public/uploads/');
+  if (publicUploadsIndex !== -1) {
+    return `/${cleaned.slice(publicUploadsIndex + 'public/'.length)}`;
+  }
+  if (cleaned.startsWith('uploads/')) {
+    return `/${cleaned}`;
+  }
+  if (cleaned.startsWith('./uploads/')) {
+    return `/${cleaned.slice(2)}`;
+  }
+  if (!cleaned.startsWith('/') && !cleaned.includes('/')) {
+    return `/uploads/${cleaned}`;
+  }
+  if (!cleaned.startsWith('/')) {
+    return `/${cleaned}`;
+  }
+  return cleaned;
+};
+
 const resolveFallback = (fallback) => {
   const fallbackValue = normalizeInput(fallback);
   if (!fallbackValue) return '';
   if (isAbsoluteUrl(fallbackValue)) return fallbackValue;
-  if (!fallbackValue.startsWith('/')) {
-    return `${API_BASE_URL}/${fallbackValue}`;
-  }
-  return `${API_BASE_URL}${fallbackValue}`;
+  const normalized = normalizePath(fallbackValue);
+  return `${API_BASE_URL}${normalized || ''}`;
 };
 
 export const resolveMediaUrl = (value, fallback = '') => {
   const resolved = normalizeInput(value);
   if (!resolved) return resolveFallback(fallback);
   if (isAbsoluteUrl(resolved)) return resolved;
-  if (!resolved.startsWith('/')) {
-    return `${API_BASE_URL}/${resolved}`;
-  }
-  return `${API_BASE_URL}${resolved}`;
+  const normalized = normalizePath(resolved);
+  return `${API_BASE_URL}${normalized || ''}`;
 };

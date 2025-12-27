@@ -39,31 +39,26 @@ export const verifyToken = async (req, res, next) => {
         .json({ success: false, message: "Unauthorized: Invalid token" });
     }
 
-    let normalizedRole = normalizeRoleValue(decodedUser?.role);
-    if (!normalizedRole && decodedUser?.isAdmin === true) {
-      normalizedRole = 'ADMIN';
+    if (!decodedUser?.id) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Unauthorized: User not found" });
     }
 
-    if (!normalizedRole && decodedUser?.id) {
-      const user = await User.findById(decodedUser.id);
-      if (!user) {
-        return res
-          .status(401)
-          .json({ success: false, message: "Unauthorized: User not found" });
-      }
-      const resolvedRole = await ensureUserRole(user);
-      req.user = {
-        id: user._id.toString(),
-        email: user.email,
-        role: resolvedRole,
-      };
-    } else {
-      req.user = {
-        id: decodedUser.id,
-        email: decodedUser.email,
-        role: normalizedRole,
-      };
+    const user = await User.findById(decodedUser.id);
+    if (!user) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Unauthorized: User not found" });
     }
+
+    const resolvedRole = await ensureUserRole(user);
+    req.user = {
+      id: user._id.toString(),
+      email: user.email,
+      role: resolvedRole,
+      isAdmin: resolvedRole === 'ADMIN',
+    };
 
     req.token = token;
     next();
@@ -93,12 +88,7 @@ export const verifyTokenOptional = async (req, res, next) => {
       return next();
     }
 
-    let normalizedRole = normalizeRoleValue(decodedUser?.role);
-    if (!normalizedRole && decodedUser?.isAdmin === true) {
-      normalizedRole = 'ADMIN';
-    }
-
-    if (!normalizedRole && decodedUser?.id) {
+    if (decodedUser?.id) {
       const user = await User.findById(decodedUser.id);
       if (user) {
         const resolvedRole = await ensureUserRole(user);
@@ -106,14 +96,22 @@ export const verifyTokenOptional = async (req, res, next) => {
           id: user._id.toString(),
           email: user.email,
           role: resolvedRole,
+          isAdmin: resolvedRole === 'ADMIN',
         };
       }
-    } else if (normalizedRole) {
-      req.user = {
-        id: decodedUser.id,
-        email: decodedUser.email,
-        role: normalizedRole,
-      };
+    } else {
+      let normalizedRole = normalizeRoleValue(decodedUser?.role);
+      if (!normalizedRole && decodedUser?.isAdmin === true) {
+        normalizedRole = 'ADMIN';
+      }
+      if (normalizedRole) {
+        req.user = {
+          id: decodedUser.id,
+          email: decodedUser.email,
+          role: normalizedRole,
+          isAdmin: normalizedRole === 'ADMIN',
+        };
+      }
     }
 
     if (req.user) {
