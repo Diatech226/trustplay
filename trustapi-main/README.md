@@ -51,13 +51,13 @@ Variables utilisées par le code :
 - `api/utils/*` : helpers (erreur, vérification JWT)
 
 ## Auth & CORS
-- Auth JWT : le serveur signe un JWT avec `{ id, email, role }` et le renvoie dans `data.token`. **Le header `Authorization: Bearer <token>` est la source de vérité pour toutes les routes protégées.**
-- Middleware `verifyToken` : lit uniquement le bearer ; en cas d'absence, renvoie `401 { success: false, message: "Unauthorized: No token provided" }`, et en cas de signature invalide renvoie `401 { success: false, message: "Unauthorized: Invalid token" }`. Le payload décodé est exposé sur `req.user` (`{ id, email, role }`).
+- Auth JWT : le serveur signe un JWT avec `{ id, email, role, isAdmin }` et le renvoie dans `data.token`. **Le header `Authorization: Bearer <token>` est la source de vérité pour toutes les routes protégées.**
+- Middleware `verifyToken` : lit d'abord le bearer (cookie `access_token` accepté en fallback) ; en cas d'absence, renvoie `401 { success: false, message: "Unauthorized: No token provided" }`, et en cas de signature invalide renvoie `401 { success: false, message: "Unauthorized: Invalid token" }`. Le payload décodé est exposé sur `req.user` (`{ id, email, role, isAdmin }`).
 - CORS : origines multiples via `CORS_ORIGIN`, `credentials: true`, méthodes `GET,POST,PUT,DELETE,OPTIONS`, headers `Content-Type, Authorization`.
 - Front : utiliser `NEXT_PUBLIC_API_URL` (ou `VITE_API_URL` en fallback) et appeler `fetch(..., { credentials: 'include' })`. Les requêtes authentifiées ajoutent automatiquement le bearer.
 
 ## Modèles de données
-- **User** : `username`, `email`, `passwordHash` (obligatoire uniquement pour `authProvider=local`), `authProvider` (`local` par défaut, compat `google`/`firebase`), `role` (`USER` par défaut, `ADMIN`, `EDITOR`, `AUTHOR`), `profilePicture`, timestamps.
+- **User** : `username`, `email`, `passwordHash` (obligatoire uniquement pour `authProvider=local`), `authProvider` (`local` par défaut, compat `google`/`firebase`), `role` (`USER` par défaut, `ADMIN`, `EDITOR`, `AUTHOR`), `isAdmin` (boolean canonique), `profilePicture`, timestamps.
 - **Post** : `userId`, `title`, `slug` (slugify lowercase/strict), `content`, `image`, `imageOriginal`, `imageThumb`, `imageCover`, `imageMedium`, `imageThumbAvif`, `imageCoverAvif`, `imageMediumAvif`, `category` (`TrustMedia`, `TrustEvent`, `TrustProd`, `uncategorized`), `subCategory`, `eventDate?`, `location?`, timestamps.
 - **Media** : `type` (`image`/`video`), `title`, `alt`, `caption`, `credit`, `category`, `tags`, `status`, `original`, `variants` (`thumb`, `card`, `cover`, `og`), `createdBy`, timestamps. (Champs legacy conservés pour compatibilité.)
 - **Comment** : `userId`, `postId`, `content`, `likes[]`, `numberOfLikes`, timestamps.
@@ -88,6 +88,7 @@ Résumé (voir le détail complet dans `API_CONTRACT.md`). Les routes sont préf
 - `GET /api/user/getusers` (admin) — liste + stats `totalUsers`, `lastMonthUsers`
 - `PUT /api/user/update/:userId` (auth proprio) — met à jour `username/email/profilePicture/password`
 - `DELETE /api/user/delete/:userId` (auth proprio/admin)
+- `PATCH /api/user/:id/promote` (admin) — promeut un utilisateur existant en admin
 - `GET /api/user/:userId` — public
 
 ### Admin users (CMS)
@@ -104,7 +105,10 @@ Alias admin (compat CMS) :
 - `PUT /api/user/:id` (admin) — update user
 - `PUT /api/user/:id/toggle-admin` (admin) — toggle admin
 
-> ⚙️ **Promotion admin** : utilisez le script `npm run make-admin -- --email someone@mail.com` pour attribuer le rôle `ADMIN` si aucun admin n’existe.
+> ⚙️ **Promotion admin** : 
+> - `.env` : définir `ADMIN_EMAILS=admin1@mail.com,admin2@mail.com` pour promouvoir automatiquement à la connexion/inscription.
+> - Route : `PATCH /api/user/:id/promote` (admin) pour promouvoir un compte existant.
+> - Script : `npm run make-admin -- --email someone@mail.com` pour forcer un admin en DB.
 
 ### Posts / Events
 - `POST /api/post/create` (auth) — crée un article/événement (`title`, `content`, `category`, `subCategory`, `image`, `eventDate`, `location`, `featuredMediaId`)

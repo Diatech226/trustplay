@@ -4,6 +4,7 @@ import {
   getUser,
   getUsers,
   getMe,
+  promoteUser,
   test,
   updateUser,
 } from '../controllers/user.controller.js';
@@ -17,6 +18,7 @@ router.post('/create', verifyToken, requireAdmin, createAdminUser);
 router.put('/update/:userId', verifyToken, updateUser);
 router.put('/:id', verifyToken, requireAdmin, updateAdminUser);
 router.put('/:id/toggle-admin', verifyToken, requireAdmin, toggleAdminUser);
+router.patch('/:id/promote', verifyToken, requireAdmin, promoteUser);
 router.delete('/delete/:userId', verifyToken, deleteUser);
 router.get('/getusers', verifyToken, requireAdmin, getUsers);
 router.get('/me', verifyToken, getMe);

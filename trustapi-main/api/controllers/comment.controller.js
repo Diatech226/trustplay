@@ -109,7 +109,7 @@ export const editComment = async (req, res, next) => {
       return next(errorHandler(404, "Comment not found"));
     }
 
-    if (comment.userId.toString() !== req.user.id && req.user.role !== "ADMIN") {
+    if (comment.userId.toString() !== req.user.id && req.user.isAdmin !== true) {
       return next(errorHandler(403, "You are not allowed to edit this comment"));
     }
 
@@ -134,7 +134,7 @@ export const deleteComment = async (req, res, next) => {
       return next(errorHandler(404, "Comment not found"));
     }
 
-    if (comment.userId.toString() !== req.user.id && req.user.role !== "ADMIN") {
+    if (comment.userId.toString() !== req.user.id && req.user.isAdmin !== true) {
       return next(errorHandler(403, "You are not allowed to delete this comment"));
     }
 
@@ -148,7 +148,7 @@ export const deleteComment = async (req, res, next) => {
 /** ✅ Get All Comments (Admin Only) */
 export const getComments = async (req, res, next) => {
   try {
-    if (req.user?.role !== "ADMIN") {
+    if (req.user?.isAdmin !== true) {
       return next(errorHandler(403, "You are not allowed to get all comments"));
     }
 

@@ -25,7 +25,7 @@ async function makeAdmin() {
 
     const user = await User.findOneAndUpdate(
       { email: email.toLowerCase() },
-      { $set: { role: 'ADMIN' } },
+      { $set: { role: 'ADMIN', isAdmin: true } },
       { new: true }
     );
 

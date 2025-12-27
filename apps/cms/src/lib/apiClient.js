@@ -63,7 +63,7 @@ const handleUnauthorized = () => {
   }
   if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
     const returnTo = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
-    window.location.href = `/login?returnTo=${returnTo}`;
+    window.location.href = `/login?returnTo=${returnTo}&reason=unauthorized`;
   }
 };
 
@@ -127,10 +127,6 @@ const request = async (
   }
 
   const response = await fetch(buildUrl(path), config);
-
-  if (response.status === 403 && needsAuth && !skipAuthRedirect) {
-    handleUnauthorized();
-  }
 
   if (response.status === 401 && needsAuth && !token && !skipAuthRedirect) {
     handleUnauthorized();

@@ -83,8 +83,7 @@ export const verifyToken = async (req, res, next) => {
 };
 
 export const requireAdmin = (req, res, next) => {
-  const isAdmin = req.user?.isAdmin === true || req.user?.role === "ADMIN";
-  if (!isAdmin) {
+  if (req.user?.isAdmin !== true) {
     logAuth(req, { tokenSource: req.tokenSource, user: req.user });
     return res
       .status(403)

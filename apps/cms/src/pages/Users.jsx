@@ -36,7 +36,7 @@ export const Users = () => {
   const { addToast } = useToast();
   const { user: currentUser, status } = useAuth();
   const { confirm } = useConfirm();
-  const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.isAdmin === true;
+  const isAdmin = currentUser?.isAdmin === true;
   const resolveUserId = (user) => user?._id || user?.id;
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(totalUsers / limit)), [totalUsers, limit]);
