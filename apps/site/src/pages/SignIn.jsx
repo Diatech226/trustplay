@@ -16,6 +16,7 @@ export default function SignIn() {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const returnToParam = searchParams.get('returnTo');
+  const reasonParam = searchParams.get('reason');
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -78,7 +79,7 @@ export default function SignIn() {
           ? fromState
           : fromState?.pathname && fromState?.pathname !== '/sign-in'
           ? `${fromState.pathname}${fromState.search || ''}${fromState.hash || ''}`
-          : profile?.role && ['ADMIN', 'EDITOR', 'AUTHOR'].includes(profile.role)
+          : profile?.role === 'ADMIN'
           ? '/dashboard'
           : '/');
 
@@ -112,6 +113,12 @@ export default function SignIn() {
               Accédez à vos contenus et à votre tableau de bord.
             </p>
           </div>
+
+          {reasonParam === 'unauthorized' && (
+            <Alert className='mb-4' color='warning'>
+              Votre session a expiré. Merci de vous reconnecter.
+            </Alert>
+          )}
 
           {errorMessage && (
             <Alert className='mb-4' color='failure'>
@@ -179,7 +186,7 @@ export default function SignIn() {
                   Connexion...
                 </span>
               ) : (
-                'Se connecter'
+                'Sign in / Se connecter'
               )}
             </button>
 
@@ -193,7 +200,7 @@ export default function SignIn() {
           <div className='flex flex-col sm:flex-row sm:items-center sm:justify-center gap-2 text-sm mt-6'>
             <span className='text-gray-600 dark:text-gray-300'>Pas encore de compte ?</span>
             <Link to='/sign-up' className='text-blue-500 hover:underline'>
-              Créer un compte
+              Create account / S’inscrire
             </Link>
           </div>
         </div>

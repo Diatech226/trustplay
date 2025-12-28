@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-export const USER_ROLES = ["ADMIN", "EDITOR", "AUTHOR", "USER"];
+export const USER_ROLES = ["USER", "ADMIN"];
 
 const userSchema = new mongoose.Schema(
   {
@@ -35,10 +35,6 @@ const userSchema = new mongoose.Schema(
       enum: USER_ROLES,
       default: "USER",
       set: (value) => (typeof value === 'string' ? value.toUpperCase() : value),
-    },
-    isAdmin: {
-      type: Boolean,
-      default: false,
     },
     profilePicture: {
       type: String,

@@ -11,7 +11,6 @@ const sanitizeUser = (userDoc = {}) => {
   delete userObj.passwordResetExpiresAt;
   const resolvedRole = resolveUserRole(userObj) || 'USER';
   userObj.role = resolvedRole;
-  userObj.isAdmin = resolvedRole === 'ADMIN';
   return userObj;
 };
 
@@ -27,20 +26,15 @@ const normalizeRole = (value, { allowDefault = false } = {}) => {
   return USER_ROLES.includes(role) ? role : null;
 };
 
-const resolveRoleInput = (roleValue, isAdminValue, options = {}) => {
+const resolveRoleInput = (roleValue, _isAdminValue, options = {}) => {
   const normalizedRole = normalizeRole(roleValue, options);
   if (normalizedRole) return normalizedRole;
-  if (typeof isAdminValue === 'boolean') {
-    return isAdminValue ? 'ADMIN' : 'USER';
-  }
   return options.allowDefault ? 'USER' : null;
 };
 
 const ensureNotLastAdmin = async (user) => {
   if (resolveUserRole(user) !== 'ADMIN') return;
-  const adminCount = await User.countDocuments({
-    $or: [{ isAdmin: true }, { role: 'ADMIN' }],
-  });
+  const adminCount = await User.countDocuments({ role: 'ADMIN' });
   if (adminCount <= 1) {
     throw errorHandler(400, 'Cannot remove the last admin');
   }
@@ -48,14 +42,13 @@ const ensureNotLastAdmin = async (user) => {
 
 const applyRole = (user, role) => {
   user.role = role;
-  user.isAdmin = role === 'ADMIN';
 };
 
 export const createAdminUser = async (req, res, next) => {
   const username = normalizeString(req.body?.username);
   const email = normalizeString(req.body?.email).toLowerCase();
   const password = normalizeString(req.body?.password);
-  const role = resolveRoleInput(req.body?.role, req.body?.isAdmin, { allowDefault: true });
+  const role = resolveRoleInput(req.body?.role, undefined, { allowDefault: true });
 
   if (!username || !email || !password) {
     return next(errorHandler(400, 'Username, email and password are required'));
@@ -84,7 +77,6 @@ export const createAdminUser = async (req, res, next) => {
       email,
       passwordHash,
       role,
-      isAdmin: role === 'ADMIN',
       authProvider: 'local',
     });
 
@@ -169,7 +161,7 @@ export const updateAdminUser = async (req, res, next) => {
   const updates = {};
   const username = normalizeString(req.body?.username);
   const email = normalizeString(req.body?.email).toLowerCase();
-  const role = resolveRoleInput(req.body?.role, req.body?.isAdmin);
+  const role = resolveRoleInput(req.body?.role);
   const password = normalizeString(req.body?.password);
   const profilePicture = normalizeString(req.body?.profilePicture);
 
@@ -185,7 +177,7 @@ export const updateAdminUser = async (req, res, next) => {
     }
     updates.email = email;
   }
-  if (req.body?.role !== undefined || req.body?.isAdmin !== undefined) {
+  if (req.body?.role !== undefined) {
     if (!role) {
       return next(errorHandler(400, 'Invalid role provided'));
     }
@@ -225,9 +217,6 @@ export const updateAdminUser = async (req, res, next) => {
     }
 
     Object.assign(user, updates);
-    if (updates.role) {
-      user.isAdmin = updates.role === 'ADMIN';
-    }
     await user.save();
 
     return res.status(200).json({

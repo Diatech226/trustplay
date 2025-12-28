@@ -37,7 +37,7 @@ Créer un fichier `.env` dans `apps/cms` (voir `.env.example`) :
 - Posts : `GET /api/posts`, `GET /api/post/:postId`, `POST /api/posts`, `PUT /api/posts/:postId`, `DELETE /api/posts/:postId`
 - Upload : `POST /api/uploads` (FormData, champ `file`) + `GET /api/uploads/list`
 - Comments : `GET /api/comment/getcomments`, `DELETE /api/comment/deleteComment/:commentId`
-- Users : `GET /api/user/getusers`, `POST /api/user/create`, `PUT /api/user/:id`, `DELETE /api/user/delete/:id`, `PUT /api/user/:id/toggle-admin`
+- Users : `GET /api/user/getusers`, `POST /api/user/admin-create`, `PATCH /api/user/:id/role`, `PUT /api/user/:id`, `DELETE /api/user/delete/:id`
 
 ## Identifiants
 - Le CMS utilise `_id` (Mongo) pour l'édition/suppression des posts.

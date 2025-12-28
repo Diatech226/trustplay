@@ -11,12 +11,6 @@ const normalizeUser = (payload) => {
   if (typeof nextUser.role === 'string') {
     nextUser.role = nextUser.role.trim().toUpperCase();
   }
-  if (!nextUser.role && nextUser.isAdmin === true) {
-    nextUser.role = 'ADMIN';
-  }
-  if (nextUser.role && nextUser.isAdmin === undefined) {
-    nextUser.isAdmin = nextUser.role === 'ADMIN';
-  }
   return nextUser;
 };
 

@@ -3,7 +3,7 @@
 ## Base
 - **Base URL** : configurable via `NEXT_PUBLIC_API_URL` (front) / `VITE_API_URL` fallback. Exemple local : `http://localhost:3000`.
 - **Prefix** : toutes les routes sont préfixées par `/api` sauf la statique `/uploads/*`.
-- **Auth** : JWT signé avec `JWT_SECRET`, transmis en cookie `access_token` (HttpOnly) **ou** header `Authorization: Bearer <token>`.
+- **Auth** : JWT signé avec `JWT_SECRET`, transmis via header `Authorization: Bearer <token>` (cookie `access_token` accepté en fallback HttpOnly).
 - **CORS** : origines autorisées via `CORS_ORIGIN` (CSV), `credentials: true`, méthodes `GET,POST,PUT,DELETE,OPTIONS`, headers `Content-Type, Authorization`.
 - **Réponses** :
   - Succès : `{ "success": true, "data": { ... }, "message"? }` + champs dupliqués pour compatibilité (`user`, `post`, `comments`, `token`...).
@@ -25,9 +25,11 @@
 | GET | `/api/user/test` | Non | Ping API | `{ success: true, message }` |
 | GET | `/api/user/me` | Oui | Profil depuis le token | `{ success, data: { user }, user }` |
 | GET | `/api/user/getusers` | Oui (admin) | Query: `startIndex` (offset, défaut 0), `limit` (défaut 9), `sort` (`asc`/`desc`) | `{ success, users, totalUsers, lastMonthUsers, data: {...} }` |
-| POST | `/api/user/create` | Oui (admin) | `{ username, email, password, role/isAdmin }` | `{ success, data: { user }, message }` |
+| POST | `/api/user/admin-create` | Oui (admin) | `{ username, email, password, role }` | `{ success, data: { user }, message }` |
+| POST | `/api/user/create` | Oui (admin) | Alias de `/api/user/admin-create` | `{ success, data: { user }, message }` |
 | GET | `/api/user/:userId` | Non | Récupérer un utilisateur par id | `{ success, data: { user }, user }` |
-| PUT | `/api/user/:userId` | Oui (admin) | `{ username?, email?, role/isAdmin?, password? }` | `{ success, data: { user }, message }` |
+| PUT | `/api/user/:userId` | Oui (admin) | `{ username?, email?, role?, password? }` | `{ success, data: { user }, message }` |
+| PATCH | `/api/user/:id/role` | Oui (admin) | `{ role }` | `{ success, data: { user }, message }` |
 | PUT | `/api/user/update/:userId` | Oui (proprio) | Corps optionnel : `username`, `email`, `profilePicture`, `password` | `{ success, data: { user }, user }` |
 | PUT | `/api/user/:userId/toggle-admin` | Oui (admin) | – | `{ success, data: { user }, message }` |
 | DELETE | `/api/user/delete/:userId` | Oui (proprio ou admin) | – | `{ success, message }` |
@@ -73,7 +75,7 @@
 | GET | `/uploads/<filename>` | Non | – | Fichier statique (servi depuis `UPLOAD_DIR`) |
 
 ## Agence (clients/projets/campagnes)
-Toutes les routes sont protégées `verifyToken` + rôle `ADMIN`/`EDITOR`/`AUTHOR`.
+Toutes les routes sont protégées `verifyToken` + rôle `ADMIN`.
 
 | Méthode | Route | Auth | Payload | Réponse |
 | --- | --- | --- | --- | --- |
@@ -94,7 +96,7 @@ Toutes les routes sont protégées `verifyToken` + rôle `ADMIN`/`EDITOR`/`AUTHO
 | DELETE | `/api/campaigns/:id` | Oui | – | `200 { success, message }` |
 
 ## Modèles de données
-- **User** : `username`, `email`, `passwordHash`, `role` (`ADMIN`/`EDITOR`/`AUTHOR`/`USER`), `profilePicture`, timestamps.
+- **User** : `username`, `email`, `passwordHash`, `role` (`ADMIN`/`USER`), `profilePicture`, timestamps.
 - **Post** : `userId`, `title`, `slug` (slugify lowercase/strict), `content`, `image`, `category`, `subCategory`, `eventDate?`, `location?`, timestamps.
 - **Comment** : `userId`, `postId`, `content`, `likes[]`, `numberOfLikes`, timestamps.
 

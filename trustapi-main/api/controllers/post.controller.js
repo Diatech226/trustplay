@@ -297,7 +297,7 @@ export const updatepost = async (req, res, next) => {
     const postId = req.params.postId;
     const targetUserId = req.params.userId;
     let existingPost;
-    if (req.user?.isAdmin !== true) {
+    if (req.user?.role !== 'ADMIN') {
       let ownerId = targetUserId;
       if (!ownerId && postId) {
         existingPost = await Post.findById(postId).select(
@@ -407,7 +407,7 @@ export const getpost = async (req, res, next) => {
       return next(errorHandler(404, 'Post not found'));
     }
 
-    const isAdmin = req.user?.isAdmin === true;
+    const isAdmin = req.user?.role === 'ADMIN';
     const isOwner = req.user?.id && post.userId?.toString() === req.user.id;
     if (post.status !== 'published' && !isAdmin && !isOwner) {
       return next(errorHandler(403, 'You are not allowed to view this post'));
@@ -448,7 +448,7 @@ export const getposts = async (req, res, next) => {
     const requestedTags = parseTags(tags);
     const statusList = status ? status.split(',').map((value) => value.trim()).filter(Boolean) : [];
 
-    const isAdmin = req.user?.isAdmin === true;
+    const isAdmin = req.user?.role === 'ADMIN';
     const allowAllStatuses = isAdmin || Boolean(userId);
     const defaultStatusFilter =
       !allowAllStatuses && statusList.length === 0 ? { status: { $in: ['published'] } } : {};
@@ -531,7 +531,7 @@ export const updatePostStatus = async (req, res, next) => {
       return next(errorHandler(404, 'Post not found'));
     }
 
-    if (req.user?.isAdmin !== true && post.userId?.toString() !== req.user?.id) {
+    if (req.user?.role !== 'ADMIN' && post.userId?.toString() !== req.user?.id) {
       return next(errorHandler(403, 'You are not allowed to update this post'));
     }
 
@@ -557,7 +557,7 @@ export const deletepost = async (req, res, next) => {
   try {
     const postId = req.params.postId;
     const targetUserId = req.params.userId;
-    if (req.user?.isAdmin !== true) {
+    if (req.user?.role !== 'ADMIN') {
       let ownerId = targetUserId;
       if (!ownerId && postId) {
         const existing = await Post.findById(postId).select('userId');

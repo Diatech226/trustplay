@@ -14,11 +14,11 @@ if (!process.env.DATABASE_URL) {
 }
 
 if (!email) {
-  console.error('Usage: npm run make-admin -- --email someone@mail.com');
+  console.error('Usage: node scripts/seed-admin.js --email someone@mail.com');
   process.exit(1);
 }
 
-async function makeAdmin() {
+const seedAdmin = async () => {
   try {
     await mongoose.connect(process.env.DATABASE_URL);
     console.log('Connected to MongoDB');
@@ -37,12 +37,12 @@ async function makeAdmin() {
 
     console.log(`User ${user.email} is now ADMIN.`);
   } catch (error) {
-    console.error('Make-admin failed:', error.message);
+    console.error('Seed admin failed:', error.message);
     process.exitCode = 1;
   } finally {
     await mongoose.disconnect();
     console.log('Disconnected from MongoDB');
   }
-}
+};
 
-makeAdmin();
+seedAdmin();

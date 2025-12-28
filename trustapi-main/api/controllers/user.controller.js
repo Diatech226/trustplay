@@ -9,7 +9,6 @@ const sanitizeUser = (userDoc = {}) => {
   delete userObj.passwordHash;
   const resolvedRole = resolveUserRole(userObj) || 'USER';
   userObj.role = resolvedRole;
-  userObj.isAdmin = resolvedRole === 'ADMIN';
   return userObj;
 };
 
@@ -65,7 +64,7 @@ export const updateUser = async (req, res, next) => {
 };
 
 export const deleteUser = async (req, res, next) => {
-  if (req.user?.isAdmin !== true && req.user.id !== req.params.userId) {
+  if (req.user?.role !== 'ADMIN' && req.user.id !== req.params.userId) {
     return next(errorHandler(403, 'You are not allowed to delete this user'));
   }
   try {
@@ -74,9 +73,7 @@ export const deleteUser = async (req, res, next) => {
       return next(errorHandler(404, 'User not found'));
     }
     if (resolveUserRole(targetUser) === 'ADMIN') {
-      const adminCount = await User.countDocuments({
-        $or: [{ isAdmin: true }, { role: 'ADMIN' }],
-      });
+      const adminCount = await User.countDocuments({ role: 'ADMIN' });
       if (adminCount <= 1) {
         return next(errorHandler(400, 'Cannot delete the last admin'));
       }
@@ -106,7 +103,7 @@ export const getMe = async (req, res, next) => {
 };
 
 export const getUsers = async (req, res, next) => {
-  if (req.user?.isAdmin !== true) {
+  if (req.user?.role !== 'ADMIN') {
     return next(errorHandler(403, 'You are not allowed to see all users'));
   }
   try {
@@ -160,7 +157,7 @@ export const getUsers = async (req, res, next) => {
 };
 
 export const promoteUser = async (req, res, next) => {
-  if (req.user?.isAdmin !== true) {
+  if (req.user?.role !== 'ADMIN') {
     return next(errorHandler(403, 'You are not allowed to promote users'));
   }
 
@@ -170,13 +167,44 @@ export const promoteUser = async (req, res, next) => {
       return next(errorHandler(404, 'User not found'));
     }
 
-    user.isAdmin = true;
     user.role = 'ADMIN';
     await user.save({ validateBeforeSave: false });
     const rest = sanitizeUser(user);
     res.status(200).json({ success: true, data: { user: rest }, user: rest });
   } catch (error) {
     next(error);
+  }
+};
+
+export const updateUserRole = async (req, res, next) => {
+  if (req.user?.role !== 'ADMIN') {
+    return next(errorHandler(403, 'You are not allowed to change roles'));
+  }
+
+  const nextRole = typeof req.body?.role === 'string' ? req.body.role.trim().toUpperCase() : '';
+  if (!USER_ROLES.includes(nextRole)) {
+    return next(errorHandler(400, 'Invalid role provided'));
+  }
+
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return next(errorHandler(404, 'User not found'));
+    }
+
+    if (user.role === 'ADMIN' && nextRole !== 'ADMIN') {
+      const adminCount = await User.countDocuments({ role: 'ADMIN' });
+      if (adminCount <= 1) {
+        return next(errorHandler(400, 'Cannot remove the last admin'));
+      }
+    }
+
+    user.role = nextRole;
+    await user.save({ validateBeforeSave: false });
+    const rest = sanitizeUser(user);
+    return res.status(200).json({ success: true, data: { user: rest }, user: rest });
+  } catch (error) {
+    return next(error);
   }
 };
 

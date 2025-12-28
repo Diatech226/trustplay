@@ -3,15 +3,16 @@ import {
   createUser,
   deleteUser,
   fetchUsers,
-  toggleAdminUser,
   updateUser,
+  updateUserRole,
 } from '../services/users.service';
 import { formatDate } from '../lib/format';
 import { useToast } from '../components/ToastProvider';
 import { useAuth } from '../context/AuthContext';
 import { useConfirm } from '../components/ConfirmDialog';
+import { AccessDenied } from '../components/AccessDenied';
 
-const ROLE_OPTIONS = ['ADMIN', 'EDITOR', 'AUTHOR', 'USER'];
+const ROLE_OPTIONS = ['ADMIN', 'USER'];
 const EMPTY_FORM = {
   username: '',
   email: '',
@@ -36,7 +37,7 @@ export const Users = () => {
   const { addToast } = useToast();
   const { user: currentUser, status } = useAuth();
   const { confirm } = useConfirm();
-  const isAdmin = currentUser?.isAdmin === true;
+  const isAdmin = currentUser?.role === 'ADMIN';
   const resolveUserId = (user) => user?._id || user?.id;
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(totalUsers / limit)), [totalUsers, limit]);
@@ -160,14 +161,14 @@ export const Users = () => {
     }
   };
 
-  const handleToggleAdmin = async (user) => {
+  const handleRoleChange = async (user) => {
     const nextRole = user.role === 'ADMIN' ? 'USER' : 'ADMIN';
     try {
       const targetUserId = resolveUserId(user);
       if (!targetUserId) {
         throw new Error("Impossible d'identifier l'utilisateur.");
       }
-      await toggleAdminUser(targetUserId);
+      await updateUserRole(targetUserId, nextRole);
       addToast(
         nextRole === 'ADMIN'
           ? 'Utilisateur promu en admin.'
@@ -193,12 +194,10 @@ export const Users = () => {
 
   if (!isAdmin) {
     return (
-      <div className="section">
-        <div className="section-header">
-          <h2>Utilisateurs</h2>
-        </div>
-        <div className="empty-state">Accès admin requis pour consulter les utilisateurs.</div>
-      </div>
+      <AccessDenied
+        title="Utilisateurs"
+        message="Accès admin requis pour consulter les utilisateurs."
+      />
     );
   }
 
@@ -359,7 +358,7 @@ export const Users = () => {
                         <button className="button secondary" onClick={() => handleEdit(user)}>
                           Éditer
                         </button>
-                        <button className="button secondary" onClick={() => handleToggleAdmin(user)}>
+                        <button className="button secondary" onClick={() => handleRoleChange(user)}>
                           {user.role === 'ADMIN' ? 'Rétrograder admin' : 'Promouvoir admin'}
                         </button>
                         <button className="button danger" onClick={() => handleDelete(user)}>

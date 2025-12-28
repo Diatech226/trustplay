@@ -1,6 +1,6 @@
 import { USER_ROLES } from '../models/user.model.js';
 
-export const allowedAgencyRoles = ['ADMIN', 'EDITOR', 'AUTHOR'];
+export const allowedAgencyRoles = ['ADMIN'];
 
 export const normalizeRoleValue = (value) => {
   if (value === undefined || value === null || value === '') return null;
@@ -11,17 +11,14 @@ export const normalizeRoleValue = (value) => {
 export const resolveUserRole = (user) => {
   const normalized = normalizeRoleValue(user?.role);
   if (normalized) return normalized;
-  if (user?.isAdmin === true) return 'ADMIN';
   return null;
 };
 
 export const ensureUserRole = async (user) => {
   if (!user) return null;
   const resolved = resolveUserRole(user) || 'USER';
-  const nextIsAdmin = resolved === 'ADMIN';
-  if (user.role !== resolved || user.isAdmin !== nextIsAdmin) {
+  if (user.role !== resolved) {
     user.role = resolved;
-    user.isAdmin = nextIsAdmin;
     await user.save({ validateBeforeSave: false });
   }
   return resolved;
