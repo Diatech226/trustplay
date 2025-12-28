@@ -24,19 +24,60 @@ import settingsRoutes from './routes/settings.route.js';
 import adminUsersRoutes from './routes/adminUsers.route.js';
 import rubricsRoutes from './routes/rubrics.route.js';
 
-// Connexion à MongoDB
-if (!process.env.DATABASE_URL) {
-  console.error('DATABASE_URL est manquant dans votre environnement. Merci de le renseigner.');
-  process.exit(1);
+const databaseUrl = process.env.DATABASE_URL;
+const dbState = {
+  ready: false,
+  error: null,
+};
+
+const resolveDatabaseHost = (value) => {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.host || url.hostname || null;
+  } catch (error) {
+    return null;
+  }
+};
+
+const maskValue = (value) => {
+  if (!value) return 'unknown';
+  if (value.length <= 4) return '***';
+  return `${value.slice(0, 2)}***${value.slice(-2)}`;
+};
+
+const databaseHost = resolveDatabaseHost(databaseUrl);
+
+if (!databaseUrl) {
+  console.error('DATABASE_URL est manquant : le serveur démarre sans base, routes DB indisponibles.');
+  dbState.error = new Error('DATABASE_URL missing');
+} else {
+  mongoose
+    .connect(databaseUrl)
+    .then(() => console.log('MongoDB is connected'))
+    .catch((err) => {
+      dbState.error = err;
+      console.error(
+        'Impossible de se connecter à MongoDB. Vérifiez DATABASE_URL et les droits réseau.',
+        err.message
+      );
+    });
 }
 
-mongoose
-  .connect(process.env.DATABASE_URL)
-  .then(() => console.log('MongoDB is connected'))
-  .catch((err) => {
-    console.error('Impossible de se connecter à MongoDB. Vérifiez DATABASE_URL et les droits réseau.', err.message);
-    process.exit(1);
-  });
+mongoose.connection.on('connected', () => {
+  dbState.ready = true;
+  dbState.error = null;
+});
+mongoose.connection.on('disconnected', () => {
+  dbState.ready = false;
+  if (!dbState.error) {
+    dbState.error = new Error('MongoDB disconnected');
+  }
+});
+mongoose.connection.on('error', (err) => {
+  dbState.ready = false;
+  dbState.error = err;
+});
 
 const __dirname = path.resolve();
 const app = express();
@@ -87,7 +128,7 @@ app.use(
 );
 
 app.use((req, res, next) => {
-  res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
   next();
 });
 
@@ -98,6 +139,30 @@ app.use((req, res, next) => {
     res.setHeader('Cache-Control', `public, max-age=${maxAge}, stale-while-revalidate=${maxAge * 2}`);
   }
   next();
+});
+
+app.get('/api/health', (_req, res) => {
+  res.json({
+    success: true,
+    status: dbState.ready ? 'ok' : 'degraded',
+    db: {
+      ready: dbState.ready,
+    },
+    message: dbState.ready ? 'API ready' : 'API running without database connection',
+  });
+});
+app.use('/api', (req, res, next) => {
+  if (req.path === '/health') {
+    return next();
+  }
+  if (!dbState.ready) {
+    return res.status(503).json({
+      success: false,
+      message: 'Database unavailable. Try again later.',
+      dbReady: false,
+    });
+  }
+  return next();
 });
 
 // Routes
@@ -115,9 +180,6 @@ app.use('/api/campaigns', campaignRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/admin', adminUsersRoutes);
 app.use('/api/rubrics', rubricsRoutes);
-app.get('/api/health', (_req, res) => {
-  res.json({ success: true });
-});
 app.use('/', seoRoutes);
 
 // Serve uploaded assets
@@ -155,6 +217,20 @@ app.use((err, req, res, next) => {
   });
 });
 
+const resolvePort = (value) => {
+  if (value === undefined || value === null || value === '') return 3000;
+  const parsed = Number.parseInt(String(value), 10);
+  if (Number.isNaN(parsed)) {
+    console.warn(`PORT invalide "${value}". Utilisation du port 3000.`);
+    return 3000;
+  }
+  return parsed;
+};
+
 // Lancer le serveur
-const PORT = process.env.PORT || 3000;
+const PORT = resolvePort(process.env.PORT);
+const maskedDbHost = maskValue(databaseHost);
+const corsSummary = allowedOrigins.length ? allowedOrigins.join(',') : '*';
+
+console.log(`[BOOT] PORT=${PORT} DB_HOST=${maskedDbHost} CORS_ORIGIN=${corsSummary}`);
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}!`));

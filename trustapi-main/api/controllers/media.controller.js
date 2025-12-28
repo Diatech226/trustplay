@@ -43,6 +43,21 @@ const resolveExtension = (file) => {
   return EXTENSION_MIME_MAP.get(file.mimetype) || '.bin';
 };
 
+const resolveMediaOwnerId = (media) => {
+  if (!media) return null;
+  const owner = media.uploadedBy || media.createdBy;
+  if (!owner) return null;
+  if (typeof owner === 'string') return owner;
+  return owner._id?.toString?.() || owner.id?.toString?.() || null;
+};
+
+const isOwnerOrAdmin = (media, user) => {
+  if (!user) return false;
+  if (user.role === 'ADMIN') return true;
+  const ownerId = resolveMediaOwnerId(media);
+  return ownerId ? ownerId === user.id : false;
+};
+
 const storage = multer.diskStorage({
   destination: (_, __, cb) => {
     cb(null, absoluteUploadPath);
@@ -152,6 +167,22 @@ export const createMedia = async (req, res, next) => {
   }
 };
 
+export const requireMediaOwnerOrAdmin = async (req, res, next) => {
+  try {
+    const media = await Media.findById(req.params.id);
+    if (!media) {
+      return next(errorHandler(404, 'Media not found'));
+    }
+    if (!isOwnerOrAdmin(media, req.user)) {
+      return res.status(403).json({ success: false, message: 'Forbidden: owner or admin required' });
+    }
+    req.media = media;
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const listMedia = async (req, res, next) => {
   try {
     const {
@@ -218,7 +249,7 @@ export const getMedia = async (req, res, next) => {
 
 export const deleteMedia = async (req, res, next) => {
   try {
-    const media = await Media.findById(req.params.id);
+    const media = req.media || (await Media.findById(req.params.id));
     if (!media) {
       return next(errorHandler(404, 'Media not found'));
     }
@@ -233,7 +264,7 @@ export const deleteMedia = async (req, res, next) => {
 
 export const updateMedia = async (req, res, next) => {
   try {
-    const media = await Media.findById(req.params.id);
+    const media = req.media || (await Media.findById(req.params.id));
     if (!media) {
       return next(errorHandler(404, 'Media not found'));
     }

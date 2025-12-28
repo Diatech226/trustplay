@@ -38,6 +38,10 @@ Variables utilisées par le code :
 - `UPLOAD_DIR` : répertoire pour stocker les fichiers uploadés (servi via `/uploads`)
 - SMTP Gmail (email reset) : `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` (mot de passe d'application Gmail) et `MAIL_FROM` (ex. `"Trust Media <your_email@gmail.com>"`). Si SMTP est absent, le lien de réinitialisation est simplement loggé en console (mode dev), sans erreur.
 
+### Santé & disponibilité
+- `GET /api/health` répond toujours (même sans MongoDB).
+- Si MongoDB est indisponible, les routes dépendantes de la base renvoient `503`.
+
 ### Emails de réinitialisation (SMTP)
 - Configurer un mot de passe d'application Gmail (`SMTP_PASS`) et le couple `SMTP_USER`/`MAIL_FROM` pour activer l'envoi réel via Gmail SMTP.
 - `SMTP_HOST` par défaut : `smtp.gmail.com`, `SMTP_PORT` par défaut : `587` (STARTTLS).
@@ -133,10 +137,10 @@ Alias admin (compat CMS) :
 - `POST /api/uploads` — `multipart/form-data` avec champ `file` (recommandé) ou `image` (compat)
   - Si fichier image : génération automatique des variantes `thumb` (400px), `medium` (900px), `cover` (1400px) en WebP + AVIF.
   - Retour : `{ originalUrl, thumbUrl, mediumUrl, coverUrl, thumbAvifUrl, mediumAvifUrl, coverAvifUrl, width, height }`.
-- `POST /api/media/upload` (admin) — upload MediaAsset (variants `thumb`, `card`, `cover`, `og`)
-- `GET /api/media` (admin) — liste paginée + filtres `search`, `category`, `type`, `status`
-- `PUT /api/media/:id` (admin) — update metadata
-- `DELETE /api/media/:id` (admin) — suppression DB + fichiers
+- `POST /api/media/upload` (auth) — upload MediaAsset (variants `thumb`, `card`, `cover`, `og`)
+- `GET /api/media` (auth) — liste paginée + filtres `search`, `category`, `type`, `status`
+- `PUT /api/media/:id` (owner/admin) — update metadata
+- `DELETE /api/media/:id` (owner/admin) — suppression DB + fichiers
 - `GET /uploads/<filename>` — fichiers statiques servis depuis `UPLOAD_DIR` (défaut `./uploads`)
 
 ### Settings
