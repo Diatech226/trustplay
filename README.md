@@ -50,8 +50,9 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
   - `GET /api/events` (liste TrustEvent côté CMS).
   - `POST /api/comment/create`, likes/édition/suppression et listing admin.
   - `POST /api/uploads` (Multer legacy) avec filtrage MIME et quotas (10 Mo image, 100 Mo vidéo).
-  - `POST /api/media/upload` (Multer + Sharp) pour MediaAsset.
-  - `GET /api/media`, `POST /api/media`, `PUT /api/media/:id`, `DELETE /api/media/:id` (bibliothèque média).
+  - `POST /api/media/upload` (Multer + Sharp) pour MediaAsset (auth).
+  - `GET /api/media`, `POST /api/media` (auth), `PUT /api/media/:id`, `DELETE /api/media/:id` (owner/admin).
+  - `GET /api/health` (healthcheck, répond même si MongoDB est indisponible).
   - `GET /api/settings` (public) et `PUT /api/settings` (admin) pour les réglages globaux du site.
 - **Auth & permissions** : middleware JWT `verifyToken` + contrôle `requireAdmin` sur les routes critiques (liste users, commentaires). Les autres permissions (ownership) sont gérées dans les contrôleurs.
 
@@ -104,11 +105,11 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 ```
 
 ### Endpoints Media/Upload
-- `POST /api/media/upload` : upload fichier (multipart) + création automatique du MediaAsset et variantes.
-- `GET /api/media?search=&category=&type=&status=&page=&limit=` : liste + filtres + pagination.
-- `POST /api/media` : créer une entrée metadata si besoin.
-- `PUT /api/media/:id` : metadata (titre/alt/caption/credit/tags/status).
-- `DELETE /api/media/:id` : suppression (admin).
+- `POST /api/media/upload` : upload fichier (multipart) + création automatique du MediaAsset et variantes (auth).
+- `GET /api/media?search=&category=&type=&status=&page=&limit=` : liste + filtres + pagination (auth).
+- `POST /api/media` : créer une entrée metadata si besoin (auth).
+- `PUT /api/media/:id` : metadata (owner/admin).
+- `DELETE /api/media/:id` : suppression (owner/admin).
 
 ## Rubriques / Taxonomie
 ### Schéma Rubric (Mongo)

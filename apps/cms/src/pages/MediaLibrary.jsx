@@ -27,6 +27,14 @@ const formatSize = (size) => {
   return `${Math.round(size / 1024)} Ko`;
 };
 
+const resolveOwnerId = (media) => {
+  if (!media) return null;
+  const owner = media.uploadedBy || media.createdBy;
+  if (!owner) return null;
+  if (typeof owner === 'string') return owner;
+  return owner._id || owner.id || null;
+};
+
 export const MediaLibrary = () => {
   const [mediaItems, setMediaItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -38,6 +46,7 @@ export const MediaLibrary = () => {
   const { addToast } = useToast();
   const { user: currentUser } = useAuth();
   const isAdmin = currentUser?.role === 'ADMIN';
+  const currentUserId = currentUser?.id || currentUser?._id || null;
   const { rubrics: mediaRubrics } = useRubrics('Media');
   const [editingMedia, setEditingMedia] = useState(null);
   const [editForm, setEditForm] = useState({
@@ -312,6 +321,9 @@ export const MediaLibrary = () => {
               <tbody>
                 {mediaItems.map((item) => {
                   const previewUrl = resolveMediaUrlFromAsset(item, 'thumb');
+                  const ownerId = resolveOwnerId(item);
+                  const isOwner = Boolean(ownerId && currentUserId && ownerId === currentUserId);
+                  const canEdit = isAdmin || isOwner;
                   return (
                   <tr key={item._id}>
                     <td>
@@ -342,10 +354,12 @@ export const MediaLibrary = () => {
                         >
                           Copier URL
                         </button>
-                        <button className="button secondary" type="button" onClick={() => openEditModal(item)}>
-                          Éditer
-                        </button>
-                        {isAdmin ? (
+                        {canEdit ? (
+                          <button className="button secondary" type="button" onClick={() => openEditModal(item)}>
+                            Éditer
+                          </button>
+                        ) : null}
+                        {canEdit ? (
                           <button className="button danger" type="button" onClick={() => handleDelete(item._id)}>
                             Supprimer
                           </button>
