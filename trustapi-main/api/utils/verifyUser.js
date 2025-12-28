@@ -29,7 +29,6 @@ const logAuth = (req, { tokenSource, user } = {}) => {
     tokenSource,
     userId: user?.id,
     role: user?.role,
-    isAdmin: user?.isAdmin,
   });
 };
 
@@ -70,7 +69,6 @@ export const verifyToken = async (req, res, next) => {
       id: user._id.toString(),
       email: user.email,
       role: resolvedRole,
-      isAdmin: resolvedRole === 'ADMIN',
     };
 
     req.token = token;
@@ -83,7 +81,7 @@ export const verifyToken = async (req, res, next) => {
 };
 
 export const requireAdmin = (req, res, next) => {
-  if (req.user?.isAdmin !== true) {
+  if (req.user?.role !== 'ADMIN') {
     logAuth(req, { tokenSource: req.tokenSource, user: req.user });
     return res
       .status(403)
@@ -112,20 +110,15 @@ export const verifyTokenOptional = async (req, res, next) => {
           id: user._id.toString(),
           email: user.email,
           role: resolvedRole,
-          isAdmin: resolvedRole === 'ADMIN',
         };
       }
     } else {
       let normalizedRole = normalizeRoleValue(decodedUser?.role);
-      if (!normalizedRole && decodedUser?.isAdmin === true) {
-        normalizedRole = 'ADMIN';
-      }
       if (normalizedRole) {
         req.user = {
           id: decodedUser.id,
           email: decodedUser.email,
           role: normalizedRole,
-          isAdmin: normalizedRole === 'ADMIN',
         };
       }
     }

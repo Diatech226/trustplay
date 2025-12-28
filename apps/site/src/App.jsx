@@ -9,7 +9,7 @@ import LoadingScreen from './components/LoadingScreen';
 import { HelmetProvider } from "react-helmet-async";
 import { useDispatch, useSelector } from 'react-redux';
 import { restoreSession, setUser } from './redux/user/userSlice';
-import { apiRequest, authUtils, getAuthToken } from './lib/apiClient';
+import { apiRequest, getAuthToken } from './lib/apiClient';
 import { logoutAndClearPersistedData } from './redux/store';
 
 const Home = lazy(() => import('./pages/Home'));
@@ -58,17 +58,20 @@ const Rubriques = lazy(() => import('./pages/Rubriques'));
 
 export default function App() {
   const dispatch = useDispatch();
-  const { currentUser, token } = useSelector((state) => state.user);
+  const { currentUser, token, initialized } = useSelector((state) => state.user);
 
   useEffect(() => {
     dispatch(restoreSession());
   }, [dispatch]);
 
   useEffect(() => {
+    if (!initialized) return;
     const fetchProfile = async () => {
       const storedToken = token || (await getAuthToken());
-      const shouldRefresh = storedToken && (!currentUser || !currentUser.role);
-      if (!shouldRefresh) return;
+      if (!storedToken) {
+        dispatch(logoutAndClearPersistedData());
+        return;
+      }
       try {
         const me = await apiRequest('/api/user/me', { auth: true });
         const profile = me.user || me.data?.user || me;
@@ -76,16 +79,12 @@ export default function App() {
           dispatch(setUser({ user: profile, token: storedToken }));
         }
       } catch (error) {
-        if (error?.status === 401 && authUtils.isInvalidTokenResponse(error?.data)) {
-          dispatch(logoutAndClearPersistedData());
-        } else {
-          console.error('Unable to refresh session', error.message);
-        }
+        dispatch(logoutAndClearPersistedData());
       }
     };
 
     fetchProfile();
-  }, [currentUser, dispatch, token]);
+  }, [dispatch, initialized, token]);
 
   return (
     <BrowserRouter>

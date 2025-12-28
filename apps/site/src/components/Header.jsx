@@ -37,7 +37,7 @@ export default function Header() {
       { path: '/about', label: 'À propos' },
     ];
 
-    const canAccessDashboard = currentUser && ['ADMIN', 'EDITOR', 'AUTHOR'].includes(currentUser.role);
+    const canAccessDashboard = currentUser && currentUser.role === 'ADMIN';
     if (canAccessDashboard) {
       baseNav.push({ path: '/dashboard', label: 'Dashboard' });
     }

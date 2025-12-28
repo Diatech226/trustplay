@@ -37,7 +37,7 @@ export const MediaLibrary = () => {
   const [uploadSubCategory, setUploadSubCategory] = useState('');
   const { addToast } = useToast();
   const { user: currentUser } = useAuth();
-  const isAdmin = currentUser?.isAdmin === true;
+  const isAdmin = currentUser?.role === 'ADMIN';
   const { rubrics: mediaRubrics } = useRubrics('Media');
   const [editingMedia, setEditingMedia] = useState(null);
   const [editForm, setEditForm] = useState({

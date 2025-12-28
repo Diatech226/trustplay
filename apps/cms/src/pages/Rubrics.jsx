@@ -27,7 +27,7 @@ export const Rubrics = () => {
   const { addToast } = useToast();
   const { confirm } = useConfirm();
   const { user: currentUser, status } = useAuth();
-  const isAdmin = currentUser?.isAdmin === true;
+  const isAdmin = currentUser?.role === 'ADMIN';
 
   const loadRubrics = useCallback(async () => {
     if (!isAdmin) {

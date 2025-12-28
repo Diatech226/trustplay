@@ -40,7 +40,7 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 - **Routes principales** :
   - `POST /api/auth/*` pour signup/signin/signout et flux reset password.
   - `GET /api/user/me`, `PUT /api/user/update/:userId`, `GET /api/user/getusers` (admin), `DELETE /api/user/delete/:userId`.
-  - `POST /api/user/create`, `PUT /api/user/:id`, `PUT /api/user/:id/toggle-admin` (alias admin CMS).
+  - `POST /api/user/admin-create`, `PATCH /api/user/:id/role`, `PUT /api/user/:id` (alias admin CMS).
   - `POST /api/admin/users`, `GET /api/admin/users`, `PUT /api/admin/users/:id`, `DELETE /api/admin/users/:id`, `PUT /api/admin/users/:id/toggle-admin` (admin users CRUD CMS).
   - `GET /api/rubrics?scope=TrustMedia`, `POST /api/rubrics`, `PUT /api/rubrics/:id`, `DELETE /api/rubrics/:id` (taxonomie rubriques).
   - `POST /api/post/create`, `GET /api/post/getposts`, `GET /api/post/:postId`, `PUT /api/post/updatepost/:postId/:userId`, `DELETE /api/post/deletepost/:postId/:userId`.
@@ -56,25 +56,25 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 - **Auth & permissions** : middleware JWT `verifyToken` + contrôle `requireAdmin` sur les routes critiques (liste users, commentaires). Les autres permissions (ownership) sont gérées dans les contrôleurs.
 
 ### Auth/RBAC — source de vérité
-- **Champ canonique** : `User.isAdmin` (boolean) est la source de vérité pour l'accès admin.
-- **Rôles éditoriaux** : `User.role` reste utilisé pour `EDITOR`/`AUTHOR`/`USER` (admin synchronisé sur `role=ADMIN`).
-- **JWT payload** : `{ id, email, role, isAdmin }` est signé à la connexion/inscription.
-- **Source de vérité** : `GET /api/user/me` retourne le profil canonique (rôle + `isAdmin`).
+- **Champ canonique** : `User.role` (`USER` ou `ADMIN`) est la source de vérité pour l'accès admin.
+- **JWT payload** : `{ id, email, role }` est signé à la connexion/inscription.
+- **Source de vérité** : `GET /api/user/me` retourne le profil canonique (rôle inclus).
 - **Transport** : l’API attend `Authorization: Bearer <token>` (cookie `access_token` accepté en fallback).
 - **Session CMS** : token stocké en `localStorage` (`cms_token`) + hydratation via `/api/user/me`.
 - **Session site** : token stocké via Redux/asyncStorage, revalidation via `/api/user/me`.
 - **Logout** : `POST /api/auth/signout` efface le cookie `access_token`; le front doit purger le token local (localStorage / redux-persist).
 - **Identifiants** : le CMS utilise `_id` pour l'édition/suppression, le site public utilise `slug` pour la lecture (`/post/:slug`).
+- **Migration** : les comptes existants sans rôle doivent être normalisés à `USER` (script `trustapi-main/scripts/migrateRoles.js`).
 
 ### Admin emails & promotion
 - **ADMIN_EMAILS** : définir `ADMIN_EMAILS=admin1@mail.com,admin2@mail.com` dans `trustapi-main/.env` pour promouvoir automatiquement ces comptes en admin à l'inscription/connexion.
 - **Promotion manuelle** :
-  - API : `PATCH /api/user/:id/promote` (admin requis).
-  - Script : `npm run make-admin -- --email someone@mail.com`.
+  - API : `PATCH /api/user/:id/role` (admin requis).
+  - Script : `npm run make-admin -- --email someone@mail.com` ou `node trustapi-main/scripts/seed-admin.js --email someone@mail.com`.
 
 ## Fonctionnalités actuelles
 - **Site média** : pages éditoriales par rubrique, page article avec commentaires, recherche multi-critères et pagination incrémentale, pages événement/production/projets.
-- **Authentification & rôles** : email/mot de passe JWT, persistance locale, gardes de routes, rôles `ADMIN`/`EDITOR`/`AUTHOR`/`USER`.
+- **Authentification & rôles** : email/mot de passe JWT, persistance locale, gardes de routes, rôles `ADMIN`/`USER`.
 - **Backoffice CMS** : dashboard multi-modules (articles, pages, médias, événements, campagnes, clients, projets, newsletter, formulaires, commentaires, utilisateurs, paramètres, activité) avec maquettes de données et actions rapides.
 - **Médias** : upload image/vidéo via API, stockage dans `UPLOAD_DIR` exposé en statique.
 - **Thème & personnalisation** : mode clair/sombre, favoris/lecture, historique et préférences de notification côté client.
@@ -190,8 +190,8 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 - Formats générés : WebP (AVIF optionnel).
 
 ## QA checklist (Users & Rubriques)
-- **Users** : liste / création / édition / suppression ok (CMS → `/api/admin/users`).
-- **Admin toggle** : promotion/rétrogradation via `/api/admin/users/:id/toggle-admin`.
+- **Users** : liste / création / édition / suppression ok (CMS → `/api/user/getusers`, `/api/user/admin-create`).
+- **Admin toggle** : promotion/rétrogradation via `/api/user/:id/role`.
 - **Rubriques** : création TrustMedia/TrustEvent/Media visible dans CMS, site public et éditeurs.
 - **Legacy** : les posts avec subCategory inconnue affichent “Legacy”.
 
@@ -203,7 +203,7 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 - **SEO & partage** : `react-helmet-async` enrichi (canonical, OG/Twitter) + schéma Article sur la page article.
 
 ## Itération 3 – Cockpit agence (clients/projets/campagnes)
-- **Modèles Mongo + API CRUD** : nouveaux schémas `Client`, `Project`, `Campaign` (relations client → projet → campagne) avec endpoints REST `/api/clients`, `/api/projects`, `/api/campaigns` protégés (`ADMIN/EDITOR/AUTHOR`). Cascade automatique sur les suppressions.
+- **Modèles Mongo + API CRUD** : nouveaux schémas `Client`, `Project`, `Campaign` (relations client → projet → campagne) avec endpoints REST `/api/clients`, `/api/projects`, `/api/campaigns` protégés (`ADMIN`). Cascade automatique sur les suppressions.
 - **Admin UI** : vues Clients / Projets / Campagnes branchées sur l'API avec filtres, tri, pagination, sélection détaillée et actions rapides (génération de brief, assignation de statut, joindre un média depuis la médiathèque).
 - **Médias liés** : attachement direct des assets uploadés aux projets/campagnes (champ `attachments`/`assets`), réutilisable depuis la Media Library.
 - **Documentation & seed** : README/API contract enrichis + seed JSON mis à jour pour injecter des clients/projets/campagnes (`trustapi-main/scripts/cms-seed.json`).
@@ -357,7 +357,7 @@ Checklist détaillée : [`QA_CHECKLIST.md`](./QA_CHECKLIST.md).
 - **Site public** : home, recherche, rubriques, pages légales, détail article + commentaires.
 - **CMS & studio éditorial** : articles/pages/événements avec éditeur riche, filtres, upload médias, suggestions.
 - **Agence & delivery** : campagnes, clients, projets, formulaires, newsletter (mock côté UI, à brancher sur l'API).
-- **Gouvernance** : rôles ADMIN/EDITOR/AUTHOR/USER en UI, journal d’activité et paramètres.
+- **Gouvernance** : rôles ADMIN/USER en UI, journal d’activité et paramètres.
 
 ### Dashboard CMS (MVP pro)
 - **Routes clés** : `/` (overview), `/posts`, `/posts/new`, `/posts/:id/edit`, `/media`, `/comments`, `/users`.

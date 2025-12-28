@@ -51,13 +51,14 @@ Variables utilisées par le code :
 - `api/utils/*` : helpers (erreur, vérification JWT)
 
 ## Auth & CORS
-- Auth JWT : le serveur signe un JWT avec `{ id, email, role, isAdmin }` et le renvoie dans `data.token`. **Le header `Authorization: Bearer <token>` est la source de vérité pour toutes les routes protégées.**
-- Middleware `verifyToken` : lit d'abord le bearer (cookie `access_token` accepté en fallback) ; en cas d'absence, renvoie `401 { success: false, message: "Unauthorized: No token provided" }`, et en cas de signature invalide renvoie `401 { success: false, message: "Unauthorized: Invalid token" }`. Le payload décodé est exposé sur `req.user` (`{ id, email, role, isAdmin }`).
+- Auth JWT : le serveur signe un JWT avec `{ id, email, role }` et le renvoie dans `data.token`. **Le header `Authorization: Bearer <token>` est la source de vérité pour toutes les routes protégées.**
+- Middleware `verifyToken` : lit d'abord le bearer (cookie `access_token` accepté en fallback) ; en cas d'absence, renvoie `401 { success: false, message: "Unauthorized: No token provided" }`, et en cas de signature invalide renvoie `401 { success: false, message: "Unauthorized: Invalid token" }`. Le payload décodé est exposé sur `req.user` (`{ id, email, role }`).
 - CORS : origines multiples via `CORS_ORIGIN`, `credentials: true`, méthodes `GET,POST,PUT,DELETE,OPTIONS`, headers `Content-Type, Authorization`.
 - Front : utiliser `NEXT_PUBLIC_API_URL` (ou `VITE_API_URL` en fallback) et appeler `fetch(..., { credentials: 'include' })`. Les requêtes authentifiées ajoutent automatiquement le bearer.
 
 ## Modèles de données
-- **User** : `username`, `email`, `passwordHash` (obligatoire uniquement pour `authProvider=local`), `authProvider` (`local` par défaut, compat `google`/`firebase`), `role` (`USER` par défaut, `ADMIN`, `EDITOR`, `AUTHOR`), `isAdmin` (boolean canonique), `profilePicture`, timestamps.
+- **User** : `username`, `email`, `passwordHash` (obligatoire uniquement pour `authProvider=local`), `authProvider` (`local` par défaut, compat `google`/`firebase`), `role` (`USER` par défaut, `ADMIN`), `profilePicture`, timestamps.
+- **Migration** : les utilisateurs existants sans rôle doivent être normalisés à `USER` (ex. via `scripts/migrateRoles.js`).
 - **Post** : `userId`, `title`, `slug` (slugify lowercase/strict), `content`, `image`, `imageOriginal`, `imageThumb`, `imageCover`, `imageMedium`, `imageThumbAvif`, `imageCoverAvif`, `imageMediumAvif`, `category` (`TrustMedia`, `TrustEvent`, `TrustProd`, `uncategorized`), `subCategory`, `eventDate?`, `location?`, timestamps.
 - **Media** : `type` (`image`/`video`), `title`, `alt`, `caption`, `credit`, `category`, `tags`, `status`, `original`, `variants` (`thumb`, `card`, `cover`, `og`), `createdBy`, timestamps. (Champs legacy conservés pour compatibilité.)
 - **Comment** : `userId`, `postId`, `content`, `likes[]`, `numberOfLikes`, timestamps.
@@ -86,6 +87,8 @@ Résumé (voir le détail complet dans `API_CONTRACT.md`). Les routes sont préf
 ### Utilisateurs
 - `GET /api/user/me` (auth) — profil courant
 - `GET /api/user/getusers` (admin) — liste + stats `totalUsers`, `lastMonthUsers`
+- `POST /api/user/admin-create` (admin) — créer un utilisateur `{ username, email, password, role }`
+- `PATCH /api/user/:id/role` (admin) — mise à jour du rôle (`ADMIN`/`USER`)
 - `PUT /api/user/update/:userId` (auth proprio) — met à jour `username/email/profilePicture/password`
 - `DELETE /api/user/delete/:userId` (auth proprio/admin)
 - `PATCH /api/user/:id/promote` (admin) — promeut un utilisateur existant en admin
@@ -101,14 +104,14 @@ Résumé (voir le détail complet dans `API_CONTRACT.md`). Les routes sont préf
 - `DELETE /api/admin/users/:id` (admin) — suppression
 
 Alias admin (compat CMS) :
-- `POST /api/user/create` (admin) — création user
+- `POST /api/user/create` (admin) — création user (alias `admin-create`)
 - `PUT /api/user/:id` (admin) — update user
 - `PUT /api/user/:id/toggle-admin` (admin) — toggle admin
 
 > ⚙️ **Promotion admin** : 
 > - `.env` : définir `ADMIN_EMAILS=admin1@mail.com,admin2@mail.com` pour promouvoir automatiquement à la connexion/inscription.
-> - Route : `PATCH /api/user/:id/promote` (admin) pour promouvoir un compte existant.
-> - Script : `npm run make-admin -- --email someone@mail.com` pour forcer un admin en DB.
+> - Route : `PATCH /api/user/:id/role` (admin) pour promouvoir/rétrograder un compte existant.
+> - Scripts : `npm run make-admin -- --email someone@mail.com` ou `node scripts/seed-admin.js --email someone@mail.com`.
 
 ### Posts / Events
 - `POST /api/post/create` (auth) — crée un article/événement (`title`, `content`, `category`, `subCategory`, `image`, `eventDate`, `location`, `featuredMediaId`)
@@ -148,7 +151,7 @@ Alias admin (compat CMS) :
 - `GET /api/campaigns` — filtre par projet/canal/statut ; `POST` pour créer une campagne (objectif, budget, KPIs, planning, assets médias).
 - `GET /api/campaigns/:id` — détail (avec projet + client) ; `PUT`/`DELETE` pour modifier/supprimer.
 
-Toutes ces routes exigent un rôle `ADMIN`/`EDITOR`/`AUTHOR` + Bearer JWT.
+Toutes ces routes exigent un rôle `ADMIN` + Bearer JWT.
 
 ### Flux Auth (JWT)
 1. **Signin** :

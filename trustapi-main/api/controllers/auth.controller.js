@@ -27,7 +27,6 @@ const sanitizeUser = (userDoc = {}) => {
   delete userObj.passwordResetExpiresAt;
   const resolvedRole = resolveUserRole(userObj) || 'USER';
   userObj.role = resolvedRole;
-  userObj.isAdmin = resolvedRole === 'ADMIN';
   return userObj;
 };
 
@@ -61,7 +60,6 @@ export const signup = async (req, res, next) => {
       passwordHash: hashedPassword,
       authProvider: 'local',
       role: shouldBeAdmin ? 'ADMIN' : 'USER',
-      isAdmin: shouldBeAdmin,
     });
 
     await newUser.save();
@@ -77,7 +75,6 @@ export const signup = async (req, res, next) => {
         id: newUser._id,
         email: newUser.email,
         role: resolvedRole,
-        isAdmin: resolvedRole === 'ADMIN',
       },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
@@ -128,8 +125,7 @@ export const signin = async (req, res) => {
       return res.status(500).json({ success: false, message: 'Internal server error' });
     }
 
-    if (isAdminEmail(validUser.email, adminEmails)) {
-      validUser.isAdmin = true;
+    if (isAdminEmail(validUser.email, adminEmails) && validUser.role !== 'ADMIN') {
       validUser.role = 'ADMIN';
       await validUser.save({ validateBeforeSave: false });
     }
@@ -140,7 +136,6 @@ export const signin = async (req, res) => {
         id: validUser._id,
         email: validUser.email,
         role: resolvedRole,
-        isAdmin: resolvedRole === 'ADMIN',
       },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
@@ -264,7 +259,6 @@ export const resetPassword = async (req, res) => {
         id: user._id,
         email: user.email,
         role: resolvedRole,
-        isAdmin: resolvedRole === 'ADMIN',
       },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }

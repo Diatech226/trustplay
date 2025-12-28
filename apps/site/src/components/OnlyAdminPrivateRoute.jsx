@@ -6,7 +6,7 @@ export default function OnlyAdminPrivateRoute() {
   const { currentUser, initialized, token, loading } = useSelector((state) => state.user);
   const location = useLocation();
   const isCheckingSession = !initialized || loading || (!!token && !currentUser);
-  const isAdmin = currentUser?.isAdmin === true;
+  const isAdmin = currentUser?.role === 'ADMIN';
 
   if (isCheckingSession) {
     return <LoadingScreen label='Vérification des droits...' />;

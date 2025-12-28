@@ -4,7 +4,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { apiRequest } from '../lib/apiClient';
 
 export default function SignUp() {
-  const [formData, setFormData] = useState({ username: '', email: '', password: '' });
+  const [formData, setFormData] = useState({
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
   const [fieldErrors, setFieldErrors] = useState({});
   const [errorMessage, setErrorMessage] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -30,6 +35,9 @@ export default function SignUp() {
     if (!formData.password) {
       errors.password = 'Veuillez choisir un mot de passe.';
     }
+    if (formData.confirmPassword && formData.confirmPassword !== formData.password) {
+      errors.confirmPassword = 'Les mots de passe ne correspondent pas.';
+    }
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -44,9 +52,15 @@ export default function SignUp() {
       setLoading(true);
       setErrorMessage(null);
 
+      const payload = {
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+      };
+
       await apiRequest('/api/auth/signup', {
         method: 'POST',
-        body: formData,
+        body: payload,
       });
 
       setLoading(false);
@@ -153,6 +167,23 @@ export default function SignUp() {
                 <p className='mt-1 text-xs text-red-600'>{fieldErrors.password}</p>
               )}
             </div>
+            <div>
+              <Label htmlFor='confirmPassword' value='Confirmer le mot de passe (optionnel)' />
+              <TextInput
+                type={showPassword ? 'text' : 'password'}
+                placeholder='Confirmer le mot de passe'
+                id='confirmPassword'
+                name='confirmPassword'
+                onChange={handleChange}
+                disabled={loading}
+                value={formData.confirmPassword}
+                autoComplete='new-password'
+                color={fieldErrors.confirmPassword ? 'failure' : 'gray'}
+              />
+              {fieldErrors.confirmPassword && (
+                <p className='mt-1 text-xs text-red-600'>{fieldErrors.confirmPassword}</p>
+              )}
+            </div>
 
             <Button
               gradientDuoTone='purpleToPink'
@@ -166,15 +197,15 @@ export default function SignUp() {
                   Création...
                 </span>
               ) : (
-                'Créer mon compte'
+                'Create account'
               )}
             </Button>
           </form>
 
           <div className='flex flex-col sm:flex-row sm:items-center sm:justify-center gap-2 text-sm mt-6'>
-            <span className='text-gray-600 dark:text-gray-300'>Déjà un compte ?</span>
+            <span className='text-gray-600 dark:text-gray-300'>Already have an account?</span>
             <Link to='/sign-in' className='text-blue-500 hover:underline'>
-              Se connecter
+              Sign in
             </Link>
           </div>
         </div>
