@@ -46,5 +46,6 @@ export const uploadMedia = async (file, metadata = {}) => {
     ...response,
     ...payload,
     media,
+    url: payload?.url || media?.url || response?.url,
   };
 };
