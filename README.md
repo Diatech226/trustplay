@@ -66,6 +66,8 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 - **Logout** : `POST /api/auth/signout` efface le cookie `access_token`; le front doit purger le token local (localStorage / redux-persist).
 - **Identifiants** : le CMS utilise `_id` pour l'édition/suppression, le site public utilise `slug` pour la lecture (`/post/:slug`).
 - **Migration** : les comptes existants sans rôle doivent être normalisés à `USER` (script `trustapi-main/scripts/migrateRoles.js`).
+- **Legacy** : les anciens comptes avec `isAdmin=true` sont automatiquement normalisés en `role=ADMIN` côté API.
+- **Debug (dev-only)** : `GET /api/debug/whoami` renvoie `req.user` + `tokenSource` pour valider le rôle reçu.
 
 ### Admin emails & promotion
 - **ADMIN_EMAILS** : définir `ADMIN_EMAILS=admin1@mail.com,admin2@mail.com` dans `trustapi-main/.env` pour promouvoir automatiquement ces comptes en admin à l'inscription/connexion.

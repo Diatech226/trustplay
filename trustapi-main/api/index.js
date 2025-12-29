@@ -23,6 +23,7 @@ import eventsRoutes from './routes/events.route.js';
 import settingsRoutes from './routes/settings.route.js';
 import adminUsersRoutes from './routes/adminUsers.route.js';
 import rubricsRoutes from './routes/rubrics.route.js';
+import debugRoutes from './routes/debug.route.js';
 
 const databaseUrl = process.env.DATABASE_URL;
 const dbState = {
@@ -180,6 +181,7 @@ app.use('/api/campaigns', campaignRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/admin', adminUsersRoutes);
 app.use('/api/rubrics', rubricsRoutes);
+app.use('/api/debug', debugRoutes);
 app.use('/', seoRoutes);
 
 // Serve uploaded assets

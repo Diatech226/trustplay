@@ -29,6 +29,13 @@ export const createApiClient = ({
   redirectPath,
   buildReturnTo,
 } = {}) => {
+  const isDev =
+    typeof import.meta !== 'undefined'
+      ? Boolean(import.meta.env?.DEV)
+      : typeof process !== 'undefined'
+      ? process.env.NODE_ENV !== 'production'
+      : true;
+
   const resolveToken = async () => {
     if (!getToken) return null;
     return getToken();
@@ -98,7 +105,16 @@ export const createApiClient = ({
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    const response = await fetch(buildUrl(path, apiBaseUrl), config);
+    const url = buildUrl(path, apiBaseUrl);
+    const response = await fetch(url, config);
+    if (!response.ok && isDev) {
+      console.debug('[API]', {
+        method,
+        url,
+        hasToken: Boolean(token),
+        status: response.status,
+      });
+    }
     if (response.status === 401 && needsAuth) {
       await handleUnauthorized();
     }

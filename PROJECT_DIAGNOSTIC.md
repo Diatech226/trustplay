@@ -20,3 +20,13 @@
 
 ## Notes
 - L'ancien `403` sur `/api/media` en USER est considéré comme **résolu** (policy changée).
+
+## Bug "Accès admin requis" (Users & Comments)
+- **Cause racine** : désalignement potentiel entre anciens comptes `isAdmin` et le champ canonique `role`.
+- **Correctif** :
+  - Normalisation côté API : `resolveUserRole` mappe `isAdmin === true` vers `role = ADMIN`.
+  - Endpoint debug (dev-only) : `GET /api/debug/whoami` pour vérifier le rôle renvoyé par le middleware.
+  - Logs front (dev-only) : `apps/shared/apiClient.js` trace les requêtes échouées (method, url, hasToken, status).
+- **Attendu** :
+  - ADMIN : `/api/user/getusers` et `/api/comment/getcomments` → `200`.
+  - USER : `403` explicite sans forcer la déconnexion.
