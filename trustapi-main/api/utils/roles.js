@@ -11,6 +11,7 @@ export const normalizeRoleValue = (value) => {
 export const resolveUserRole = (user) => {
   const normalized = normalizeRoleValue(user?.role);
   if (normalized) return normalized;
+  if (user?.isAdmin === true) return 'ADMIN';
   return null;
 };
 

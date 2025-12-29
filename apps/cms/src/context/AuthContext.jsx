@@ -15,7 +15,7 @@ const normalizeUser = (payload) => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => apiClient.getUser());
+  const [user, setUser] = useState(() => normalizeUser(apiClient.getUser()));
   const [status, setStatus] = useState('loading');
 
   const logout = useCallback((options = {}) => {
