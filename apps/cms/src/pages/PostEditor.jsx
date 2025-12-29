@@ -8,6 +8,8 @@ import { useToast } from '../components/ToastProvider';
 import { MediaPicker } from '../components/MediaPicker';
 import { resolveMediaUrl } from '../lib/mediaUrls';
 import { useRubrics } from '../hooks/useRubrics';
+import { sanitizeHtml } from '../lib/sanitizeHtml';
+import { AccessDenied } from '../components/AccessDenied';
 
 const CATEGORY_OPTIONS = [
   { value: 'TrustMedia', label: 'Trust Media' },
@@ -25,6 +27,7 @@ const TRUST_MEDIA_SUBCATEGORIES = [
 
 const emptyForm = {
   title: '',
+  slug: '',
   content: '',
   category: 'TrustMedia',
   subCategory: TRUST_MEDIA_SUBCATEGORIES[0].value,
@@ -46,6 +49,11 @@ const emptyForm = {
   coverMediaId: '',
   featuredMediaId: '',
   mediaIds: [],
+  eventDate: '',
+  location: '',
+  pricingType: 'free',
+  price: '',
+  registrationEnabled: false,
 };
 
 const resolveMediaCategory = (category) => {
@@ -83,6 +91,7 @@ export const PostEditor = () => {
   const [error, setError] = useState(null);
   const [errorCode, setErrorCode] = useState(null);
   const [pickerState, setPickerState] = useState({ open: false, mode: 'cover' });
+  const [slugTouched, setSlugTouched] = useState(false);
   const quillRef = useRef(null);
   const imageInputRef = useRef(null);
   const videoInputRef = useRef(null);
@@ -155,6 +164,7 @@ export const PostEditor = () => {
           rubricOptions[0]?.value || TRUST_MEDIA_SUBCATEGORIES[0].value;
         setFormData({
           title: post.title || '',
+          slug: post.slug || '',
           content: post.content || '',
           category: nextCategory,
           subCategory:
@@ -179,7 +189,13 @@ export const PostEditor = () => {
           coverMediaId: post.coverMediaId || '',
           featuredMediaId: post.featuredMediaId || '',
           mediaIds: post.mediaIds || [],
+          eventDate: post.eventDate ? post.eventDate.slice(0, 16) : '',
+          location: post.location || '',
+          pricingType: post.pricingType || 'free',
+          price: post.price ?? '',
+          registrationEnabled: Boolean(post.registrationEnabled),
         });
+        setSlugTouched(Boolean(post.slug));
       } catch (err) {
         setError(err.message);
         setErrorCode(err.status || (err.message === 'Post introuvable' ? 404 : null));
@@ -203,11 +219,33 @@ export const PostEditor = () => {
           subCategory: nextValue === 'TrustMedia' ? prev.subCategory || rubricOptions[0]?.value || '' : '',
         };
       }
+      if (name === 'title' && !slugTouched) {
+        return {
+          ...prev,
+          title: nextValue,
+          slug: nextValue
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)+/g, ''),
+        };
+      }
       return {
         ...prev,
         [name]: nextValue,
       };
     });
+  };
+
+  const handleSlugChange = (event) => {
+    const nextValue = event.target.value;
+    setSlugTouched(true);
+    setFormData((prev) => ({
+      ...prev,
+      slug: nextValue
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)+/g, ''),
+    }));
   };
 
   const insertIntoContent = (snippet) => {
@@ -318,7 +356,7 @@ export const PostEditor = () => {
     }));
   };
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = async (event, { overrideStatus } = {}) => {
     event.preventDefault();
     if (!formData.title?.trim()) {
       setError('Le titre est obligatoire.');
@@ -333,17 +371,43 @@ export const PostEditor = () => {
     setLoading(true);
     setError(null);
 
+    if (formData.category === 'TrustEvent') {
+      if (!formData.eventDate) {
+        setError('La date de l’événement est obligatoire.');
+        addToast('La date de l’événement est obligatoire.', { type: 'error' });
+        return;
+      }
+      if (!formData.location?.trim()) {
+        setError('Le lieu est obligatoire pour un événement.');
+        addToast('Le lieu est obligatoire pour un événement.', { type: 'error' });
+        return;
+      }
+      if (formData.pricingType === 'paid' && !formData.price) {
+        setError('Le prix est obligatoire pour un événement payant.');
+        addToast('Le prix est obligatoire pour un événement payant.', { type: 'error' });
+        return;
+      }
+    }
+
     const payload = {
       ...formData,
+      slug: formData.slug || undefined,
       subCategory: formData.category === 'TrustMedia' ? formData.subCategory : '',
       tags: formData.tags
         .split(',')
         .map((tag) => tag.trim())
         .filter(Boolean),
       publishedAt: formData.publishedAt || undefined,
+      content: sanitizeHtml(formData.content),
       mediaIds: formData.mediaIds,
       coverMediaId: formData.coverMediaId || undefined,
       featuredMediaId: formData.featuredMediaId || undefined,
+      status: overrideStatus || formData.status,
+      eventDate: formData.category === 'TrustEvent' ? formData.eventDate : undefined,
+      location: formData.category === 'TrustEvent' ? formData.location : undefined,
+      pricingType: formData.category === 'TrustEvent' ? formData.pricingType : undefined,
+      price: formData.category === 'TrustEvent' ? formData.price : undefined,
+      registrationEnabled: formData.category === 'TrustEvent' ? formData.registrationEnabled : undefined,
     };
 
     try {
@@ -390,6 +454,10 @@ export const PostEditor = () => {
     );
   }
 
+  if (isEditing && errorCode === 403) {
+    return <AccessDenied message="Vous n’avez pas accès à ce post." />;
+  }
+
   return (
     <div className="section">
       <div className="section-header">
@@ -402,6 +470,10 @@ export const PostEditor = () => {
         <label>
           Titre
           <input name="title" value={formData.title} onChange={handleChange} required />
+        </label>
+        <label>
+          Slug
+          <input name="slug" value={formData.slug} onChange={handleSlugChange} placeholder="auto-genere" />
         </label>
         <label>
           Contenu
@@ -464,6 +536,40 @@ export const PostEditor = () => {
             </select>
           </label>
         ) : null}
+        {formData.category === 'TrustEvent' ? (
+          <>
+            <label>
+              Date de l’événement
+              <input type="datetime-local" name="eventDate" value={formData.eventDate} onChange={handleChange} />
+            </label>
+            <label>
+              Lieu
+              <input name="location" value={formData.location} onChange={handleChange} />
+            </label>
+            <label>
+              Type de tarif
+              <select name="pricingType" value={formData.pricingType} onChange={handleChange}>
+                <option value="free">Gratuit</option>
+                <option value="paid">Payant</option>
+              </select>
+            </label>
+            {formData.pricingType === 'paid' ? (
+              <label>
+                Prix
+                <input type="number" name="price" value={formData.price} onChange={handleChange} min="0" />
+              </label>
+            ) : null}
+            <label style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <input
+                type="checkbox"
+                name="registrationEnabled"
+                checked={formData.registrationEnabled}
+                onChange={handleChange}
+              />
+              Inscriptions activées
+            </label>
+          </>
+        ) : null}
         <label>
           Statut
           <select name="status" value={formData.status} onChange={handleChange}>
@@ -521,6 +627,22 @@ export const PostEditor = () => {
         <div style={{ display: 'flex', gap: 12 }}>
           <button className="button" type="submit" disabled={loading}>
             {loading ? 'Enregistrement...' : 'Enregistrer'}
+          </button>
+          <button
+            className="button secondary"
+            type="button"
+            disabled={loading}
+            onClick={(event) => handleSubmit(event, { overrideStatus: 'draft' })}
+          >
+            Sauvegarder brouillon
+          </button>
+          <button
+            className="button secondary"
+            type="button"
+            disabled={loading}
+            onClick={(event) => handleSubmit(event, { overrideStatus: 'published' })}
+          >
+            Sauvegarder & publier
           </button>
           <button className="button secondary" type="button" onClick={() => navigate('/posts')}>
             Annuler

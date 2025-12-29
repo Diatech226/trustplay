@@ -83,7 +83,11 @@ export const createApiClient = ({
     return data;
   };
 
-  const request = async (method, path, { body, headers = {}, auth = true, ...rest } = {}) => {
+  const request = async (
+    method,
+    path,
+    { body, headers = {}, auth = true, skipAuthRedirect = false, ...rest } = {}
+  ) => {
     const needsAuth = auth !== false;
     const token = needsAuth ? await resolveToken() : null;
     const config = {
@@ -107,7 +111,7 @@ export const createApiClient = ({
 
     const url = buildUrl(path, apiBaseUrl);
     const response = await fetch(url, config);
-    if (!response.ok && isDev) {
+    if (isDev) {
       console.debug('[API]', {
         method,
         url,
@@ -115,7 +119,7 @@ export const createApiClient = ({
         status: response.status,
       });
     }
-    if (response.status === 401 && needsAuth) {
+    if (response.status === 401 && needsAuth && !skipAuthRedirect) {
       await handleUnauthorized();
     }
 

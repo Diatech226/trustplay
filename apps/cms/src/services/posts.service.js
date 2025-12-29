@@ -18,8 +18,10 @@ export const fetchPosts = async (params = {}) => {
 };
 
 export const fetchPostById = async (postId) => {
-  if (!postId || postId === 'undefined' || postId === 'null') return null;
-  const response = await apiClient.get(`/api/post/${postId}`);
+  if (!postId || postId === 'undefined' || postId === 'null') {
+    throw new Error('Identifiant de post manquant.');
+  }
+  const response = await apiClient.get(`/api/posts/${postId}`);
   return response?.post || response?.data?.post || null;
 };
 

@@ -153,31 +153,48 @@ export const MediaPicker = ({ open, onClose, onSelect, multiple = false, title =
             Aucun média disponible.
           </div>
         ) : (
-          <div className="media-grid" style={{ marginTop: 16 }}>
-            {mediaItems.map((item) => {
-              const previewUrl = resolveMediaUrlFromAsset(item, 'thumb') || resolveMediaUrl(item.url);
-              return (
-                <button
-                  type="button"
-                  key={item._id}
-                  className={`media-card${selectedIds.has(item._id) ? ' selected' : ''}`}
-                  onClick={() => toggleSelect(item._id)}
-                >
-                  {previewUrl ? (
-                    item.type === 'image' || item.kind === 'image' ? (
-                      <img src={previewUrl} alt={item.title || item.name} />
-                    ) : item.type === 'video' || item.kind === 'video' ? (
-                      <video src={previewUrl} />
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginTop: 16 }}>
+            <div className="media-grid">
+              {mediaItems.map((item) => {
+                const previewUrl = resolveMediaUrlFromAsset(item, 'thumb') || resolveMediaUrl(item.url);
+                return (
+                  <button
+                    type="button"
+                    key={item._id}
+                    className={`media-card${selectedIds.has(item._id) ? ' selected' : ''}`}
+                    onClick={() => toggleSelect(item._id)}
+                  >
+                    {previewUrl ? (
+                      item.type === 'image' || item.kind === 'image' ? (
+                        <img src={previewUrl} alt={item.title || item.name} />
+                      ) : item.type === 'video' || item.kind === 'video' ? (
+                        <video src={previewUrl} />
+                      ) : (
+                        <div className="media-file">{item.name}</div>
+                      )
                     ) : (
-                      <div className="media-file">{item.name}</div>
-                    )
-                  ) : (
-                    <div className="media-file">Preview indisponible</div>
-                  )}
-                  <span>{item.title || item.name}</span>
-                </button>
-              );
-            })}
+                      <div className="media-file">Preview indisponible</div>
+                    )}
+                    <span>{item.title || item.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="card" style={{ padding: 12 }}>
+              <h4 style={{ marginTop: 0 }}>Détails</h4>
+              {selectedItems.length === 0 ? (
+                <p className="helper">Sélectionnez un média pour voir ses détails.</p>
+              ) : (
+                selectedItems.map((item) => (
+                  <div key={item._id} style={{ marginBottom: 12 }}>
+                    <strong>{item.title || item.name}</strong>
+                    <div className="helper">Type: {item.type || item.kind || item.mimeType || '—'}</div>
+                    <div className="helper">Taille: {item.size ? `${Math.round(item.size / 1024)} Ko` : '—'}</div>
+                    <div className="helper">URL: {resolveMediaUrl(item.url)}</div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         )}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, gap: 8 }}>
