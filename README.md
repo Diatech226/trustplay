@@ -18,7 +18,7 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
    - `apps/site/.env.example` → `apps/site/.env`
    - `apps/cms/.env.example` → `apps/cms/.env`
 3. Vérifier les valeurs critiques :
-   - `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN`, `UPLOAD_DIR` côté API.
+   - `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN`, `UPLOAD_DIR`, `API_PUBLIC_URL` côté API.
    - `VITE_API_URL` côté site + CMS.
 4. Démarrer en local : `npm run dev` (site 5173, CMS 5174, API 3000).
 
@@ -278,8 +278,9 @@ Créer un fichier `.env` dans `apps/cms` avec :
 - `VITE_API_URL` : URL de base de l'API REST (ex: `http://localhost:3000`).
 
 Créer `.env` dans `trustapi-main` (voir `.env.example`) avec :
-- `PORT`, `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN`, `FRONTEND_URL`, `UPLOAD_DIR`.
+- `PORT`, `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN`, `FRONTEND_URL`, `UPLOAD_DIR`, `API_PUBLIC_URL`.
 - Exemple recommandé : `CORS_ORIGIN=http://localhost:5173,http://localhost:5174`.
+- `API_PUBLIC_URL` doit pointer vers l'URL publique de l'API (ex: `http://localhost:3000`) pour générer des URLs absolues vers `/uploads`.
 - (Optionnel) Email reset password : `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`.
 
 ### Créer un administrateur
@@ -304,7 +305,7 @@ Créer `.env` dans `trustapi-main` (voir `.env.example`) avec :
 - Les uploads sont servis en statique via `GET /uploads/...`.
 - Les entrées Media stockent par défaut des URLs **relatives** (`/uploads/xxx.jpg`).
 - Le CMS préfixe automatiquement `VITE_API_URL` pour générer les previews et liens cliquables.
-- Pour forcer des URLs absolues côté API, configurez un reverse proxy qui expose `/uploads` sur le même domaine que l'API.
+- Pour forcer des URLs absolues côté API, définissez `API_PUBLIC_URL` (ex: `http://localhost:3000`).
 
 ### URLs de développement
 - Site public : `http://localhost:5173`

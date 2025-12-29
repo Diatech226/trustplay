@@ -43,6 +43,62 @@ const resolveExtension = (file) => {
   return EXTENSION_MIME_MAP.get(file.mimetype) || '.bin';
 };
 
+const resolveApiBaseUrl = (req) => {
+  const configured = process.env.API_PUBLIC_URL?.replace(/\/$/, '');
+  if (configured) return configured;
+  const forwardedProto = req.headers['x-forwarded-proto'];
+  const protocol = forwardedProto ? forwardedProto.split(',')[0] : req.protocol;
+  return `${protocol}://${req.get('host')}`;
+};
+
+const isAbsoluteUrl = (value) => {
+  if (!value || typeof value !== 'string') return false;
+  return value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:') || value.startsWith('blob:');
+};
+
+const resolveAbsoluteUrl = (req, value) => {
+  if (!value) return value;
+  if (isAbsoluteUrl(value)) return value;
+  const baseUrl = resolveApiBaseUrl(req);
+  const normalized = value.startsWith('/') ? value : `/${value}`;
+  return `${baseUrl}${normalized}`;
+};
+
+const resolvePreviewType = (media) => {
+  if (!media) return 'file';
+  if (media.type) return media.type;
+  if (media.kind) return media.kind;
+  if (media.mimeType?.startsWith('video/')) return 'video';
+  if (media.mimeType?.startsWith('image/')) return 'image';
+  return 'file';
+};
+
+const serializeMedia = (media, req) => {
+  if (!media) return media;
+  const payload = media.toObject ? media.toObject() : { ...media };
+  const applyUrl = (value) => resolveAbsoluteUrl(req, value);
+  const variants = payload.variants
+    ? Object.fromEntries(
+        Object.entries(payload.variants).map(([key, variant]) => [
+          key,
+          variant ? { ...variant, url: applyUrl(variant.url) } : variant,
+        ])
+      )
+    : payload.variants;
+
+  return {
+    ...payload,
+    url: applyUrl(payload.url),
+    originalUrl: applyUrl(payload.originalUrl),
+    thumbUrl: applyUrl(payload.thumbUrl),
+    coverUrl: applyUrl(payload.coverUrl),
+    mediumUrl: applyUrl(payload.mediumUrl),
+    original: payload.original ? { ...payload.original, url: applyUrl(payload.original.url) } : payload.original,
+    variants,
+    previewType: resolvePreviewType(payload),
+  };
+};
+
 const resolveMediaOwnerId = (media) => {
   if (!media) return null;
   const owner = media.uploadedBy || media.createdBy;
@@ -128,7 +184,25 @@ export const uploadMedia = async (req, res, next) => {
       mediaId: req.mediaId,
     };
     const media = await createMediaFromUpload(uploadedFile, req.user, payload);
-    return res.status(201).json({ success: true, data: { media }, media });
+    const serialized = serializeMedia(media, req);
+    const absoluteUrl =
+      serialized?.url || serialized?.original?.url || serialized?.originalUrl || serialized?.thumbUrl || null;
+    const filename = absoluteUrl ? absoluteUrl.split('/').pop() : null;
+
+    return res.status(201).json({
+      success: true,
+      data: {
+        id: serialized?._id,
+        url: absoluteUrl,
+        filename,
+        mimeType: serialized?.mimeType,
+        size: serialized?.size,
+        width: serialized?.width,
+        height: serialized?.height,
+        createdAt: serialized?.createdAt,
+      },
+      media: serialized,
+    });
   } catch (error) {
     return next(error);
   }
@@ -161,7 +235,8 @@ export const createMedia = async (req, res, next) => {
     };
 
     const media = await Media.create(payload);
-    res.status(201).json({ success: true, media, data: { media } });
+    const serialized = serializeMedia(media, req);
+    res.status(201).json({ success: true, media: serialized, data: { media: serialized } });
   } catch (error) {
     next(error);
   }
@@ -221,14 +296,15 @@ export const listMedia = async (req, res, next) => {
 
     const totalMedia = await Media.countDocuments(query);
     const totalPages = Math.ceil(totalMedia / safeLimit) || 1;
+    const serializedMedia = media.map((item) => serializeMedia(item, req));
 
     res.status(200).json({
       success: true,
-      media,
+      media: serializedMedia,
       totalMedia,
       page: currentPage,
       totalPages,
-      data: { media, totalMedia, page: currentPage, totalPages },
+      data: { media: serializedMedia, totalMedia, page: currentPage, totalPages },
     });
   } catch (error) {
     next(error);
@@ -241,7 +317,8 @@ export const getMedia = async (req, res, next) => {
     if (!media) {
       return next(errorHandler(404, 'Media not found'));
     }
-    res.status(200).json({ success: true, media, data: { media } });
+    const serialized = serializeMedia(media, req);
+    res.status(200).json({ success: true, media: serialized, data: { media: serialized } });
   } catch (error) {
     next(error);
   }
@@ -292,7 +369,8 @@ export const updateMedia = async (req, res, next) => {
     }
 
     const updated = await Media.findByIdAndUpdate(req.params.id, { $set: updates }, { new: true });
-    res.status(200).json({ success: true, media: updated, data: { media: updated } });
+    const serialized = serializeMedia(updated, req);
+    res.status(200).json({ success: true, media: serialized, data: { media: serialized } });
   } catch (error) {
     next(error);
   }

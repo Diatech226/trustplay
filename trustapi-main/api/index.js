@@ -84,31 +84,48 @@ const __dirname = path.resolve();
 const app = express();
 app.set('trust proxy', true);
 
-const allowedOrigins = (process.env.CORS_ORIGIN || '').split(',').filter(Boolean);
-const resolveCorsOrigin = (origin) => {
-  if (allowedOrigins.length === 0) {
-    return origin || '*';
-  }
-  if (!origin) {
-    return null;
-  }
-  return allowedOrigins.includes(origin) ? origin : null;
-};
+const defaultDevOrigins = ['http://localhost:5173', 'http://localhost:5174'];
+const allowedOrigins = (process.env.CORS_ORIGIN || '')
+  .split(',')
+  .map((value) => value.trim())
+  .filter(Boolean);
+const allowAllOrigins = allowedOrigins.length === 0;
+
+if (!allowAllOrigins && process.env.NODE_ENV !== 'production') {
+  defaultDevOrigins.forEach((origin) => {
+    if (!allowedOrigins.includes(origin)) {
+      allowedOrigins.push(origin);
+    }
+  });
+}
+
 const corsOptions = {
   origin: (origin, callback) => {
-    const resolved = resolveCorsOrigin(origin);
-    if (resolved) {
+    if (allowAllOrigins) {
       return callback(null, true);
     }
-    if (!origin && allowedOrigins.length === 0) {
+    if (!origin) {
       return callback(null, true);
     }
-    return callback(new Error('Not allowed by CORS'));
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(null, false);
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (!origin || allowAllOrigins || allowedOrigins.includes(origin)) {
+    return next();
+  }
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Vary', 'Origin');
+  return res.status(403).json({ success: false, message: 'Origin not allowed by CORS' });
+});
 
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
@@ -232,7 +249,16 @@ const resolvePort = (value) => {
 // Lancer le serveur
 const PORT = resolvePort(process.env.PORT);
 const maskedDbHost = maskValue(databaseHost);
-const corsSummary = allowedOrigins.length ? allowedOrigins.join(',') : '*';
+const corsSummary = allowAllOrigins ? '*' : allowedOrigins.join(',');
+const uploadDir = process.env.UPLOAD_DIR || './uploads';
+const apiPublicUrl = process.env.API_PUBLIC_URL || '';
+const missingRequired = ['DATABASE_URL', 'JWT_SECRET'].filter((key) => !process.env[key]);
 
-console.log(`[BOOT] PORT=${PORT} DB_HOST=${maskedDbHost} CORS_ORIGIN=${corsSummary}`);
+if (missingRequired.length > 0) {
+  console.error(`[BOOT] Missing required env: ${missingRequired.join(', ')}`);
+}
+
+console.log(
+  `[BOOT] PORT=${PORT} DB_HOST=${maskedDbHost} CORS_ORIGIN=${corsSummary} UPLOAD_DIR=${uploadDir} API_PUBLIC_URL=${apiPublicUrl}`
+);
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}!`));
