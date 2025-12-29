@@ -1,5 +1,8 @@
 import EventLog from '../models/eventLog.model.js';
 import Post from '../models/post.model.js';
+import Media from '../models/media.model.js';
+import User from '../models/user.model.js';
+import Comment from '../models/comment.model.js';
 import { errorHandler } from '../utils/error.js';
 
 const getClientIp = (req) =>
@@ -69,13 +72,38 @@ export const getAnalyticsSummary = async (req, res, next) => {
     const last30Days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     const last7Days = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    const [pageViews, shares, eventSignups, uniquePages, topArticles, dailyViews] = await Promise.all([
+    const [
+      pageViews,
+      shares,
+      eventSignups,
+      uniquePages,
+      topArticles,
+      dailyViews,
+      totalPosts,
+      draftPosts,
+      reviewPosts,
+      publishedPosts,
+      scheduledPosts,
+      totalMedia,
+      totalUsers,
+      totalComments,
+      totalEvents,
+    ] = await Promise.all([
       EventLog.countDocuments({ type: 'page_view', createdAt: { $gte: last30Days } }),
       EventLog.countDocuments({ type: 'share', createdAt: { $gte: last30Days } }),
       EventLog.countDocuments({ type: 'event_signup', createdAt: { $gte: last30Days } }),
       EventLog.distinct('slug', { type: 'page_view', createdAt: { $gte: last30Days } }),
       aggregateTopArticles(last30Days),
       aggregateDailyViews(last7Days),
+      Post.countDocuments({}),
+      Post.countDocuments({ status: 'draft' }),
+      Post.countDocuments({ status: 'review' }),
+      Post.countDocuments({ status: 'published' }),
+      Post.countDocuments({ status: 'scheduled' }),
+      Media.countDocuments({}),
+      User.countDocuments({}),
+      Comment.countDocuments({}),
+      Post.countDocuments({ category: 'TrustEvent' }),
     ]);
 
     const latestEvents = await EventLog.find({ createdAt: { $gte: last30Days } })
@@ -94,6 +122,17 @@ export const getAnalyticsSummary = async (req, res, next) => {
         topArticles,
         dailyViews,
         latestEvents,
+        posts: {
+          total: totalPosts,
+          draft: draftPosts,
+          review: reviewPosts,
+          published: publishedPosts,
+          scheduled: scheduledPosts,
+        },
+        events: { total: totalEvents },
+        media: { total: totalMedia },
+        users: { total: totalUsers },
+        comments: { total: totalComments },
       },
     });
   } catch (error) {

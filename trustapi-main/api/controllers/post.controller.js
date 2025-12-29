@@ -205,7 +205,8 @@ export const create = async (req, res, next) => {
       return next(errorHandler(400, 'Invalid category'));
     }
 
-    const slug = slugify(title, { lower: true, strict: true });
+    const rawSlug = req.body.slug ? String(req.body.slug) : title;
+    const slug = slugify(rawSlug, { lower: true, strict: true });
     const normalizedSubCategory = normalizeSubCategory(subCategory);
     if (category === 'TrustMedia') {
       if (!normalizedSubCategory) {
@@ -273,6 +274,7 @@ export const create = async (req, res, next) => {
         location,
         pricingType: normalizedPricing,
         price: normalizedPricing === 'paid' ? parsedPrice : undefined,
+        registrationEnabled: req.body.registrationEnabled !== undefined ? Boolean(req.body.registrationEnabled) : true,
       }),
       coverMediaId,
       mediaIds: parseMediaIds(mediaIds),
@@ -361,8 +363,10 @@ export const updatepost = async (req, res, next) => {
     const normalizedOgImage = normalizeMediaUrl(req.body.ogImage);
     const imagePayload = buildImageUpdatePayload(req.body);
 
+    const nextSlug = req.body.slug ? slugify(req.body.slug, { lower: true, strict: true }) : undefined;
     const updatePayload = removeUndefined({
       title: req.body.title,
+      slug: nextSlug,
       content: req.body.content,
       category: req.body.category,
       subCategory: nextCategory === 'TrustMedia' ? normalizedSubCategory : undefined,
@@ -377,6 +381,10 @@ export const updatepost = async (req, res, next) => {
       location: req.body.location,
       pricingType: nextCategory === 'TrustEvent' ? normalizedPricing : undefined,
       price: nextCategory === 'TrustEvent' && normalizedPricing === 'paid' ? parsedPrice : undefined,
+      registrationEnabled:
+        nextCategory === 'TrustEvent' && req.body.registrationEnabled !== undefined
+          ? Boolean(req.body.registrationEnabled)
+          : undefined,
       coverMediaId: req.body.coverMediaId,
       mediaIds: req.body.mediaIds ? parseMediaIds(req.body.mediaIds) : undefined,
       featuredMediaId: req.body.featuredMediaId,

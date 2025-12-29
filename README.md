@@ -180,6 +180,38 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 3. Le CMS liste via `/api/media` et permet la sélection dans l’éditeur.
 4. Les posts stockent `featuredMediaId` et continuent de supporter `image` legacy.
 
+## Posts & editorial workflow (CMS)
+### Statuts supportés
+- `draft` : brouillon interne.
+- `review` : en relecture.
+- `published` : en ligne.
+- `scheduled` : publication planifiée.
+- `archived` : hors ligne.
+
+### Flux d’édition
+1. Créer un post via `/posts/new` (titre + slug auto, catégorie, rubrique, statut).
+2. Sélectionner un **featured media** ou uploader un fichier (créé côté `/api/media/upload`).
+3. Insérer des médias inline via le Media Picker (images/vidéos).
+4. Sauvegarder en brouillon ou publier.
+
+### TrustEvent (événements)
+- Champs requis : `eventDate`, `location`, `pricingType` (`free|paid`), `price` si payant.
+- Les événements sont des posts `category=TrustEvent` et apparaissent dans le module Events.
+
+## Overview (CMS)
+- Le tableau de bord s’appuie sur `GET /api/analytics/summary` (admin) pour les KPI.
+- Les cartes KPI redirigent vers les pages filtrées :
+  - Brouillons → `/posts?status=draft`
+  - Publiés → `/posts?status=published`
+  - Planifiés → `/posts?status=scheduled`
+  - Médias → `/media`
+  - Utilisateurs → `/users`
+  - Commentaires → `/comments`
+  - Événements → `/events`
+
+## QA checklist (CMS)
+Consulter la checklist dédiée : [`docs/QA.md`](./docs/QA.md).
+
 ### Convention URLs média
 - **Stockage** : chemin relatif `/uploads/<filename>` en base (normalisé côté API).
 - **Front** : construire l'URL publique via `API_BASE_URL` (helper `resolveMediaUrl` dans le site et `apps/cms/src/lib/mediaUrls.js`).

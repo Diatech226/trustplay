@@ -66,6 +66,10 @@ const PostSchema = new mongoose.Schema(
       type: Number,
       min: 0,
     },
+    registrationEnabled: {
+      type: Boolean,
+      default: true,
+    },
     status: {
       type: String,
       enum: ["draft", "review", "published", "scheduled", "archived"],
