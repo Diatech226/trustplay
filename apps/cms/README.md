@@ -34,8 +34,8 @@ Créer un fichier `.env` dans `apps/cms` (voir `.env.example`) :
 - `/settings` : paramètres
 
 ## Endpoints utilisés
-- Posts : `GET /api/posts`, `GET /api/post/:postId`, `POST /api/posts`, `PUT /api/posts/:postId`, `DELETE /api/posts/:postId`
-- Upload : `POST /api/uploads` (FormData, champ `file`) + `GET /api/uploads/list`
+- Posts : `GET /api/posts`, `GET /api/posts/:postId`, `POST /api/posts`, `PUT /api/posts/:postId`, `DELETE /api/posts/:postId`
+- Media : `POST /api/media/upload` (FormData, champ `file`) + `GET /api/media`
 - Comments : `GET /api/comment/getcomments`, `DELETE /api/comment/deleteComment/:commentId`
 - Users : `GET /api/user/getusers`, `POST /api/user/admin-create`, `PATCH /api/user/:id/role`, `PUT /api/user/:id`, `DELETE /api/user/delete/:id`
 

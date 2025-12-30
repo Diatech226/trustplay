@@ -89,7 +89,7 @@ const allowedOrigins = (process.env.CORS_ORIGIN || '')
   .split(',')
   .map((value) => value.trim())
   .filter(Boolean);
-const allowAllOrigins = allowedOrigins.length === 0;
+const allowAllOrigins = allowedOrigins.length === 0 && process.env.NODE_ENV !== 'production';
 
 if (!allowAllOrigins && process.env.NODE_ENV !== 'production') {
   defaultDevOrigins.forEach((origin) => {
@@ -101,37 +101,32 @@ if (!allowAllOrigins && process.env.NODE_ENV !== 'production') {
 
 const corsOptions = {
   origin: (origin, callback) => {
-    if (allowAllOrigins) {
-      return callback(null, true);
-    }
     if (!origin) {
       return callback(null, true);
     }
-    if (allowedOrigins.includes(origin)) {
+    if (allowAllOrigins || allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
     return callback(null, false);
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 204,
 };
-
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (!origin || allowAllOrigins || allowedOrigins.includes(origin)) {
-    return next();
-  }
-  res.setHeader('Access-Control-Allow-Origin', origin);
-  res.setHeader('Vary', 'Origin');
-  return res.status(403).json({ success: false, message: 'Origin not allowed by CORS' });
-});
 
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
 // Middlewares
-app.use(express.json());
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+});
+app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());
 app.use(
   compression({
@@ -144,6 +139,46 @@ app.use(
     },
   })
 );
+
+const sanitizeObject = (value) => {
+  if (!value || typeof value !== 'object') return value;
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeObject(item));
+  }
+  return Object.entries(value).reduce((acc, [key, val]) => {
+    const cleanedKey = key.replace(/\$/g, '').replace(/\./g, '');
+    acc[cleanedKey] = sanitizeObject(val);
+    return acc;
+  }, {});
+};
+
+app.use((req, _res, next) => {
+  req.body = sanitizeObject(req.body);
+  req.query = sanitizeObject(req.query);
+  req.params = sanitizeObject(req.params);
+  next();
+});
+
+const authRateState = new Map();
+const authRateLimiter = (req, res, next) => {
+  const windowMs = 15 * 60 * 1000;
+  const max = 20;
+  const key = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+  const now = Date.now();
+  const entry = authRateState.get(key) || { count: 0, resetAt: now + windowMs };
+  if (now > entry.resetAt) {
+    entry.count = 0;
+    entry.resetAt = now + windowMs;
+  }
+  entry.count += 1;
+  authRateState.set(key, entry);
+  if (entry.count > max) {
+    return res.status(429).json({ success: false, message: 'Too many attempts. Please try again later.' });
+  }
+  return next();
+};
+
+app.use('/api/auth', authRateLimiter);
 
 app.use((req, res, next) => {
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');

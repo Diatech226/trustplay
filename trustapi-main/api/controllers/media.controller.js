@@ -73,6 +73,11 @@ const resolvePreviewType = (media) => {
   return 'file';
 };
 
+const logUpload = (context) => {
+  if (process.env.NODE_ENV === 'production') return;
+  console.info('[MEDIA_UPLOAD]', context);
+};
+
 const serializeMedia = (media, req) => {
   if (!media) return media;
   const payload = media.toObject ? media.toObject() : { ...media };
@@ -170,6 +175,13 @@ export const uploadMedia = async (req, res, next) => {
   }
 
   try {
+    logUpload({
+      userId: req.user?.id || req.user?._id,
+      mime: uploadedFile.mimetype,
+      size: uploadedFile.size,
+      filename: uploadedFile.filename,
+      originalName: uploadedFile.originalname,
+    });
     const payload = {
       title: req.body?.title,
       name: req.body?.name,
