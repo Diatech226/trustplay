@@ -33,7 +33,7 @@ Variables utilisées par le code :
 - `PORT` : port HTTP (défaut 3000)
 - `DATABASE_URL` : URI MongoDB (ex. `mongodb+srv://user:pass@cluster/db`)
 - `JWT_SECRET` : clé de signature JWT
-- `CORS_ORIGIN` : origines autorisées (CSV, ex. `http://localhost:5173,http://localhost:5174`)
+- `CORS_ORIGIN` : origines autorisées (CSV, ex. `http://localhost:5173,http://localhost:5174`). En production, la valeur est requise (CORS strict). En dev, les ports 5173/5174 sont ajoutés par défaut.
 - `FRONTEND_URL` : URL publique du frontend (utilisée pour construire les liens de reset password)
 - `UPLOAD_DIR` : répertoire pour stocker les fichiers uploadés (servi via `/uploads`)
 - `API_PUBLIC_URL` : base publique de l'API pour retourner des URLs absolues vers `/uploads` (ex. `http://localhost:3000`)
@@ -58,9 +58,10 @@ Variables utilisées par le code :
 ## Auth & CORS
 - Auth JWT : le serveur signe un JWT avec `{ id, email, role }` et le renvoie dans `data.token`. **Le header `Authorization: Bearer <token>` est la source de vérité pour toutes les routes protégées.**
 - Middleware `verifyToken` : lit d'abord le bearer (cookie `access_token` accepté en fallback) ; en cas d'absence, renvoie `401 { success: false, message: "Unauthorized: No token provided" }`, et en cas de signature invalide renvoie `401 { success: false, message: "Unauthorized: Invalid token" }`. Le payload décodé est exposé sur `req.user` (`{ id, email, role }`).
-- CORS : origines multiples via `CORS_ORIGIN`, `credentials: true`, méthodes `GET,POST,PUT,DELETE,OPTIONS`, headers `Content-Type, Authorization`.
+- CORS : origines multiples via `CORS_ORIGIN`, `credentials: true`, méthodes `GET,POST,PUT,DELETE,OPTIONS`, headers `Content-Type, Authorization, X-Requested-With`.
 - Uploads : `API_PUBLIC_URL` permet de renvoyer des URLs absolues pour la médiathèque (sinon l'API déduit l'host depuis la requête).
 - Front : utiliser `NEXT_PUBLIC_API_URL` (ou `VITE_API_URL` en fallback) et appeler `fetch(..., { credentials: 'include' })`. Les requêtes authentifiées ajoutent automatiquement le bearer.
+- Sécurité minimale : rate limiting sur `/api/auth`, headers de sécurité de base et sanitation des inputs pour limiter les injections Mongo.
 
 ## Modèles de données
 - **User** : `username`, `email`, `passwordHash` (obligatoire uniquement pour `authProvider=local`), `authProvider` (`local` par défaut, compat `google`/`firebase`), `role` (`USER` par défaut, `ADMIN`), `profilePicture`, timestamps.
@@ -139,8 +140,8 @@ Alias admin (compat CMS) :
 - `POST /api/uploads` — `multipart/form-data` avec champ `file` (recommandé) ou `image` (compat)
   - Si fichier image : génération automatique des variantes `thumb` (400px), `medium` (900px), `cover` (1400px) en WebP + AVIF.
   - Retour : `{ originalUrl, thumbUrl, mediumUrl, coverUrl, thumbAvifUrl, mediumAvifUrl, coverAvifUrl, width, height }`.
-- `POST /api/media/upload` (auth) — upload MediaAsset (variants `thumb`, `card`, `cover`, `og`)
-- `GET /api/media` (auth) — liste paginée + filtres `search`, `category`, `type`, `status`
+- `POST /api/media/upload` (admin) — upload MediaAsset (variants `thumb`, `card`, `cover`, `og`)
+- `GET /api/media` (admin) — liste paginée + filtres `search`, `category`, `type`, `status`
 - `PUT /api/media/:id` (owner/admin) — update metadata
 - `DELETE /api/media/:id` (owner/admin) — suppression DB + fichiers
 - `GET /uploads/<filename>` — fichiers statiques servis depuis `UPLOAD_DIR` (défaut `./uploads`)

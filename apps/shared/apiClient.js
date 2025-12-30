@@ -41,6 +41,8 @@ export const createApiClient = ({
     return getToken();
   };
 
+  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
   const handleUnauthorized = async () => {
     if (onUnauthorized) {
       await onUnauthorized();
@@ -110,7 +112,25 @@ export const createApiClient = ({
     }
 
     const url = buildUrl(path, apiBaseUrl);
-    const response = await fetch(url, config);
+    const maxRetries = Number.isFinite(rest.retry) ? rest.retry : 1;
+    const retryDelayMs = Number.isFinite(rest.retryDelayMs) ? rest.retryDelayMs : 300;
+    let response;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+      try {
+        response = await fetch(url, config);
+        break;
+      } catch (error) {
+        if (attempt >= maxRetries) {
+          throw error;
+        }
+        const wait = retryDelayMs * Math.pow(2, attempt);
+        if (isDev) {
+          console.warn('[API] network error, retrying...', { url, attempt: attempt + 1 });
+        }
+        await delay(wait);
+      }
+    }
     if (isDev) {
       console.debug('[API]', {
         method,

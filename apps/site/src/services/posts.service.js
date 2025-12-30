@@ -5,7 +5,7 @@ import {
   normalizeSubCategory,
 } from '../utils/categories';
 
-const POSTS_ENDPOINT = '/api/post/getposts';
+const POSTS_ENDPOINT = '/api/posts';
 
 const extractPostsResponse = (data) => ({
   posts: data?.posts || data?.data?.posts || [],

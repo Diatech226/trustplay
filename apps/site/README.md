@@ -53,7 +53,7 @@ npm run lint
   - Toute valeur obsolète est normalisée vers ces rubriques côté front (fallback: `news`).
 
 ## Queries API (site public)
-Les pages publiques consomment `GET /api/post/getposts` avec les paramètres supportés :
+Les pages publiques consomment `GET /api/posts` avec les paramètres supportés :
 - `category`, `subCategory`
 - `searchTerm`
 - `startIndex` (pagination), `limit`
@@ -70,6 +70,6 @@ La page `/search` accepte les paramètres suivants (tous optionnels) :
 - `startIndex`, `limit` (pagination)
 
 Endpoints utilisés :
-- Home Trust Media : `GET /api/post/getposts?category=TrustMedia&order=desc&limit=...`
-- Trust Event : `GET /api/post/getposts?category=TrustEvent&order=desc&limit=...`
-- Trust Production : `GET /api/post/getposts?category=TrustProduction&order=desc&limit=...`
+- Home Trust Media : `GET /api/posts?category=TrustMedia&order=desc&limit=...`
+- Trust Event : `GET /api/posts?category=TrustEvent&order=desc&limit=...`
+- Trust Production : `GET /api/posts?category=TrustProduction&order=desc&limit=...`

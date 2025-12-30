@@ -11,6 +11,11 @@ Ce dépôt contient désormais un **monorepo** :
 Une analyse détaillée (architecture, benchmark, risques) est disponible dans [`ANALYSIS.md`](./ANALYSIS.md). La roadmap produit/technique détaillée est suivie dans [`ROADMAP.md`](./ROADMAP.md).
 Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 
+## Documentation production
+- **Audit prod** : [`PRODUCTION_AUDIT.md`](./PRODUCTION_AUDIT.md)
+- **Changelog** : [`CHANGELOG.md`](./CHANGELOG.md)
+- **Checklist QA prod** : [`docs/QA_PROD_CHECKLIST.md`](./docs/QA_PROD_CHECKLIST.md)
+
 ## Setup rapide
 1. Installer les dépendances : `npm install` (workspaces actifs).
 2. Copier les variables d’environnement :
@@ -43,15 +48,15 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
   - `POST /api/user/admin-create`, `PATCH /api/user/:id/role`, `PUT /api/user/:id` (alias admin CMS).
   - `POST /api/admin/users`, `GET /api/admin/users`, `PUT /api/admin/users/:id`, `DELETE /api/admin/users/:id`, `PUT /api/admin/users/:id/toggle-admin` (admin users CRUD CMS).
   - `GET /api/rubrics?scope=TrustMedia`, `POST /api/rubrics`, `PUT /api/rubrics/:id`, `DELETE /api/rubrics/:id` (taxonomie rubriques).
-  - `POST /api/post/create`, `GET /api/post/getposts`, `GET /api/post/:postId`, `PUT /api/post/updatepost/:postId/:userId`, `DELETE /api/post/deletepost/:postId/:userId`.
-  - `GET /api/posts/:postId` (CMS : lecture par `_id`).
+  - `GET /api/posts` (contrat unifié), `GET /api/posts/:postId` (CMS : lecture par `_id`).
+  - `POST /api/post/create`, `GET /api/post/getposts`, `GET /api/post/:postId`, `PUT /api/post/updatepost/:postId/:userId`, `DELETE /api/post/deletepost/:postId/:userId` (legacy, conservé).
   - `PATCH /api/posts/:postId/status` (admin/author) pour mise à jour rapide du statut (`draft|published|archived`).
   - `PATCH /api/post/:postId/status` (alias legacy).
   - `GET /api/events` (liste TrustEvent côté CMS).
   - `POST /api/comment/create`, likes/édition/suppression et listing admin.
   - `POST /api/uploads` (Multer legacy) avec filtrage MIME et quotas (10 Mo image, 100 Mo vidéo).
-  - `POST /api/media/upload` (Multer + Sharp) pour MediaAsset (auth).
-  - `GET /api/media`, `POST /api/media` (auth), `PUT /api/media/:id`, `DELETE /api/media/:id` (owner/admin).
+  - `POST /api/media/upload` (Multer + Sharp) pour MediaAsset (admin).
+  - `GET /api/media`, `POST /api/media` (admin), `PUT /api/media/:id`, `DELETE /api/media/:id` (owner/admin).
   - `GET /api/health` (healthcheck, répond même si MongoDB est indisponible).
   - `GET /api/settings` (public) et `PUT /api/settings` (admin) pour les réglages globaux du site.
 - **Auth & permissions** : middleware JWT `verifyToken` + contrôle `requireAdmin` sur les routes critiques (liste users, commentaires). Les autres permissions (ownership) sont gérées dans les contrôleurs.
@@ -107,9 +112,9 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
 ```
 
 ### Endpoints Media/Upload
-- `POST /api/media/upload` : upload fichier (multipart) + création automatique du MediaAsset et variantes (auth).
-- `GET /api/media?search=&category=&type=&status=&page=&limit=` : liste + filtres + pagination (auth).
-- `POST /api/media` : créer une entrée metadata si besoin (auth).
+- `POST /api/media/upload` : upload fichier (multipart) + création automatique du MediaAsset et variantes (admin).
+- `GET /api/media?search=&category=&type=&status=&page=&limit=` : liste + filtres + pagination (admin).
+- `POST /api/media` : créer une entrée metadata si besoin (admin).
 - `PUT /api/media/:id` : metadata (owner/admin).
 - `DELETE /api/media/:id` : suppression (owner/admin).
 
@@ -456,6 +461,19 @@ La roadmap détaillée par itérations (objectifs, modules, changements techniqu
 - [ ] Dashboard overview affiche les KPIs et les listes récentes (posts, commentaires, utilisateurs) ; bouton « Rafraîchir » fonctionne.
 - [ ] Content Manager : recherche/filtre/pagination fonctionnent ; publier/dépublier/envoyer en revue puis supprimer un post met bien à jour la liste.
 - [ ] Formulaire de création de post : création réussie, redirection vers l’article.
-- [ ] Media upload : sélection d’un fichier image/vidéo, upload via `/api/uploads`, URL affichée et prévisualisation image visible.
+- [ ] Media upload : sélection d’un fichier image/vidéo, upload via `/api/media/upload`, URL affichée et prévisualisation image visible.
 - [ ] Comments moderation : filtrage par article et recherche texte, suppression confirmée met à jour le tableau sans erreur `postId`.
 - [ ] Users admin : liste chargée depuis `/api/user/getusers`, recherche par nom/email, rafraîchissement manuel OK.
+
+## Troubleshooting (prod & dev)
+- **CORS** : vérifier `CORS_ORIGIN` (prod obligatoire) et que les origins incluent `http://localhost:5173` et `http://localhost:5174` en dev.
+- **Tokens** : inspecter `/api/debug/whoami` (dev-only) pour valider `role`, `tokenSource` et `userId`.
+- **Images cassées** : vérifier `API_PUBLIC_URL` et l’accès à `/uploads/<filename>`.
+- **ERR_CONNECTION_REFUSED** : vérifier `DATABASE_URL`, `JWT_SECRET` et que l’API écoute sur le port `3000`.
+
+## Future iterations (pro level)
+1. **Iteration 1: Stabilisation (done)** — sécurisation CORS, auth/roles, cohérence API, médiathèque unifiée, QA prod.
+2. **Iteration 2: CMS éditorial pro** — workflow draft/review/publish, scheduling, SEO avancé, validations côté API.
+3. **Iteration 3: Media pipeline avancé** — tags, collections, bulk upload, variants/optimisations, CDN.
+4. **Iteration 4: Performance/SEO** — SSR/SSG option, sitemap, caching, analytics produit.
+5. **Iteration 5: Agence cockpit** — clients/projets/campagnes, RBAC fin, audit log, reporting.

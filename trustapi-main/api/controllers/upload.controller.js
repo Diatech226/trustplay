@@ -86,6 +86,11 @@ const resolveKind = (mime) => {
   return 'file';
 };
 
+const logUpload = (context) => {
+  if (process.env.NODE_ENV === 'production') return;
+  console.info('[UPLOAD]', context);
+};
+
 const buildResponsePayload = (file, media, extra = {}) => {
   const isImage = file.mimetype.startsWith('image/');
   const baseUrl = extra.originalUrl || `/uploads/${file.filename}`;
@@ -173,6 +178,13 @@ export const handleUpload = async (req, res, next) => {
   }
 
   try {
+    logUpload({
+      userId: req.user?.id || req.user?._id,
+      mime: uploadedFile.mimetype,
+      size: uploadedFile.size,
+      filename: uploadedFile.filename,
+      originalName: uploadedFile.originalname,
+    });
     const originalUrl = `/uploads/${uploadedFile.filename}`;
     const variants = isImage ? await generateImageVariants(uploadedFile.path, uploadedFile.filename) : {};
     const mediaPayload = {
