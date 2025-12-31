@@ -27,6 +27,31 @@ Le blueprint CMS v2 est documenté dans [`CMS_V2.md`](./CMS_V2.md).
    - `VITE_API_URL` côté site + CMS.
 4. Démarrer en local : `npm run dev` (site 5173, CMS 5174, API 3000).
 
+## Build & Production
+### Builds par application
+```bash
+npm run build:api
+npm run build:site
+npm run build:cms
+```
+
+### Build complet (monorepo)
+```bash
+npm run build
+```
+
+### Variables d’environnement production (résumé)
+- API : `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN`, `UPLOAD_DIR`, `API_PUBLIC_URL`.
+- Site/CMS : `VITE_API_URL`.
+
+### Before deploy checklist
+- [ ] `npm install` exécuté à la racine (workspaces synchronisés).
+- [ ] `npm run build` OK (api + site + cms).
+- [ ] `DATABASE_URL` et `JWT_SECRET` présents (API).
+- [ ] `VITE_API_URL` défini pour site + CMS.
+- [ ] `API_PUBLIC_URL` pointe vers l’URL publique de l’API.
+- [ ] `/api/health` répond `200` en environnement cible.
+
 ## Architecture monorepo
 ### apps/site (Vite/React)
 - **Routage** : routes publiques (home, recherche, rubriques, article) et routes protégées (dashboard historique) déclarées dans `apps/site/src/App.jsx`.

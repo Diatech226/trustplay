@@ -10,10 +10,16 @@
     "dev:cms": "npm --workspace apps/cms run dev",
     "dev:api": "npm --workspace trustapi-main run dev",
     "dev": "concurrently -k -n site,cms,api \"npm:dev:site\" \"npm:dev:cms\" \"npm:dev:api\"",
-    "build": "npm --workspace apps/site run build && npm --workspace apps/cms run build",
+    "build:site": "npm --workspace apps/site run build",
+    "build:cms": "npm --workspace apps/cms run build",
+    "build:api": "npm --workspace trustapi-main run build",
+    "build": "npm run build:api && npm run build:site && npm run build:cms",
     "lint": "npm --workspace apps/site run lint && npm --workspace apps/cms run lint"
   },
   "devDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "^4.54.0",
+    "@swc/core": "^1.15.8",
+    "@swc/core-linux-x64-gnu": "^1.15.8",
     "concurrently": "^8.2.2"
   }
 }
