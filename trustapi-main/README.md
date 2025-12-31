@@ -13,6 +13,7 @@ Backend Express/MongoDB qui alimente Trust Media (articles, événements TrustEv
 - [Endpoints principaux](#endpoints-principaux)
 - [Upload](#upload)
 - [Troubleshooting](#troubleshooting)
+- [Common build errors](#common-build-errors)
 - [Contract API détaillé](#contract-api-détaillé)
 
 ## Prérequis
@@ -246,6 +247,11 @@ curl -X POST "$NEXT_PUBLIC_API_URL/api/uploads" \
 - **Upload** : le dossier `UPLOAD_DIR` est créé automatiquement. En cas d’erreur 400 "No file uploaded", vérifier le nom de champ (`image` ou `file`).
 - **Migration des rôles legacy** : si votre base contient des utilisateurs avec `role: "client"` (ou un ancien rôle de livraison),
   normalisez les rôles en lançant `npm run migrate:roles` (nécessite `DATABASE_URL`).
+
+## Common build errors
+- **`[BOOT] Missing required env: DATABASE_URL, JWT_SECRET`** : renseigner `trustapi-main/.env` (voir `.env.example`). Le serveur démarre en mode dégradé sans base, mais les routes DB renverront `503`.
+- **Connexion MongoDB refusée** : vérifier l’URI `DATABASE_URL`, les droits réseau et l’IP whitelist côté Atlas.
+- **`PORT invalide`** : vérifier `PORT` (entier). Le serveur retombe sur `3000` si la valeur est invalide.
 
 ## Contract API détaillé
 Le mapping complet des routes, paramètres et réponses est maintenu dans [`API_CONTRACT.md`](./API_CONTRACT.md).
