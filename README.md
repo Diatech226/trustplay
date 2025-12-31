@@ -40,6 +40,10 @@ npm run build:cms
 npm run build
 ```
 
+### Notes Windows
+- Le workspace **trustapi-main** n’a pas d’étape de build (API Node). `npm run build:api` affiche simplement un message.
+- Après un changement d’OS (Linux ⇄ Windows), supprimez les `node_modules` et le `package-lock.json` à la racine puis relancez `npm install` pour régénérer un lockfile compatible.
+
 ### Variables d’environnement production (résumé)
 - API : `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN`, `UPLOAD_DIR`, `API_PUBLIC_URL`.
 - Site/CMS : `VITE_API_URL`.
