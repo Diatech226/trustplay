@@ -2,6 +2,18 @@
 
 Trust Media combine un site média grand public et un backoffice orienté agence. La vision produit est d'offrir un CMS complet pour des équipes éditoriales et marketing : publication multi-rubriques, gestion d'événements, stockage média, suivi de projets/campagnes et outils d'engagement (newsletter, formulaires, commentaires).
 
+## Présentation
+- **apps/site** : site public (audience média & lectorat).
+- **apps/cms** : backoffice CMS (rédaction, édition, administration).
+- **trustapi-main** : API centrale (auth, contenus, médias, utilisateurs).
+
+## Vision & positionnement
+Trust Media est pensé comme un **CMS média professionnel** et une **plateforme d’agence** pour orchestrer contenus, campagnes et actifs médias depuis un environnement unifié.
+
+## Roadmap & futures évolutions
+La vision produit et la roadmap détaillée sont décrites dans
+[FUTURE_ITERATIONS.md](./FUTURE_ITERATIONS.md).
+
 Ce dépôt contient désormais un **monorepo** :
 - **apps/site** : site public Vite/React (Redux Toolkit + Flowbite/Tailwind, routes clientes, upload via API).
 - **apps/cms** : CMS v2 Vite/React dédié (layout pro + modules branchés sur l'API).
