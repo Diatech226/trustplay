@@ -12,8 +12,13 @@ npm run dev
 ```
 
 ## Configuration (.env)
-Créer un fichier `.env` dans `apps/cms` (voir `.env.example`) :
+Créer un fichier `.env` à la racine du repo (voir `.env.example`) :
 - `VITE_API_URL` : URL de base de l'API (ex. `http://localhost:3000`).
+
+## Déploiement Vercel
+- Build command : `npm run build`
+- Output directory : `dist`
+- La SPA est configurée via `vercel.json` (rewrite vers `/index.html`).
 
 ## Auth flow
 - Token stocké en local (`cms_token`) + profil (`cms_current_user`).
