@@ -1,4 +1,4 @@
-import { createApiClient } from '@shared/apiClient';
+import { createApiClient } from './apiClientCore';
 
 const API_BASE_URL = import.meta.env?.VITE_API_URL || 'http://localhost:3000';
 const TOKEN_KEY = 'cms_token';

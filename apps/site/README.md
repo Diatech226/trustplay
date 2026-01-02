@@ -12,21 +12,25 @@ npm run dev
 ```
 
 ## Configuration (.env)
-Créer un fichier `.env` dans `apps/site` (voir `.env.example`) :
+Créer un fichier `.env` à la racine du repo (voir `.env.example`) :
 - `VITE_API_URL` : URL de base de l'API (ex. `http://localhost:3000`).
 - `VITE_CMS_URL` (optionnel) : URL du CMS pour le lien admin (ex. `http://localhost:5174`).
 
 ## Scripts
-Depuis la racine du monorepo :
 ```bash
-npm run dev:site
+npm run dev
 npm run build
 npm run lint
 ```
 
+## Déploiement Vercel
+- Build command : `npm run build`
+- Output directory : `dist`
+- La SPA est configurée via `vercel.json` (rewrite vers `/index.html`).
+
 ## Notes
 - L'UI actuelle est conservée : aucune modification visuelle n'est nécessaire pour démarrer.
-- Les appels API sont centralisés dans `apps/site/src/lib/apiClient.js`.
+- Les appels API sont centralisés dans `src/lib/apiClient.js` (core client dans `src/lib/apiClientCore.js`).
 
 ## Routes publiques principales
 - `/` : Home
