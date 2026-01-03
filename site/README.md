@@ -1,6 +1,6 @@
 # Trust Media — Site public
 
-Application Vite/React du site public (UI existante). Elle consomme l'API Express disponible dans `trustapi-main`.
+Application Vite/React du site public (UI existante). Elle consomme l'API Express disponible dans `backend`.
 
 ## Prérequis
 - Node.js 18+
@@ -12,7 +12,7 @@ npm run dev
 ```
 
 ## Configuration (.env)
-Créer un fichier `.env` à la racine du repo (voir `.env.example`) :
+Créer un fichier `.env` à la racine du projet (voir `.env.example`) :
 - `VITE_API_URL` : URL de base de l'API (ex. `http://localhost:3000`).
 - `VITE_CMS_URL` (optionnel) : URL du CMS pour le lien admin (ex. `http://localhost:5174`).
 

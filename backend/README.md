@@ -249,7 +249,7 @@ curl -X POST "$NEXT_PUBLIC_API_URL/api/uploads" \
   normalisez les rôles en lançant `npm run migrate:roles` (nécessite `DATABASE_URL`).
 
 ## Common build errors
-- **`[BOOT] Missing required env: DATABASE_URL, JWT_SECRET`** : renseigner `trustapi-main/.env` (voir `.env.example`). Le serveur démarre en mode dégradé sans base, mais les routes DB renverront `503`.
+- **`[BOOT] Missing required env: DATABASE_URL, JWT_SECRET`** : renseigner `backend/.env` (voir `.env.example`). Le serveur démarre en mode dégradé sans base, mais les routes DB renverront `503`.
 - **Connexion MongoDB refusée** : vérifier l’URI `DATABASE_URL`, les droits réseau et l’IP whitelist côté Atlas.
 - **`PORT invalide`** : vérifier `PORT` (entier). Le serveur retombe sur `3000` si la valeur est invalide.
 

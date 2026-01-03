@@ -25,7 +25,7 @@ Les variantes sont générées avec Sharp à partir de l’original. L’OG util
 - Fallback legacy: `image` et anciennes variantes si `featuredMedia` absent
 
 ## Intégration front
-- Utiliser le composant `ResponsiveImage` (apps/site) pour générer `srcSet`.
+- Utiliser le composant `ResponsiveImage` (site) pour générer `srcSet`.
 - Exemples :
   - Home: `variantPreference="thumb"` + `sizes="(max-width: 768px) 100vw, 400px"`
   - PostPage: `variantPreference="cover"` + `sizes="(max-width: 768px) 100vw, 1200px"`

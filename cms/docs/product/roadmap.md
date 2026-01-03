@@ -5,7 +5,7 @@ Chaque itération vise un objectif clair avec scope, modules impactés, risques 
 ## Itération 1 — Stabilisation auth & médias
 - **Objectif** : rendre l’auth et l’affichage média fiables sur site + CMS.
 - **Scope** : unification rôle admin, normalisation URLs médias, cohérence `/api/user/me`, CORS clean.
-- **Modules impactés** : `trustapi-main/api/utils/verifyUser.js`, `trustapi-main/api/utils/media.js`, helpers media front (`apps/site`, `apps/cms`).
+- **Modules impactés** : `backend/api/utils/verifyUser.js`, `backend/api/utils/media.js`, helpers media front (`site`, `cms`).
 - **Risques** : régression sur des tokens legacy, URL média historiques non normalisées.
 - **Critères d’acceptation** :
   - `/users` CMS accessible en admin.
@@ -15,7 +15,7 @@ Chaque itération vise un objectif clair avec scope, modules impactés, risques 
 ## Itération 2 — CMS éditorial pro
 - **Objectif** : workflow éditorial complet (draft → review → published) avec actions rapides.
 - **Scope** : statuts, planning, filtres avancés, SEO (title/description/OG).
-- **Modules impactés** : `apps/cms/src/pages/PostEditor.jsx`, API posts (`trustapi-main/api/controllers/post.controller.js`).
+- **Modules impactés** : `cms/src/pages/PostEditor.jsx`, API posts (`backend/api/controllers/post.controller.js`).
 - **Risques** : complexité UI (filtres + pagination), migrations de données.
 - **Critères d’acceptation** :
   - Filtres par statut/rubrique/tags.
@@ -25,7 +25,7 @@ Chaque itération vise un objectif clair avec scope, modules impactés, risques 
 ## Itération 3 — Media pipeline avancé
 - **Objectif** : pipeline médias optimisé (variants, WebP/AVIF, stockage).
 - **Scope** : thumbnails, variantes par usage, compression, renommage uniforme.
-- **Modules impactés** : `trustapi-main/api/controllers/upload.controller.js`, Media Library CMS.
+- **Modules impactés** : `backend/api/controllers/upload.controller.js`, Media Library CMS.
 - **Risques** : temps de traitement, stockage disque, compatibilité navigateur.
 - **Critères d’acceptation** :
   - Variantes auto générées et exposées.

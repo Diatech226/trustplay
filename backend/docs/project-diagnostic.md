@@ -26,7 +26,7 @@
 - **Correctif** :
   - Normalisation côté API : `resolveUserRole` mappe `isAdmin === true` vers `role = ADMIN`.
   - Endpoint debug (dev-only) : `GET /api/debug/whoami` pour vérifier le rôle renvoyé par le middleware.
-  - Logs front (dev-only) : `apps/shared/apiClient.js` trace les requêtes échouées (method, url, hasToken, status).
+  - Logs front (dev-only) : `site/src/lib/apiClient.js` et `cms/src/lib/apiClient.js` tracent les requêtes échouées (method, url, hasToken, status).
 - **Attendu** :
   - ADMIN : `/api/user/getusers` et `/api/comment/getcomments` → `200`.
   - USER : `403` explicite sans forcer la déconnexion.

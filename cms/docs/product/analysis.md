@@ -2,7 +2,7 @@
 
 ## 1️⃣ Analyse interne
 ### A. Architecture
-- **Organisation** : séparation claire frontend (`src/`) et backend (`trustapi-main/api`). Routage React structuré via `src/App.jsx` avec lazy loading et gardes de routes ; backoffice sous `/dashboard` avec contrôles de rôle. L'API Express monte les routes auth/user/post/comment/upload et sert les assets depuis `/uploads`.
+- **Organisation** : séparation claire frontend (`src/`) et backend (`backend/api`). Routage React structuré via `src/App.jsx` avec lazy loading et gardes de routes ; backoffice sous `/dashboard` avec contrôles de rôle. L'API Express monte les routes auth/user/post/comment/upload et sert les assets depuis `/uploads`.
 - **Patterns** : contrôleurs/routers/modèles côté API, middleware JWT (`verifyToken`) et gate `requireAdmin`. Côté front, layout admin (sidebar, header, breadcrumbs) et navigation role-based, mais la logique RBAC est dupliquée entre client et serveur et reste minimale (peu de services/intercepteurs partagés).
 - **État** : Redux Toolkit persistant pour utilisateur/thème/favoris/historique/notifications. Restauration de session et rafraîchissement du profil si un token existe.
 - **Conventions** : réponses API mêlant parfois `{ success, data }` et retour direct d’objets ; endpoints nommés `getposts`, `updatepost`… peu homogènes. Côté front, conventions de noms et cheminement des rôles sont cohérents mais non documentés.

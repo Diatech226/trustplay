@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "nodemon api/index.js",
     "start": "node api/index.js",
-    "build": "echo \"trustapi-main: no build step\"",
+    "build": "echo \"backend: no build step\"",
     "test": "echo \"No tests specified\" && exit 0",
     "migrate:roles": "node scripts/migrateRoles.js",
     "make-admin": "node scripts/makeAdmin.js"
