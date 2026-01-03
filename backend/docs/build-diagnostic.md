@@ -1,21 +1,21 @@
 # Build Diagnostic
 
-## trustapi-main (Express / Node)
+## backend (Express / Node)
 ### Erreur
 - `[BOOT] Missing required env: DATABASE_URL, JWT_SECRET`
 
 ### Cause
-- Variables d’environnement manquantes lors du démarrage (`trustapi-main/.env` non configuré).
+- Variables d’environnement manquantes lors du démarrage (`backend/.env` non configuré).
 
 ### Fichier concerné
-- `trustapi-main/api/index.js`
+- `backend/api/index.js`
 
 ### Solution appliquée
 - Documenté dans le README API (section **Common build errors**) et rappel dans le README root (Build & Production). Le serveur reste démarrable en mode dégradé.
 
 ---
 
-## apps/cms (Vite / React)
+## cms (Vite / React)
 ### Erreur
 - `Cannot find module @rollup/rollup-linux-x64-gnu` au lancement de Vite.
 
@@ -42,7 +42,7 @@
 
 ---
 
-## apps/site (Vite / React)
+## site (Vite / React)
 ### Erreur
 - `Cannot find module @rollup/rollup-linux-x64-gnu` au lancement de Vite.
 

@@ -2,19 +2,20 @@
   "name": "trustplay-monorepo",
   "private": true,
   "workspaces": [
-    "apps/*",
-    "trustapi-main"
+    "site",
+    "cms",
+    "backend"
   ],
   "scripts": {
-    "dev:site": "npm --workspace apps/site run dev",
-    "dev:cms": "npm --workspace apps/cms run dev",
-    "dev:api": "npm --workspace trustapi-main run dev",
+    "dev:site": "npm --workspace site run dev",
+    "dev:cms": "npm --workspace cms run dev",
+    "dev:api": "npm --workspace backend run dev",
     "dev": "concurrently -k -n site,cms,api \"npm:dev:site\" \"npm:dev:cms\" \"npm:dev:api\"",
-    "build:site": "npm --workspace apps/site run build",
-    "build:cms": "npm --workspace apps/cms run build",
-    "build:api": "npm --workspace trustapi-main run build",
+    "build:site": "npm --workspace site run build",
+    "build:cms": "npm --workspace cms run build",
+    "build:api": "npm --workspace backend run build",
     "build": "npm run build:api && npm run build:site && npm run build:cms",
-    "lint": "npm --workspace apps/site run lint && npm --workspace apps/cms run lint"
+    "lint": "npm --workspace site run lint && npm --workspace cms run lint"
   },
   "devDependencies": {
     "@swc/core": "^1.15.8",

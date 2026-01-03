@@ -12,7 +12,7 @@ npm run dev
 ```
 
 ## Configuration (.env)
-Créer un fichier `.env` à la racine du repo (voir `.env.example`) :
+Créer un fichier `.env` à la racine du projet (voir `.env.example`) :
 - `VITE_API_URL` : URL de base de l'API (ex. `http://localhost:3000`).
 
 ## Déploiement Vercel

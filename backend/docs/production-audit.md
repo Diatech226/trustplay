@@ -3,51 +3,51 @@
 Date: 2025-02-14
 
 ## Scope
-- **apps/site** (Vite/React public site)
-- **apps/cms** (Vite/React CMS)
-- **trustapi-main** (Express/MongoDB API)
+- **site** (Vite/React public site)
+- **cms** (Vite/React CMS)
+- **backend** (Express/MongoDB API)
 
 ## P0 — Bloquants (must-fix)
 1. **Incohérence des endpoints posts (site)**
    - **Cause probable** : le site consommait `GET /api/post/getposts` (legacy) alors que le CMS utilise `GET /api/posts`.
-   - **Fichiers** : `apps/site/src/services/posts.service.js`.
+   - **Fichiers** : `site/src/services/posts.service.js`.
    - **Fix appliqué** : standardisation côté site sur `/api/posts`.
    - **Validation** : vérifier que Home/TrustEvent/TrustProduction chargent les posts et que la pagination fonctionne.
 
 2. **CORS permissif en prod + preflight instable**
    - **Cause probable** : origin wildcard en l’absence de `CORS_ORIGIN` et middleware CORS qui renvoyait un 403 non standard.
-   - **Fichiers** : `trustapi-main/api/index.js`.
+   - **Fichiers** : `backend/api/index.js`.
    - **Fix appliqué** : CORS strict en production (origines obligatoires), ajout par défaut de `localhost:5173/5174` en dev, options preflight stabilisées.
    - **Validation** : vérifier OPTIONS et appels cross-origin en dev/prod.
 
 3. **Sécurité minimale absente (rate limit + sanitize)**
    - **Cause probable** : pas de rate limiting et pas de sanitation des inputs.
-   - **Fichiers** : `trustapi-main/api/index.js`.
+   - **Fichiers** : `backend/api/index.js`.
    - **Fix appliqué** : rate limiting sur `/api/auth`, headers de sécurité de base, sanitation des inputs.
    - **Validation** : vérifier headers de sécurité + throttling des routes auth.
 
 4. **Media endpoint non restreint**
    - **Cause probable** : `/api/media` était accessible à tout utilisateur authentifié.
-   - **Fichiers** : `trustapi-main/api/routes/media.route.js`.
+   - **Fichiers** : `backend/api/routes/media.route.js`.
    - **Fix appliqué** : `requireAdmin` sur `/api/media` et `/api/media/upload`.
    - **Validation** : un compte non-admin ne peut pas lister/uploader, un admin oui.
 
 ## P1 — Importants (à stabiliser)
 1. **Rôle admin côté front**
    - **Cause probable** : rôle non normalisé ou non hydraté après `GET /api/user/me`.
-   - **Fichiers** : `apps/cms/src/context/AuthContext.jsx`, `apps/site/src/App.jsx`.
+   - **Fichiers** : `cms/src/context/AuthContext.jsx`, `site/src/App.jsx`.
    - **Fix recommandé** : conserver la normalisation du rôle et éviter les logout en cascade sur 403.
    - **Validation** : connexion admin -> navigation CMS, pas de boucle de reconnexion.
 
 2. **Uploads & URLs médias absolues**
    - **Cause probable** : images rendues avec URL relative si `API_PUBLIC_URL` absent.
-   - **Fichiers** : `trustapi-main/api/controllers/media.controller.js`, `trustapi-main/api/utils/media.js`.
+   - **Fichiers** : `backend/api/controllers/media.controller.js`, `backend/api/utils/media.js`.
    - **Fix recommandé** : documenter `API_PUBLIC_URL` dans les README (fait) + vérifier `/uploads` en prod.
    - **Validation** : upload depuis CMS, affichage correct dans CMS et site public.
 
 3. **Commentaires (postId)**
    - **Cause probable** : création appelée sans `postId` ou `postId` undefined.
-   - **Fichiers** : `apps/site/src/components/CommentSection.jsx`.
+   - **Fichiers** : `site/src/components/CommentSection.jsx`.
    - **Fix appliqué** : garde de validation de `postId` côté site.
    - **Validation** : création de commentaire sur un post existant, erreur contrôlée si postId manquant.
 

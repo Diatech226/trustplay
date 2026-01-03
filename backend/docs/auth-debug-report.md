@@ -16,8 +16,8 @@
 - **500 reset-password** : la comparaison du token et l’écriture DB sont protégées par un `try/catch`; les expirations, tokens invalides et secrets JWT manquants sont renvoyés en 400/500 contrôlés.
 
 ## Fichiers modifiés
-- `trustapi-main/api/controllers/auth.controller.js`
-- `trustapi-main/api/index.js`
+- `backend/api/controllers/auth.controller.js`
+- `backend/api/index.js`
 
 ## Comment tester (curl)
 - Vérifier l’état du serveur : `curl -i http://localhost:3000/api/health`

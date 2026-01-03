@@ -9,8 +9,8 @@
 - Cette base est utilisée pour toutes les URLs images (site + CMS), sans modifier l'API base utilisée pour les requêtes REST.
 
 ## Fichiers modifiés
-- `apps/site/src/lib/mediaUrls.js`
-- `apps/cms/src/lib/mediaUrls.js`
+- `site/src/lib/mediaUrls.js`
+- `cms/src/lib/mediaUrls.js`
 
 ## Convention retenue
 - Les médias sont stockés en DB sous forme de chemins publics relatifs : `/uploads/<fichier>`.
