@@ -27,6 +27,12 @@ npm run dev   # nodemon api/index.js
 npm start     # node api/index.js
 ```
 
+## Build/Démarrage depuis la racine (workspaces)
+```bash
+npm run build:api
+npm run start:api
+```
+
 ## Configuration (.env)
 Un exemple complet est fourni dans `.env.example`.
 
@@ -246,6 +252,17 @@ curl -X POST "$NEXT_PUBLIC_API_URL/api/uploads" \
   }
   ```
 - Les fichiers sont servis via `/uploads/<filename>` ; le dossier `UPLOAD_DIR` est créé automatiquement.
+- Les fichiers d'uploads **ne doivent pas être versionnés** (voir `.gitignore`).
+
+## .htaccess
+- **Non requis** quand l'API tourne en Node/Render/OnRender (Express gère les routes).
+- Si l'API est derrière Apache, utiliser une config proxy côté serveur (exemples plus bas).
+
+## Push séparé (subtree)
+Depuis la racine du monorepo :
+```bash
+git subtree push --prefix backend git@github.com:ORG/trust-media-backend.git main
+```
 
 ## Troubleshooting
 - Si l'API est derrière un proxy (Nginx/Apache), assurez-vous que les préflights `OPTIONS` passent bien et que les headers CORS sont renvoyés.
