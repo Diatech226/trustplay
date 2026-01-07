@@ -10,6 +10,7 @@
     "dev:site": "npm --workspace site run dev",
     "dev:cms": "npm --workspace cms run dev",
     "dev:api": "npm --workspace backend run dev",
+    "start:api": "npm --workspace backend run start",
     "dev": "concurrently -k -n site,cms,api \"npm:dev:site\" \"npm:dev:cms\" \"npm:dev:api\"",
     "build:site": "npm --workspace site run build",
     "build:cms": "npm --workspace cms run build",
