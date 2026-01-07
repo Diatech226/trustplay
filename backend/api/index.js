@@ -85,13 +85,13 @@ const app = express();
 app.set('trust proxy', true);
 
 const defaultDevOrigins = ['http://localhost:5173', 'http://localhost:5174'];
+const vercelPreviewRegex = /^https:\/\/trust-.*\.vercel\.app$/;
 const allowedOrigins = (process.env.CORS_ORIGIN || '')
   .split(',')
   .map((value) => value.trim())
   .filter(Boolean);
-const allowAllOrigins = allowedOrigins.length === 0 && process.env.NODE_ENV !== 'production';
 
-if (!allowAllOrigins && process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV !== 'production') {
   defaultDevOrigins.forEach((origin) => {
     if (!allowedOrigins.includes(origin)) {
       allowedOrigins.push(origin);
@@ -99,19 +99,24 @@ if (!allowAllOrigins && process.env.NODE_ENV !== 'production') {
   });
 }
 
+const isOriginAllowed = (origin) => {
+  if (!origin) return true;
+  if (allowedOrigins.includes(origin)) return true;
+  if (vercelPreviewRegex.test(origin)) return true;
+  return false;
+};
+
 const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin) {
-      return callback(null, true);
+    const allowed = isOriginAllowed(origin);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[CORS] origin=${origin || 'none'} allowed=${allowed}`);
     }
-    if (allowAllOrigins || allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    return callback(null, false);
+    return callback(null, allowed);
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   optionsSuccessStatus: 204,
 };
 
@@ -284,7 +289,7 @@ const resolvePort = (value) => {
 // Lancer le serveur
 const PORT = resolvePort(process.env.PORT);
 const maskedDbHost = maskValue(databaseHost);
-const corsSummary = allowAllOrigins ? '*' : allowedOrigins.join(',');
+const corsSummary = allowedOrigins.length === 0 ? '(none)' : allowedOrigins.join(',');
 const uploadDir = process.env.UPLOAD_DIR || './uploads';
 const apiPublicUrl = process.env.API_PUBLIC_URL || '';
 const missingRequired = ['DATABASE_URL', 'JWT_SECRET'].filter((key) => !process.env[key]);
