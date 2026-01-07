@@ -231,6 +231,7 @@ app.use('/api/posts', postsRoutes);
 app.use('/api/comment', commentRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/media', mediaRoutes);
+app.use('/api/analytics', analyticsRoutes);
 app.use('/api/events', eventsRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/projects', projectRoutes);
