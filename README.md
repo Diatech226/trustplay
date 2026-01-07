@@ -25,6 +25,25 @@ npm run build:api
 npm run start:api
 ```
 
+## Démarrage local
+1. Démarrer l'API (par défaut sur `http://localhost:3000`) :
+   ```bash
+   npm run dev:api
+   ```
+2. Démarrer le site et/ou le CMS :
+   ```bash
+   npm run dev:site
+   npm run dev:cms
+   ```
+3. Si l'API tourne sur un autre port, définir `VITE_API_URL` dans `site/.env.local` et/ou `cms/.env.local`
+   (ex. `VITE_API_URL=http://localhost:3000`).
+
+## API Contract (local)
+- Health : `GET /api/health`
+- Auth : `/api/auth/*`
+- Me : `GET /api/user/me`
+- Analytics : `GET /api/analytics/summary`
+
 ## Déploiement & isolation
 Consultez `DEPLOYMENT.md` pour les instructions détaillées (build/run séparés, variables d'env, push séparé sur GitHub).
 
