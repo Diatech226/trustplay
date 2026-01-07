@@ -34,7 +34,10 @@ Variables utilisées par le code :
 - `PORT` : port HTTP (défaut 3000)
 - `DATABASE_URL` : URI MongoDB (ex. `mongodb+srv://user:pass@cluster/db`)
 - `JWT_SECRET` : clé de signature JWT
-- `CORS_ORIGIN` : origines autorisées (CSV, ex. `http://localhost:5173,http://localhost:5174`). En production, la valeur est requise (CORS strict). En dev, les ports 5173/5174 sont ajoutés par défaut.
+- `CORS_ORIGIN` : origines autorisées (CSV). Exemples :
+  - **Prod** : `CORS_ORIGIN=https://trust-group.agency,https://trust-git-main-christodules-projects.vercel.app`
+  - **Dev** : `CORS_ORIGIN=http://localhost:5173,http://localhost:5174`
+  - Les previews Vercel `https://trust-*.vercel.app` sont autorisées automatiquement (regex).
 - `FRONTEND_URL` : URL publique du frontend (utilisée pour construire les liens de reset password)
 - `UPLOAD_DIR` : répertoire pour stocker les fichiers uploadés (servi via `/uploads`)
 - `API_PUBLIC_URL` : base publique de l'API pour retourner des URLs absolues vers `/uploads` (ex. `http://localhost:3000`)
@@ -59,7 +62,13 @@ Variables utilisées par le code :
 ## Auth & CORS
 - Auth JWT : le serveur signe un JWT avec `{ id, email, role }` et le renvoie dans `data.token`. **Le header `Authorization: Bearer <token>` est la source de vérité pour toutes les routes protégées.**
 - Middleware `verifyToken` : lit d'abord le bearer (cookie `access_token` accepté en fallback) ; en cas d'absence, renvoie `401 { success: false, message: "Unauthorized: No token provided" }`, et en cas de signature invalide renvoie `401 { success: false, message: "Unauthorized: Invalid token" }`. Le payload décodé est exposé sur `req.user` (`{ id, email, role }`).
-- CORS : origines multiples via `CORS_ORIGIN`, `credentials: true`, méthodes `GET,POST,PUT,DELETE,OPTIONS`, headers `Content-Type, Authorization, X-Requested-With`.
+- CORS : origines multiples via `CORS_ORIGIN` (plus previews Vercel), `credentials: true`, méthodes `GET,POST,PUT,PATCH,DELETE,OPTIONS`, headers `Content-Type, Authorization`.
+- Vérification rapide (préflight) :
+  ```bash
+  curl -I -X OPTIONS "$NEXT_PUBLIC_API_URL/api/posts" \
+    -H "Origin: https://trust-git-main-christodules-projects.vercel.app" \
+    -H "Access-Control-Request-Method: GET"
+  ```
 - Uploads : `API_PUBLIC_URL` permet de renvoyer des URLs absolues pour la médiathèque (sinon l'API déduit l'host depuis la requête).
 - Front : utiliser `NEXT_PUBLIC_API_URL` (ou `VITE_API_URL` en fallback) et appeler `fetch(..., { credentials: 'include' })`. Les requêtes authentifiées ajoutent automatiquement le bearer.
 - Sécurité minimale : rate limiting sur `/api/auth`, headers de sécurité de base et sanitation des inputs pour limiter les injections Mongo.
@@ -239,6 +248,49 @@ curl -X POST "$NEXT_PUBLIC_API_URL/api/uploads" \
 - Les fichiers sont servis via `/uploads/<filename>` ; le dossier `UPLOAD_DIR` est créé automatiquement.
 
 ## Troubleshooting
+- Si l'API est derrière un proxy (Nginx/Apache), assurez-vous que les préflights `OPTIONS` passent bien et que les headers CORS sont renvoyés.
+
+### Exemple Nginx (proxy CORS + OPTIONS)
+```nginx
+location /api/ {
+  if ($request_method = OPTIONS) {
+    add_header Access-Control-Allow-Origin $http_origin always;
+    add_header Access-Control-Allow-Credentials true always;
+    add_header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS" always;
+    add_header Access-Control-Allow-Headers "Content-Type, Authorization" always;
+    add_header Content-Length 0;
+    return 204;
+  }
+
+  proxy_set_header Host $host;
+  proxy_set_header X-Forwarded-Proto $scheme;
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_pass http://localhost:3000;
+
+  add_header Access-Control-Allow-Origin $http_origin always;
+  add_header Access-Control-Allow-Credentials true always;
+  add_header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS" always;
+  add_header Access-Control-Allow-Headers "Content-Type, Authorization" always;
+}
+```
+
+### Exemple Apache (proxy CORS + OPTIONS)
+```apache
+<Location "/api/">
+  RewriteEngine On
+  RewriteCond %{REQUEST_METHOD} OPTIONS
+  RewriteRule ^(.*)$ $1 [R=204,L]
+
+  SetEnvIfNoCase Origin "^https?://.*$" Origin=$0
+  Header always set Access-Control-Allow-Origin "%{Origin}e" env=Origin
+  Header always set Access-Control-Allow-Credentials "true"
+  Header always set Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+  Header always set Access-Control-Allow-Headers "Content-Type, Authorization"
+
+  ProxyPass http://localhost:3000/
+  ProxyPassReverse http://localhost:3000/
+</Location>
+```
 - **Mongo Atlas** :
   - S’assurer que `DATABASE_URL` est renseigné et que l’utilisateur a le rôle `readWrite` sur la base.
   - Ajouter votre IP dans la whitelist Atlas ; encoder les caractères spéciaux du mot de passe dans l’URI.
