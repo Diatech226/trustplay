@@ -40,10 +40,11 @@ export default function Header() {
     const canAccessDashboard = currentUser && currentUser.role === 'ADMIN';
     if (canAccessDashboard) {
       baseNav.push({ path: '/dashboard', label: 'Dashboard' });
+      baseNav.push({ path: cmsUrl, label: 'Go to CMS', external: true });
     }
 
     return baseNav;
-  }, [currentUser, trustMediaRubrics]);
+  }, [cmsUrl, currentUser, trustMediaRubrics]);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
@@ -150,7 +151,11 @@ export default function Header() {
               </Button>
             </Link>
             <Link to='/sign-up'>
-              <Button color='gray' outline>
+              <Button
+                color='gray'
+                outline
+                className='border-slate-200 text-slate-700 dark:border-slate-700 dark:text-slate-100'
+              >
                 Créer un compte
               </Button>
             </Link>
@@ -161,24 +166,33 @@ export default function Header() {
       <Navbar.Collapse>
         {navItems.map((item) => {
           const isActive = path === item.path;
+          const linkClasses = `relative pb-1 transition-colors ${
+            isActive
+              ? 'text-primary dark:text-white'
+              : 'text-slate-600 hover:text-primary dark:text-slate-200 dark:hover:text-white'
+          }`;
           return (
             <Navbar.Link key={item.path} active={isActive} as={'div'}>
-              <Link
-                to={item.path}
-                className={`relative pb-1 transition-colors ${
-                  isActive
-                    ? 'text-primary dark:text-white'
-                    : 'text-slate-600 hover:text-primary'
-                }`}
-              >
-                {item.label}
-                {item.path === '/notifications-preferences' && unread > 0 && (
-                  <span className='absolute -right-3 -top-1 h-2.5 w-2.5 rounded-full bg-red-500'></span>
-                )}
-                {isActive && (
-                  <span className='absolute left-0 -bottom-1 h-0.5 w-full bg-accent'></span>
-                )}
-              </Link>
+              {item.external ? (
+                <a
+                  href={item.path}
+                  className={linkClasses}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {item.label}
+                </a>
+              ) : (
+                <Link to={item.path} className={linkClasses}>
+                  {item.label}
+                  {item.path === '/notifications-preferences' && unread > 0 && (
+                    <span className='absolute -right-3 -top-1 h-2.5 w-2.5 rounded-full bg-red-500'></span>
+                  )}
+                  {isActive && (
+                    <span className='absolute left-0 -bottom-1 h-0.5 w-full bg-accent'></span>
+                  )}
+                </Link>
+              )}
             </Navbar.Link>
           );
         })}
