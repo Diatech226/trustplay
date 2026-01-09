@@ -4,6 +4,13 @@ const API_BASE_URL = (
   'http://localhost:3000'
 ).replace(/\/$/, '');
 const MEDIA_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, '');
+const API_ORIGIN = (() => {
+  try {
+    return new URL(MEDIA_BASE_URL).origin;
+  } catch (error) {
+    return MEDIA_BASE_URL;
+  }
+})();
 
 export const DEFAULT_MEDIA_PLACEHOLDER =
   'https://www.hostinger.com/tutorials/wp-content/uploads/sites/2/2021/09/how-to-write-a-blog-post.png';
@@ -75,10 +82,16 @@ const resolveFallback = (fallback) => {
   return `${MEDIA_BASE_URL}${normalized || ''}`;
 };
 
-export const resolveMediaUrl = (value, fallback = '') => {
+export const resolveAssetUrl = (value, fallback = DEFAULT_MEDIA_PLACEHOLDER) => {
   const resolved = normalizeInput(value);
-  if (!resolved) return resolveFallback(fallback);
+  if (!resolved) return resolveFallback(fallback || DEFAULT_MEDIA_PLACEHOLDER);
   if (isAbsoluteUrl(resolved)) return resolved;
   const normalized = normalizePath(resolved);
+  if (normalized.startsWith('/uploads')) {
+    return `${API_ORIGIN}${normalized}`;
+  }
   return `${MEDIA_BASE_URL}${normalized || ''}`;
 };
+
+export const resolveMediaUrl = (value, fallback = '') =>
+  resolveAssetUrl(value, fallback || DEFAULT_MEDIA_PLACEHOLDER);

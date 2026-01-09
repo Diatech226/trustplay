@@ -157,6 +157,7 @@ Alias admin (compat CMS) :
 - `POST /api/uploads` — `multipart/form-data` avec champ `file` (recommandé) ou `image` (compat)
   - Si fichier image : génération automatique des variantes `thumb` (400px), `medium` (900px), `cover` (1400px) en WebP + AVIF.
   - Retour : `{ originalUrl, thumbUrl, mediumUrl, coverUrl, thumbAvifUrl, mediumAvifUrl, coverAvifUrl, width, height }`.
+  - Les URLs renvoyées sont absolues si `API_PUBLIC_URL` est défini (sinon basées sur l'host de la requête).
 - `POST /api/media/upload` (admin) — upload MediaAsset (variants `thumb`, `card`, `cover`, `og`)
 - `GET /api/media` (admin) — liste paginée + filtres `search`, `category`, `type`, `status`
 - `PUT /api/media/:id` (owner/admin) — update metadata

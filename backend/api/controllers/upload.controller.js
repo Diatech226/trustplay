@@ -91,9 +91,33 @@ const logUpload = (context) => {
   console.info('[UPLOAD]', context);
 };
 
-const buildResponsePayload = (file, media, extra = {}) => {
+const resolveApiBaseUrl = (req) => {
+  const configured = process.env.API_PUBLIC_URL?.replace(/\/$/, '');
+  if (configured) return configured;
+  const forwardedProto = req.headers['x-forwarded-proto'];
+  const protocol = forwardedProto ? forwardedProto.split(',')[0] : req.protocol;
+  return `${protocol}://${req.get('host')}`;
+};
+
+const isAbsoluteUrl = (value) => {
+  if (!value || typeof value !== 'string') return false;
+  return value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:') || value.startsWith('blob:');
+};
+
+const resolveAbsoluteUrl = (req, value) => {
+  if (!value || typeof value !== 'string') return value;
+  if (isAbsoluteUrl(value)) return value;
+  const baseUrl = resolveApiBaseUrl(req);
+  const normalized = value.startsWith('/') ? value : `/${value}`;
+  return `${baseUrl}${normalized}`;
+};
+
+const buildResponsePayload = (req, file, media, extra = {}) => {
   const isImage = file.mimetype.startsWith('image/');
-  const baseUrl = extra.originalUrl || `/uploads/${file.filename}`;
+  const baseUrl = resolveAbsoluteUrl(req, extra.originalUrl || `/uploads/${file.filename}`);
+  const resolvedExtra = Object.fromEntries(
+    Object.entries(extra).map(([key, value]) => [key, resolveAbsoluteUrl(req, value)])
+  );
   return {
     success: true,
     media,
@@ -104,7 +128,7 @@ const buildResponsePayload = (file, media, extra = {}) => {
       size: file.size,
       type: isImage ? 'image' : 'video',
       media,
-      ...extra,
+      ...resolvedExtra,
     },
     url: baseUrl,
     name: file.originalname,
@@ -211,7 +235,7 @@ export const handleUpload = async (req, res, next) => {
 
     const media = await Media.create(mediaPayload);
     return res.status(201).json(
-      buildResponsePayload(uploadedFile, media, {
+      buildResponsePayload(req, uploadedFile, media, {
         originalUrl,
         thumbUrl: variants.thumbUrl,
         coverUrl: variants.coverUrl,
@@ -254,7 +278,7 @@ export const listUploads = async (req, res, next) => {
           const mime = resolveMimeType(entry.name);
           return {
             name: entry.name,
-            url: `/uploads/${entry.name}`,
+            url: resolveAbsoluteUrl(req, `/uploads/${entry.name}`),
             mime,
             size: stats.size,
             createdAt: stats.birthtime?.toISOString() || stats.mtime.toISOString(),

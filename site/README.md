@@ -16,6 +16,11 @@ Créer un fichier `.env` à la racine du projet (voir `.env.example`) :
 - `VITE_API_URL` : URL de base de l'API (ex. `http://localhost:3000`).
 - `VITE_CMS_URL` (optionnel) : URL du CMS pour le lien admin (ex. `http://localhost:5174`).
 
+## Règles d'URL des images
+- Les URLs absolues (`https://...`) sont utilisées telles quelles.
+- Les URLs commençant par `/uploads/...` sont préfixées par l'origine de `VITE_API_URL`.
+- Si aucune image n'est fournie, un placeholder est affiché (`DEFAULT_MEDIA_PLACEHOLDER`).
+
 ## Scripts
 ```bash
 npm run dev

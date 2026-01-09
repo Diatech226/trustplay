@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { Suspense, lazy, useEffect } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -90,68 +90,79 @@ export default function App() {
     <BrowserRouter>
       <HelmetProvider>
         <ScrollToTop />
-        <Header />
-        <Suspense fallback={<LoadingScreen label='Chargement de la page...' />}>
-          <Routes>
-            <Route path='/' element={<Home />} />
-            <Route path='/about' element={<About />} />
-            <Route path='/sign-in' element={<SignIn />} />
-            <Route path='/sign-up' element={<SignUp />} />
-            <Route path='/forgot-password' element={<ForgotPassword />} />
-            <Route path='/reset-password' element={<ResetPassword />} />
-            <Route path='/search' element={<Search />} />
-            <Route path='/events' element={<TrustEvent />} />
-            <Route path='/event' element={<TrustEvent />} />
-            <Route path='/production' element={<TrustProd />} />
-            <Route path='/favorites' element={<Favorites />} />
-            <Route path='/history' element={<History />} />
-            <Route path='/notifications-preferences' element={<NotificationsPreferences />} />
-            <Route path='/rubriques' element={<Rubriques />} />
-            <Route path='/news' element={<NewsPage />} />
-            <Route path='/politique' element={<PoliticsPage />} />
-            <Route path='/science' element={<SciencePage />} />
-            <Route path='/science-tech' element={<SciencePage />} />
-            <Route path='/sport' element={<SportPage />} />
-            <Route path='/cinema' element={<CinemaPage />} />
-            <Route path='/:rubricSlug' element={<RubricPage />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/terms" element={<TermsConditions />} />
-            <Route element={<PrivateRoute />}>
-              <Route path='/dashboard' element={<AdminLayout />}>
-                <Route element={<OnlyAdminPrivateRoute />}>
-                  <Route index element={<AdminDashboard />} />
-                  <Route path='posts' element={<AdminPosts />} />
-                  <Route path='posts/create' element={<CreatePost />} />
-                  <Route path='posts/:postId/edit' element={<UpdatePost />} />
-                  <Route path='pages' element={<AdminPages />} />
-                  <Route path='comments' element={<AdminComments />} />
-                  <Route path='events' element={<AdminEvents />} />
-                  <Route path='media' element={<AdminMedia />} />
-                  <Route path='campaigns' element={<AdminCampaigns />} />
-                  <Route path='clients' element={<AdminClients />} />
-                  <Route path='projects' element={<AdminProjects />} />
-                  <Route path='analytics' element={<AdminAnalytics />} />
-                  <Route path='newsletter' element={<AdminNewsletter />} />
-                  <Route path='forms' element={<AdminForms />} />
-                  <Route path='activity' element={<AdminActivity />} />
-                  <Route path='users' element={<AdminUsers />} />
-                  <Route path='settings' element={<AdminSettings />} />
-                </Route>
-                <Route path='profile' element={<DashProfile />} />
-              </Route>
-            </Route>
-            <Route element={<OnlyAdminPrivateRoute />}>
-              <Route path='/create-post' element={<CreatePost />} />
-              <Route path='/update-post/:postId' element={<UpdatePost />} />
-            </Route>
-
-            <Route path='/projects' element={<Projects />} />
-            <Route path='/post/:postSlug' element={<PostPage />} />
-            <Route path='*' element={<NotFound />} />
-          </Routes>
-        </Suspense>
-        <Footer />
+        <AppShell />
       </HelmetProvider>
     </BrowserRouter>
+  );
+}
+
+function AppShell() {
+  const location = useLocation();
+  const isDashboard = location.pathname.startsWith('/dashboard');
+
+  return (
+    <>
+      {!isDashboard && <Header />}
+      <Suspense fallback={<LoadingScreen label='Chargement de la page...' />}>
+        <Routes>
+          <Route path='/' element={<Home />} />
+          <Route path='/about' element={<About />} />
+          <Route path='/sign-in' element={<SignIn />} />
+          <Route path='/sign-up' element={<SignUp />} />
+          <Route path='/forgot-password' element={<ForgotPassword />} />
+          <Route path='/reset-password' element={<ResetPassword />} />
+          <Route path='/search' element={<Search />} />
+          <Route path='/events' element={<TrustEvent />} />
+          <Route path='/event' element={<TrustEvent />} />
+          <Route path='/production' element={<TrustProd />} />
+          <Route path='/favorites' element={<Favorites />} />
+          <Route path='/history' element={<History />} />
+          <Route path='/notifications-preferences' element={<NotificationsPreferences />} />
+          <Route path='/rubriques' element={<Rubriques />} />
+          <Route path='/news' element={<NewsPage />} />
+          <Route path='/politique' element={<PoliticsPage />} />
+          <Route path='/science' element={<SciencePage />} />
+          <Route path='/science-tech' element={<SciencePage />} />
+          <Route path='/sport' element={<SportPage />} />
+          <Route path='/cinema' element={<CinemaPage />} />
+          <Route path='/:rubricSlug' element={<RubricPage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsConditions />} />
+          <Route element={<PrivateRoute />}>
+            <Route path='/dashboard' element={<AdminLayout />}>
+              <Route element={<OnlyAdminPrivateRoute />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path='posts' element={<AdminPosts />} />
+                <Route path='posts/create' element={<CreatePost />} />
+                <Route path='posts/:postId/edit' element={<UpdatePost />} />
+                <Route path='pages' element={<AdminPages />} />
+                <Route path='comments' element={<AdminComments />} />
+                <Route path='events' element={<AdminEvents />} />
+                <Route path='media' element={<AdminMedia />} />
+                <Route path='campaigns' element={<AdminCampaigns />} />
+                <Route path='clients' element={<AdminClients />} />
+                <Route path='projects' element={<AdminProjects />} />
+                <Route path='analytics' element={<AdminAnalytics />} />
+                <Route path='newsletter' element={<AdminNewsletter />} />
+                <Route path='forms' element={<AdminForms />} />
+                <Route path='activity' element={<AdminActivity />} />
+                <Route path='users' element={<AdminUsers />} />
+                <Route path='settings' element={<AdminSettings />} />
+              </Route>
+              <Route path='profile' element={<DashProfile />} />
+            </Route>
+          </Route>
+          <Route element={<OnlyAdminPrivateRoute />}>
+            <Route path='/create-post' element={<CreatePost />} />
+            <Route path='/update-post/:postId' element={<UpdatePost />} />
+          </Route>
+
+          <Route path='/projects' element={<Projects />} />
+          <Route path='/post/:postSlug' element={<PostPage />} />
+          <Route path='*' element={<NotFound />} />
+        </Routes>
+      </Suspense>
+      {!isDashboard && <Footer />}
+    </>
   );
 }
