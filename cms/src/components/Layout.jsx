@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 
 const navItems = [
   { to: '/', label: 'Overview', icon: '📊' },
+  { to: '/pages', label: 'Pages', icon: '📄' },
   { to: '/posts', label: 'Posts', icon: '📰' },
   { to: '/events', label: 'Events', icon: '📅' },
   { to: '/media', label: 'Media Library', icon: '🗂️' },
@@ -14,6 +15,7 @@ const navItems = [
 
 const labelMap = {
   posts: 'Posts',
+  pages: 'Pages',
   events: 'Events',
   media: 'Media Library',
   comments: 'Comments',

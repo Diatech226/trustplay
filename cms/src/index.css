@@ -211,6 +211,14 @@ a {
   gap: 16px;
 }
 
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: #475569;
+}
+
 .form-grid label {
   display: flex;
   flex-direction: column;
@@ -232,6 +240,138 @@ textarea {
 textarea {
   min-height: 140px;
   resize: vertical;
+}
+
+.page-editor-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 24px;
+  align-items: start;
+}
+
+.page-editor-main,
+.page-editor-sidebar {
+  min-width: 0;
+}
+
+.page-editor-sidebar {
+  position: sticky;
+  top: 24px;
+  height: fit-content;
+}
+
+.page-editor-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.page-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.page-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.page-card__header h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.editor-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.editor-toolbar__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.page-editor-quill {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.page-editor-quill .ql-toolbar {
+  border: none;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.page-editor-quill .ql-container {
+  border: none;
+  min-height: 320px;
+  font-size: 15px;
+}
+
+.page-sidebar-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.page-sidebar-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.page-sidebar-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.page-sidebar-card__header h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.page-action-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.featured-media {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.featured-media__preview {
+  border: 1px dashed #cbd5f5;
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+  color: #64748b;
+  background: #f8fafc;
+}
+
+.featured-media__preview img {
+  max-width: 100%;
+  border-radius: 8px;
+  display: block;
+}
+
+.featured-media__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .helper {
@@ -530,5 +670,13 @@ textarea {
 
   .settings-shell {
     grid-template-columns: 1fr;
+  }
+
+  .page-editor-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .page-editor-sidebar {
+    position: static;
   }
 }
