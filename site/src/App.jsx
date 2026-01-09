@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { Suspense, lazy, useEffect } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
-import PrivateRoute from './components/PrivateRoute';
 import OnlyAdminPrivateRoute from './components/OnlyAdminPrivateRoute';
 import ScrollToTop from './components/ScrollToTop';
 import LoadingScreen from './components/LoadingScreen';
@@ -128,27 +127,25 @@ function AppShell() {
           <Route path='/:rubricSlug' element={<RubricPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsConditions />} />
-          <Route element={<PrivateRoute />}>
+          <Route element={<OnlyAdminPrivateRoute />}>
             <Route path='/dashboard' element={<AdminLayout />}>
-              <Route element={<OnlyAdminPrivateRoute />}>
-                <Route index element={<AdminDashboard />} />
-                <Route path='posts' element={<AdminPosts />} />
-                <Route path='posts/create' element={<CreatePost />} />
-                <Route path='posts/:postId/edit' element={<UpdatePost />} />
-                <Route path='pages' element={<AdminPages />} />
-                <Route path='comments' element={<AdminComments />} />
-                <Route path='events' element={<AdminEvents />} />
-                <Route path='media' element={<AdminMedia />} />
-                <Route path='campaigns' element={<AdminCampaigns />} />
-                <Route path='clients' element={<AdminClients />} />
-                <Route path='projects' element={<AdminProjects />} />
-                <Route path='analytics' element={<AdminAnalytics />} />
-                <Route path='newsletter' element={<AdminNewsletter />} />
-                <Route path='forms' element={<AdminForms />} />
-                <Route path='activity' element={<AdminActivity />} />
-                <Route path='users' element={<AdminUsers />} />
-                <Route path='settings' element={<AdminSettings />} />
-              </Route>
+              <Route index element={<AdminDashboard />} />
+              <Route path='posts' element={<AdminPosts />} />
+              <Route path='posts/create' element={<CreatePost />} />
+              <Route path='posts/:postId/edit' element={<UpdatePost />} />
+              <Route path='pages' element={<AdminPages />} />
+              <Route path='comments' element={<AdminComments />} />
+              <Route path='events' element={<AdminEvents />} />
+              <Route path='media' element={<AdminMedia />} />
+              <Route path='campaigns' element={<AdminCampaigns />} />
+              <Route path='clients' element={<AdminClients />} />
+              <Route path='projects' element={<AdminProjects />} />
+              <Route path='analytics' element={<AdminAnalytics />} />
+              <Route path='newsletter' element={<AdminNewsletter />} />
+              <Route path='forms' element={<AdminForms />} />
+              <Route path='activity' element={<AdminActivity />} />
+              <Route path='users' element={<AdminUsers />} />
+              <Route path='settings' element={<AdminSettings />} />
               <Route path='profile' element={<DashProfile />} />
             </Route>
           </Route>

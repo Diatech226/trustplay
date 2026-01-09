@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import { Layout } from './components/Layout';
-import { ProtectedRoute } from './components/ProtectedRoute';
+import { AdminRoute } from './components/AdminRoute';
 import { Overview } from './pages/Overview';
 import { Posts } from './pages/Posts';
 import { PostEditor } from './pages/PostEditor';
@@ -23,9 +23,9 @@ export const App = () => {
       <Route
         path="/"
         element={
-          <ProtectedRoute>
+          <AdminRoute>
             <Layout />
-          </ProtectedRoute>
+          </AdminRoute>
         }
       >
         <Route index element={<Overview />} />

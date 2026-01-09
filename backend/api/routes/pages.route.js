@@ -1,5 +1,5 @@
 import express from 'express';
-import { verifyToken } from '../utils/verifyUser.js';
+import { requireAdmin, verifyToken } from '../utils/verifyUser.js';
 import {
   createPage,
   deletePage,
@@ -11,11 +11,11 @@ import {
 
 const router = express.Router();
 
-router.get('/', verifyToken, getPages);
-router.get('/:pageId', verifyToken, getPage);
-router.post('/', verifyToken, createPage);
-router.put('/:pageId', verifyToken, updatePage);
-router.patch('/:pageId/status', verifyToken, updatePageStatus);
-router.delete('/:pageId', verifyToken, deletePage);
+router.get('/', verifyToken, requireAdmin, getPages);
+router.get('/:pageId', verifyToken, requireAdmin, getPage);
+router.post('/', verifyToken, requireAdmin, createPage);
+router.put('/:pageId', verifyToken, requireAdmin, updatePage);
+router.patch('/:pageId/status', verifyToken, requireAdmin, updatePageStatus);
+router.delete('/:pageId', verifyToken, requireAdmin, deletePage);
 
 export default router;

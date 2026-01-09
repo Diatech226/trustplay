@@ -69,6 +69,7 @@ Variables utilisées par le code :
 ## Auth & CORS
 - Auth JWT : le serveur signe un JWT avec `{ id, email, role }` et le renvoie dans `data.token`. **Le header `Authorization: Bearer <token>` est la source de vérité pour toutes les routes protégées.**
 - Middleware `verifyToken` : lit d'abord le bearer (cookie `access_token` accepté en fallback) ; en cas d'absence, renvoie `401 { success: false, message: "Unauthorized: No token provided" }`, et en cas de signature invalide renvoie `401 { success: false, message: "Unauthorized: Invalid token" }`. Le payload décodé est exposé sur `req.user` (`{ id, email, role }`).
+- Middleware `requireAdmin` : bloque tout rôle non `ADMIN` avec `403 { success: false, message: "Admin access required" }`.
 - CORS : origines multiples via `CORS_ORIGIN` (plus previews Vercel), `credentials: true`, méthodes `GET,POST,PUT,PATCH,DELETE,OPTIONS`, headers `Content-Type, Authorization`.
 - Vérification rapide (préflight) :
   ```bash
@@ -99,6 +100,17 @@ Variables utilisées par le code :
 
 ## Endpoints principaux
 Résumé (voir le détail complet dans `API_CONTRACT.md`). Les routes sont préfixées par `/api`.
+
+### Endpoints admin-only (role `ADMIN`)
+- Media library : `POST /api/media/upload`, `GET /api/media`, `GET /api/media/:id`, `POST /api/media`, `PUT /api/media/:id`, `DELETE /api/media/:id`
+- Uploads : `POST /api/uploads`, `GET /api/uploads/list`
+- Pages CMS : `GET /api/pages`, `GET /api/pages/:pageId`, `POST /api/pages`, `PUT /api/pages/:pageId`, `PATCH /api/pages/:pageId/status`, `DELETE /api/pages/:pageId`
+- Posts/events admin : `POST /api/post/create`, `PUT /api/post/updatepost/:postId/:userId`, `DELETE /api/post/deletepost/:postId/:userId`, `PATCH /api/post/:postId/status`
+- Comment moderation : `GET /api/comment/getcomments`
+- Settings : `PUT /api/settings`
+- Analytics : `GET /api/analytics/summary`
+- Clients/projects/campaigns : toutes les routes `/api/clients`, `/api/projects`, `/api/campaigns`
+- Admin users : toutes les routes `/api/admin/*`, `POST /api/user/admin-create`, `POST /api/user/create`, `PUT /api/user/:id`, `PUT /api/user/:id/toggle-admin`, `PATCH /api/user/:id/role`, `PATCH /api/user/:id/promote`, `GET /api/user/getusers`
 
 ### Auth
 - `POST /api/auth/signup` — `{ username, email, password }`
@@ -138,11 +150,11 @@ Alias admin (compat CMS) :
 > - Scripts : `npm run make-admin -- --email someone@mail.com` ou `node scripts/seed-admin.js --email someone@mail.com`.
 
 ### Posts / Events
-- `POST /api/post/create` (auth) — crée un article/événement (`title`, `content`, `category`, `subCategory`, `image`, `eventDate`, `location`, `featuredMediaId`)
+- `POST /api/post/create` (admin) — crée un article/événement (`title`, `content`, `category`, `subCategory`, `image`, `eventDate`, `location`, `featuredMediaId`)
 - `GET /api/post/getposts` — filtre par `userId`, `category`, `subCategory`, `slug`, `postId`, `searchTerm`, `startIndex`, `limit`, `order` + `populateMedia=1`
 - `GET /api/posts/:postId` et `GET /api/post/:postId` — lecture d'un post par `_id` (admin voit tous les statuts)
-- `PUT /api/post/updatepost/:postId/:userId` (auth proprio/admin)
-- `DELETE /api/post/deletepost/:postId/:userId` (auth proprio/admin)
+- `PUT /api/post/updatepost/:postId/:userId` (admin)
+- `DELETE /api/post/deletepost/:postId/:userId` (admin)
 - Un événement est un post avec `category=TrustEvent`; filtrer `category=TrustEvent` pour la vue Events.
 
 ### Commentaires
@@ -154,14 +166,14 @@ Alias admin (compat CMS) :
 - `DELETE /api/comment/deleteComment/:commentId` (auth proprio/admin)
 
 ### Upload
-- `POST /api/uploads` — `multipart/form-data` avec champ `file` (recommandé) ou `image` (compat)
+- `POST /api/uploads` (admin) — `multipart/form-data` avec champ `file` (recommandé) ou `image` (compat)
   - Si fichier image : génération automatique des variantes `thumb` (400px), `medium` (900px), `cover` (1400px) en WebP + AVIF.
   - Retour : `{ originalUrl, thumbUrl, mediumUrl, coverUrl, thumbAvifUrl, mediumAvifUrl, coverAvifUrl, width, height }`.
   - Les URLs renvoyées sont absolues si `API_PUBLIC_URL` est défini (sinon basées sur l'host de la requête).
-- `POST /api/media/upload` (auth) — upload MediaAsset (variants `thumb`, `card`, `cover`, `og`) et retourne `data.media`
-- `GET /api/media` (auth) — liste paginée + filtres `search`, `category`, `type`, `status`
-- `PUT /api/media/:id` (owner/admin) — update metadata
-- `DELETE /api/media/:id` (owner/admin) — suppression DB + fichiers
+- `POST /api/media/upload` (admin) — upload MediaAsset (variants `thumb`, `card`, `cover`, `og`) et retourne `data.media`
+- `GET /api/media` (admin) — liste paginée + filtres `search`, `category`, `type`, `status`
+- `PUT /api/media/:id` (admin) — update metadata
+- `DELETE /api/media/:id` (admin) — suppression DB + fichiers
 - `GET /uploads/<filename>` — fichiers statiques servis depuis `UPLOAD_DIR` (défaut `./uploads`)
 
 ### Settings
@@ -177,6 +189,9 @@ Alias admin (compat CMS) :
 - `GET /api/campaigns/:id` — détail (avec projet + client) ; `PUT`/`DELETE` pour modifier/supprimer.
 
 Toutes ces routes exigent un rôle `ADMIN` + Bearer JWT.
+
+### Debug (dev-only)
+- `GET /api/debug/whoami` (auth) — retourne `{ id, role }` et la source du token. Désactivé en production (404).
 
 ### Flux Auth (JWT)
 1. **Signin** :

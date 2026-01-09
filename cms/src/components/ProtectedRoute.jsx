@@ -1,8 +1,9 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { AccessDenied } from './AccessDenied';
 
-export const ProtectedRoute = ({ children }) => {
-  const { status } = useAuth();
+export const ProtectedRoute = ({ children, requiredRole }) => {
+  const { status, user } = useAuth();
   const location = useLocation();
 
   if (status === 'loading') {
@@ -16,6 +17,15 @@ export const ProtectedRoute = ({ children }) => {
   if (status !== 'authenticated') {
     const returnTo = encodeURIComponent(`${location.pathname}${location.search}`);
     return <Navigate to={`/login?returnTo=${returnTo}`} replace />;
+  }
+
+  if (requiredRole && user?.role !== requiredRole) {
+    return (
+      <AccessDenied
+        title="Accès refusé"
+        message="Vous devez être administrateur pour accéder à cette interface."
+      />
+    );
   }
 
   return children;
