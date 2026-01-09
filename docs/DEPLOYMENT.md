@@ -1,4 +1,4 @@
-# Deployment Guide (Trust Media)
+# Deployment Guide (Trustplay)
 
 Ce document décrit comment builder/déployer chaque application séparément, ainsi que les variables d'environnement attendues.
 
@@ -6,13 +6,15 @@ Ce document décrit comment builder/déployer chaque application séparément, a
 
 ### Build local
 ```bash
-npm --workspace site install
-npm --workspace site run build
+cd site
+npm install
+npm run build
 ```
 
 ### Dev local
 ```bash
-npm --workspace site run dev
+cd site
+npm run dev
 ```
 
 ### Variables d'env
@@ -29,13 +31,15 @@ Créer `site/.env` si nécessaire :
 
 ### Build local
 ```bash
-npm --workspace cms install
-npm --workspace cms run build
+cd cms
+npm install
+npm run build
 ```
 
 ### Dev local
 ```bash
-npm --workspace cms run dev
+cd cms
+npm run dev
 ```
 
 ### Variables d'env
@@ -50,10 +54,11 @@ Créer `cms/.env` si nécessaire :
 
 ### Démarrage local
 ```bash
-npm --workspace backend install
-npm --workspace backend run dev
+cd backend
+npm install
+npm run dev
 # ou
-npm --workspace backend run start
+npm run start
 ```
 
 ### Variables d'env
@@ -71,14 +76,5 @@ Créer `backend/.env` (voir `backend/.env.example`) :
 - Les fichiers uploadés sont stockés dans `UPLOAD_DIR`.
 - `.htaccess` non requis (Express gère les routes).
 
-## Commandes workspace depuis la racine
-```bash
-npm run build:site
-npm run build:cms
-npm run build:api
-
-npm run start:api
-```
-
 ## Push séparé sur GitHub
-Voir `REPO_STRUCTURE_AUDIT.md` pour la stratégie détaillée (subtree / split).
+Voir `docs/STRUCTURE_REPORT.md` pour les décisions de structure et d'isolation.

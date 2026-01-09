@@ -1,6 +1,6 @@
 node_modules
+dist
+.vite
 .env
 .env.*
-uploads
-public/uploads
 *.log

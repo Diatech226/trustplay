@@ -27,10 +27,11 @@ npm run dev   # nodemon api/index.js
 npm start     # node api/index.js
 ```
 
-## Build/Démarrage depuis la racine (workspaces)
-```bash
-npm run build:api
-npm run start:api
+### Windows (PowerShell)
+```powershell
+Copy-Item .env.example .env
+npm install
+npm run dev
 ```
 
 ## Configuration (.env)

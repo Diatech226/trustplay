@@ -20,17 +20,6 @@ Créer un fichier `.env` à la racine du projet (voir `.env.example`) :
 - Output directory : `dist`
 - La SPA est configurée via `vercel.json` (rewrite vers `/index.html`).
 
-## Build séparé depuis la racine
-```bash
-npm run build:cms
-```
-
-## Push séparé (subtree)
-Depuis la racine du monorepo :
-```bash
-git subtree push --prefix cms git@github.com:ORG/trust-media-cms.git main
-```
-
 ## Auth flow
 - Token stocké en local (`cms_token`) + profil (`cms_current_user`).
 - Au boot, si token présent : `GET /api/user/me`.
