@@ -374,6 +374,48 @@ textarea {
   gap: 8px;
 }
 
+.skeleton-line,
+.skeleton-block {
+  background: linear-gradient(90deg, #e2e8f0 25%, #f8fafc 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+.skeleton-line {
+  height: 12px;
+  border-radius: 999px;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.skeleton-line--lg {
+  height: 18px;
+  width: 60%;
+}
+
+.skeleton-block {
+  height: 220px;
+  border-radius: 12px;
+}
+
+.skeleton-block--sm {
+  height: 120px;
+}
+
+.skeleton-block:last-child,
+.skeleton-line:last-child {
+  margin-bottom: 0;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
 .helper {
   font-size: 12px;
   color: #94a3b8;

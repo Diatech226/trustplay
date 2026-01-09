@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { uploadMedia } from '../services/media.service';
-import { createPost, fetchPostById, updatePost } from '../services/posts.service';
+import { createPost, fetchPostById, updatePost, updatePostStatus } from '../services/posts.service';
 import { useToast } from '../components/ToastProvider';
 import { MediaPicker } from '../components/MediaPicker';
 import { resolveMediaUrl } from '../lib/mediaUrls';
@@ -48,6 +48,7 @@ const emptyForm = {
   publishedAt: '',
   coverMediaId: '',
   featuredMediaId: '',
+  featuredMediaUrl: '',
   mediaIds: [],
   eventDate: '',
   location: '',
@@ -88,6 +89,7 @@ export const PostEditor = () => {
   const [formData, setFormData] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
+  const [statusUpdating, setStatusUpdating] = useState(false);
   const [error, setError] = useState(null);
   const [errorCode, setErrorCode] = useState(null);
   const [pickerState, setPickerState] = useState({ open: false, mode: 'cover' });
@@ -157,8 +159,16 @@ export const PostEditor = () => {
       setError(null);
       setErrorCode(null);
       try {
-        const post = await fetchPostById(postId);
+        const post = await fetchPostById(postId, { populateMedia: true });
         if (!post) throw new Error('Post introuvable');
+        const featuredMedia = post.featuredMedia || post.featuredMediaId;
+        const featuredMediaUrl =
+          featuredMedia?.original?.url ||
+          featuredMedia?.originalUrl ||
+          featuredMedia?.url ||
+          post.imageCover ||
+          post.image ||
+          '';
         const nextCategory = post.category || 'TrustMedia';
         const fallbackSubCategory =
           rubricOptions[0]?.value || TRUST_MEDIA_SUBCATEGORIES[0].value;
@@ -188,6 +198,7 @@ export const PostEditor = () => {
           publishedAt: post.publishedAt ? post.publishedAt.slice(0, 16) : '',
           coverMediaId: post.coverMediaId || '',
           featuredMediaId: post.featuredMediaId || '',
+          featuredMediaUrl,
           mediaIds: post.mediaIds || [],
           eventDate: post.eventDate ? post.eventDate.slice(0, 16) : '',
           location: post.location || '',
@@ -197,8 +208,10 @@ export const PostEditor = () => {
         });
         setSlugTouched(Boolean(post.slug));
       } catch (err) {
-        setError(err.message);
-        setErrorCode(err.status || (err.message === 'Post introuvable' ? 404 : null));
+        const statusCode = err.status || (err.message === 'Post introuvable' ? 404 : null);
+        const message = statusCode === 404 ? 'Post introuvable' : err.message;
+        setError(message);
+        setErrorCode(statusCode);
         addToast(`Impossible de charger le post : ${err.message}`, { type: 'error' });
       } finally {
         setFetching(false);
@@ -300,6 +313,7 @@ export const PostEditor = () => {
         imageMediumAvif: data.mediumAvifUrl || data.media?.mediumAvifUrl || prev.imageMediumAvif,
         coverMediaId: data.media?._id || prev.coverMediaId,
         featuredMediaId: data.media?._id || prev.featuredMediaId,
+        featuredMediaUrl: originalUrl || prev.featuredMediaUrl,
       }));
       addToast('Fichier uploadé avec succès.', { type: 'success' });
     } catch (err) {
@@ -346,6 +360,7 @@ export const PostEditor = () => {
         imageMediumAvif: media.mediumAvifUrl || prev.imageMediumAvif,
         coverMediaId: media._id,
         featuredMediaId: media._id,
+        featuredMediaUrl: originalUrl || prev.featuredMediaUrl,
       }));
       return;
     }
@@ -427,13 +442,47 @@ export const PostEditor = () => {
     }
   };
 
+  const handleQuickStatusUpdate = async (nextStatus) => {
+    if (!isEditing || !nextStatus) return;
+    setStatusUpdating(true);
+    try {
+      await updatePostStatus(postId, nextStatus);
+      setFormData((prev) => ({ ...prev, status: nextStatus }));
+      addToast('Statut mis à jour.', { type: 'success' });
+    } catch (err) {
+      addToast(`Mise à jour impossible : ${err.message}`, { type: 'error' });
+    } finally {
+      setStatusUpdating(false);
+    }
+  };
+
   if (fetching) {
     return (
       <div className="section">
         <div className="section-header">
           <h2>{isEditing ? 'Éditer un post' : 'Créer un post'}</h2>
         </div>
-        <div className="loader">Chargement du post…</div>
+        <div className="page-editor-layout">
+          <div className="page-editor-main">
+            <div className="page-card">
+              <div className="skeleton-line skeleton-line--lg" />
+              <div className="skeleton-line" />
+              <div className="skeleton-block" />
+            </div>
+          </div>
+          <div className="page-editor-sidebar">
+            <div className="page-sidebar-stack">
+              <div className="page-sidebar-card">
+                <div className="skeleton-line" />
+                <div className="skeleton-line" />
+              </div>
+              <div className="page-sidebar-card">
+                <div className="skeleton-line" />
+                <div className="skeleton-block skeleton-block--sm" />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -458,6 +507,13 @@ export const PostEditor = () => {
     return <AccessDenied message="Vous n’avez pas accès à ce post." />;
   }
 
+  const featuredPreview =
+    formData.featuredMediaUrl ||
+    formData.imageCover ||
+    formData.imageMedium ||
+    formData.image ||
+    formData.imageOriginal;
+
   return (
     <div className="section">
       <div className="section-header">
@@ -466,40 +522,287 @@ export const PostEditor = () => {
 
       {error ? <div className="notice">{error}</div> : null}
 
-      <form className="form-grid" onSubmit={handleSubmit}>
-        <label>
-          Titre
-          <input name="title" value={formData.title} onChange={handleChange} required />
-        </label>
-        <label>
-          Slug
-          <input name="slug" value={formData.slug} onChange={handleSlugChange} placeholder="auto-genere" />
-        </label>
-        <label>
-          Contenu
-          <ReactQuill
-            ref={quillRef}
-            theme="snow"
-            value={formData.content}
-            onChange={(value) => setFormData((prev) => ({ ...prev, content: value }))}
-            modules={quillModules}
-            formats={quillFormats}
-          />
-          <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-            <button
-              className="button secondary"
-              type="button"
-              onClick={() => setPickerState({ open: true, mode: 'inline' })}
-            >
-              Bibliothèque médias
-            </button>
-            <label className="button secondary" style={{ cursor: 'pointer' }}>
-              Upload & insérer
-              <input type="file" onChange={handleInlineUpload} style={{ display: 'none' }} />
-            </label>
-            <span className="helper">{(formData.mediaIds || []).length} média(s) liés</span>
+      <form onSubmit={handleSubmit}>
+        <div className="page-editor-layout">
+          <div className="page-editor-main page-editor-stack">
+            <div className="page-card">
+              <div className="page-card__header">
+                <h3>Rédaction</h3>
+                <span className="helper">Optimisé pour Trustplay CMS</span>
+              </div>
+              <div className="form-grid two-cols">
+                <label>
+                  Titre
+                  <input name="title" value={formData.title} onChange={handleChange} required />
+                </label>
+                <label>
+                  Slug
+                  <input name="slug" value={formData.slug} onChange={handleSlugChange} placeholder="auto-genere" />
+                </label>
+              </div>
+              <div className="form-field" style={{ marginTop: 16 }}>
+                <span>Contenu</span>
+                <div className="editor-toolbar">
+                  <div className="editor-toolbar__actions">
+                    <button
+                      className="button secondary"
+                      type="button"
+                      onClick={() => setPickerState({ open: true, mode: 'inline' })}
+                    >
+                      Insérer depuis la médiathèque
+                    </button>
+                    <label className="button secondary" style={{ cursor: 'pointer' }}>
+                      Upload & insérer
+                      <input type="file" accept="image/*,video/*" onChange={handleInlineUpload} style={{ display: 'none' }} />
+                    </label>
+                    <span className="helper">{(formData.mediaIds || []).length} média(s) liés</span>
+                  </div>
+                </div>
+                <div className="page-editor-quill">
+                  <ReactQuill
+                    ref={quillRef}
+                    theme="snow"
+                    value={formData.content}
+                    onChange={(value) => setFormData((prev) => ({ ...prev, content: value }))}
+                    modules={quillModules}
+                    formats={quillFormats}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
-        </label>
+          <div className="page-editor-sidebar">
+            <div className="page-sidebar-stack">
+              <div className="page-sidebar-card">
+                <div className="page-sidebar-card__header">
+                  <h3>Statut</h3>
+                </div>
+                <div className="form-grid">
+                  <label>
+                    Statut actuel
+                    <select name="status" value={formData.status} onChange={handleChange}>
+                      <option value="draft">Draft</option>
+                      <option value="review">Review</option>
+                      <option value="published">Published</option>
+                      <option value="scheduled">Scheduled</option>
+                    </select>
+                  </label>
+                  <label>
+                    Publication planifiée
+                    <input
+                      type="datetime-local"
+                      name="publishedAt"
+                      value={formData.publishedAt}
+                      onChange={handleChange}
+                    />
+                  </label>
+                  <label style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <input type="checkbox" name="featured" checked={formData.featured} onChange={handleChange} />
+                    Mettre en avant
+                  </label>
+                  {isEditing ? (
+                    <div className="page-action-group">
+                      <span className="helper">Mise à jour rapide</span>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        <button
+                          className="button secondary"
+                          type="button"
+                          onClick={() => handleQuickStatusUpdate('draft')}
+                          disabled={statusUpdating}
+                        >
+                          Passer en brouillon
+                        </button>
+                        <button
+                          className="button"
+                          type="button"
+                          onClick={() => handleQuickStatusUpdate('published')}
+                          disabled={statusUpdating}
+                        >
+                          Publier
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+              <div className="page-sidebar-card">
+                <div className="page-sidebar-card__header">
+                  <h3>Actions</h3>
+                </div>
+                <div className="page-action-group">
+                  <button className="button" type="submit" disabled={loading}>
+                    {loading ? 'Enregistrement...' : 'Enregistrer'}
+                  </button>
+                  <button
+                    className="button secondary"
+                    type="button"
+                    disabled={loading}
+                    onClick={(event) => handleSubmit(event, { overrideStatus: 'draft' })}
+                  >
+                    Sauvegarder brouillon
+                  </button>
+                  <button
+                    className="button secondary"
+                    type="button"
+                    disabled={loading}
+                    onClick={(event) => handleSubmit(event, { overrideStatus: 'published' })}
+                  >
+                    Sauvegarder & publier
+                  </button>
+                  <button className="button secondary" type="button" onClick={() => navigate('/posts')}>
+                    Annuler
+                  </button>
+                </div>
+              </div>
+              <div className="page-sidebar-card">
+                <div className="page-sidebar-card__header">
+                  <h3>Featured media</h3>
+                </div>
+                <div className="featured-media">
+                  <div className="featured-media__preview">
+                    {featuredPreview ? (
+                      <img src={resolveMediaUrl(featuredPreview)} alt={formData.title || 'Featured media'} />
+                    ) : (
+                      <span>Aucun média sélectionné</span>
+                    )}
+                  </div>
+                  <div className="featured-media__actions">
+                    <button
+                      className="button secondary"
+                      type="button"
+                      onClick={() => setPickerState({ open: true, mode: 'cover' })}
+                    >
+                      Choisir dans la médiathèque
+                    </button>
+                    <label className="button secondary" style={{ cursor: 'pointer' }}>
+                      Upload nouveau
+                      <input type="file" onChange={handleUpload} style={{ display: 'none' }} />
+                    </label>
+                    {featuredPreview ? (
+                      <button
+                        className="button secondary"
+                        type="button"
+                        onClick={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            featuredMediaId: '',
+                            coverMediaId: '',
+                            featuredMediaUrl: '',
+                            image: '',
+                            imageOriginal: '',
+                            imageThumb: '',
+                            imageCover: '',
+                            imageMedium: '',
+                          }))
+                        }
+                      >
+                        Retirer
+                      </button>
+                    ) : null}
+                  </div>
+                  <label>
+                    URL cover (legacy)
+                    <input name="image" value={formData.image} onChange={handleChange} placeholder="https://..." />
+                  </label>
+                  {formData.featuredMediaId ? (
+                    <span className="helper">Media ID: {formData.featuredMediaId}</span>
+                  ) : null}
+                </div>
+              </div>
+              <div className="page-sidebar-card">
+                <div className="page-sidebar-card__header">
+                  <h3>Catégorie</h3>
+                </div>
+                <div className="form-grid">
+                  <label>
+                    Catégorie
+                    <select name="category" value={formData.category} onChange={handleChange} required>
+                      {CATEGORY_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  {formData.category === 'TrustMedia' ? (
+                    <label>
+                      Sous-catégorie
+                      <select name="subCategory" value={formData.subCategory} onChange={handleChange} required>
+                        {rubricOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
+                  <label>
+                    Tags (séparés par des virgules)
+                    <input name="tags" value={formData.tags} onChange={handleChange} />
+                  </label>
+                </div>
+              </div>
+              {formData.category === 'TrustEvent' ? (
+                <div className="page-sidebar-card">
+                  <div className="page-sidebar-card__header">
+                    <h3>Détails événement</h3>
+                  </div>
+                  <div className="form-grid">
+                    <label>
+                      Date de l’événement
+                      <input type="datetime-local" name="eventDate" value={formData.eventDate} onChange={handleChange} />
+                    </label>
+                    <label>
+                      Lieu
+                      <input name="location" value={formData.location} onChange={handleChange} />
+                    </label>
+                    <label>
+                      Type de tarif
+                      <select name="pricingType" value={formData.pricingType} onChange={handleChange}>
+                        <option value="free">Gratuit</option>
+                        <option value="paid">Payant</option>
+                      </select>
+                    </label>
+                    {formData.pricingType === 'paid' ? (
+                      <label>
+                        Prix
+                        <input type="number" name="price" value={formData.price} onChange={handleChange} min="0" />
+                      </label>
+                    ) : null}
+                    <label style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <input
+                        type="checkbox"
+                        name="registrationEnabled"
+                        checked={formData.registrationEnabled}
+                        onChange={handleChange}
+                      />
+                      Inscriptions activées
+                    </label>
+                  </div>
+                </div>
+              ) : null}
+              <div className="page-sidebar-card">
+                <div className="page-sidebar-card__header">
+                  <h3>SEO</h3>
+                </div>
+                <div className="form-grid">
+                  <label>
+                    SEO Title
+                    <input name="seoTitle" value={formData.seoTitle} onChange={handleChange} />
+                  </label>
+                  <label>
+                    SEO Description
+                    <textarea name="seoDescription" value={formData.seoDescription} onChange={handleChange} />
+                  </label>
+                  <label>
+                    OG Image
+                    <input name="ogImage" value={formData.ogImage} onChange={handleChange} placeholder="https://..." />
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         <input
           ref={imageInputRef}
           type="file"
@@ -514,140 +817,6 @@ export const PostEditor = () => {
           style={{ display: 'none' }}
           onChange={handleInlineUpload}
         />
-        <label>
-          Catégorie
-          <select name="category" value={formData.category} onChange={handleChange} required>
-            {CATEGORY_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        {formData.category === 'TrustMedia' ? (
-          <label>
-            Sous-catégorie
-            <select name="subCategory" value={formData.subCategory} onChange={handleChange} required>
-              {rubricOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : null}
-        {formData.category === 'TrustEvent' ? (
-          <>
-            <label>
-              Date de l’événement
-              <input type="datetime-local" name="eventDate" value={formData.eventDate} onChange={handleChange} />
-            </label>
-            <label>
-              Lieu
-              <input name="location" value={formData.location} onChange={handleChange} />
-            </label>
-            <label>
-              Type de tarif
-              <select name="pricingType" value={formData.pricingType} onChange={handleChange}>
-                <option value="free">Gratuit</option>
-                <option value="paid">Payant</option>
-              </select>
-            </label>
-            {formData.pricingType === 'paid' ? (
-              <label>
-                Prix
-                <input type="number" name="price" value={formData.price} onChange={handleChange} min="0" />
-              </label>
-            ) : null}
-            <label style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <input
-                type="checkbox"
-                name="registrationEnabled"
-                checked={formData.registrationEnabled}
-                onChange={handleChange}
-              />
-              Inscriptions activées
-            </label>
-          </>
-        ) : null}
-        <label>
-          Statut
-          <select name="status" value={formData.status} onChange={handleChange}>
-            <option value="draft">Draft</option>
-            <option value="review">Review</option>
-            <option value="published">Published</option>
-            <option value="scheduled">Scheduled</option>
-          </select>
-        </label>
-        <label>
-          Tags (séparés par des virgules)
-          <input name="tags" value={formData.tags} onChange={handleChange} />
-        </label>
-        <label>
-          Image de couverture
-          <input name="image" value={formData.image} onChange={handleChange} placeholder="https://..." />
-          <span className="helper">Vous pouvez coller une URL ou sélectionner un média (legacy).</span>
-          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-            <button
-              className="button secondary"
-              type="button"
-              onClick={() => setPickerState({ open: true, mode: 'cover' })}
-            >
-              Bibliothèque médias
-            </button>
-            <label className="button secondary" style={{ cursor: 'pointer' }}>
-              Upload cover
-              <input type="file" onChange={handleUpload} style={{ display: 'none' }} />
-            </label>
-          </div>
-          {formData.featuredMediaId ? (
-            <span className="helper">Featured media ID: {formData.featuredMediaId}</span>
-          ) : null}
-        </label>
-        <label>
-          SEO Title
-          <input name="seoTitle" value={formData.seoTitle} onChange={handleChange} />
-        </label>
-        <label>
-          SEO Description
-          <textarea name="seoDescription" value={formData.seoDescription} onChange={handleChange} />
-        </label>
-        <label>
-          OG Image
-          <input name="ogImage" value={formData.ogImage} onChange={handleChange} placeholder="https://..." />
-        </label>
-        <label>
-          Publication planifiée
-          <input type="datetime-local" name="publishedAt" value={formData.publishedAt} onChange={handleChange} />
-        </label>
-        <label style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <input type="checkbox" name="featured" checked={formData.featured} onChange={handleChange} />
-          Mettre en avant
-        </label>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button className="button" type="submit" disabled={loading}>
-            {loading ? 'Enregistrement...' : 'Enregistrer'}
-          </button>
-          <button
-            className="button secondary"
-            type="button"
-            disabled={loading}
-            onClick={(event) => handleSubmit(event, { overrideStatus: 'draft' })}
-          >
-            Sauvegarder brouillon
-          </button>
-          <button
-            className="button secondary"
-            type="button"
-            disabled={loading}
-            onClick={(event) => handleSubmit(event, { overrideStatus: 'published' })}
-          >
-            Sauvegarder & publier
-          </button>
-          <button className="button secondary" type="button" onClick={() => navigate('/posts')}>
-            Annuler
-          </button>
-        </div>
       </form>
       <MediaPicker
         open={pickerState.open}

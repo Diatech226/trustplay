@@ -17,11 +17,12 @@ export const fetchPosts = async (params = {}) => {
   return normalizePostsResponse(response);
 };
 
-export const fetchPostById = async (postId) => {
+export const fetchPostById = async (postId, { populateMedia } = {}) => {
   if (!postId || postId === 'undefined' || postId === 'null') {
     throw new Error('Identifiant de post manquant.');
   }
-  const response = await apiClient.get(`/api/posts/${postId}`);
+  const query = populateMedia ? '?populateMedia=1' : '';
+  const response = await apiClient.get(`/api/posts/${postId}${query}`);
   return response?.post || response?.data?.post || null;
 };
 

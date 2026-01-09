@@ -68,7 +68,7 @@ export const EventEditor = () => {
       setLoading(true);
       setError(null);
       try {
-        const post = await fetchPostById(postId);
+        const post = await fetchPostById(postId, { populateMedia: true });
         if (!post) throw new Error('Événement introuvable');
         setFormData({
           title: post.title || '',
