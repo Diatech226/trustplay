@@ -74,6 +74,17 @@
 | POST | `/api/uploads` | Oui | `multipart/form-data` champ `file` (ou `image` en compat) | `201 { success, data: { url, name, mime, size, type }, message }` |
 | GET | `/uploads/<filename>` | Non | – | Fichier statique (servi depuis `UPLOAD_DIR`) |
 
+### Media Library
+| Méthode | Route | Auth | Corps / Query | Réponse principale |
+| --- | --- | --- | --- | --- |
+| POST | `/api/media/upload` | Oui | `multipart/form-data` champ `file` + champs optionnels `name`, `category`, `subCategory`, `alt`, `caption` | `{ success: true, data: { media: { id, url, name, type, mimeType, variants, createdAt } }, media }` |
+| GET | `/api/media` | Oui | Query: `search`, `type`, `category`, `subCategory`, `startIndex`, `limit`, `order` | `{ success: true, data: { items, total, startIndex, limit }, media, totalMedia }` |
+| GET | `/api/media/:id` | Oui | – | `{ success: true, data: { media }, media }` |
+| PUT | `/api/media/:id` | Oui (owner/admin) | `{ title?, alt?, caption?, credit?, category?, subCategory?, tags?, status? }` | `{ success: true, data: { media }, media }` |
+| DELETE | `/api/media/:id` | Oui (owner/admin) | – | `{ success: true, message }` |
+
+> **Standard recommandé** : utiliser `/api/media/upload` pour toutes les créations de médias qui doivent apparaître dans la Media Library. L'endpoint `/api/uploads` reste compatible (legacy) mais n'est pas indexé dans la médiathèque.
+
 ## Agence (clients/projets/campagnes)
 Toutes les routes sont protégées `verifyToken` + rôle `ADMIN`.
 
@@ -98,6 +109,7 @@ Toutes les routes sont protégées `verifyToken` + rôle `ADMIN`.
 ## Modèles de données
 - **User** : `username`, `email`, `passwordHash`, `role` (`ADMIN`/`USER`), `profilePicture`, timestamps.
 - **Post** : `userId`, `title`, `slug` (slugify lowercase/strict), `content`, `image`, `category`, `subCategory`, `eventDate?`, `location?`, timestamps.
+- **MediaAsset** : `_id`, `url`, `name`, `mimeType`, `size`, `type` (`image`/`video`/`file`), `category`, `subCategory`, `createdAt`, `uploadedBy`, `variants`.
 - **Comment** : `userId`, `postId`, `content`, `likes[]`, `numberOfLikes`, timestamps.
 
 ## Pagination & tri

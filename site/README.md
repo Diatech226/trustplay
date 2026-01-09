@@ -20,6 +20,7 @@ Créer un fichier `.env` à la racine du projet (voir `.env.example`) :
 - Les URLs absolues (`https://...`) sont utilisées telles quelles.
 - Les URLs commençant par `/uploads/...` sont préfixées par l'origine de `VITE_API_URL`.
 - Si aucune image n'est fournie, un placeholder est affiché (`DEFAULT_MEDIA_PLACEHOLDER`).
+- Quand un média est associé (`featuredMedia`), les variantes (`thumb`, `cover`, `card`) sont utilisées en priorité avant l’URL originale.
 
 ## Scripts
 ```bash

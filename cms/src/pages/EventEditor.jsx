@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { uploadMedia } from '../services/media.service';
 import { createPost, fetchPostById, updatePost } from '../services/posts.service';
 import { useToast } from '../components/ToastProvider';
 import { useRubrics } from '../hooks/useRubrics';
+import { MediaPicker } from '../components/MediaPicker';
+import { resolveMediaUrl } from '../lib/mediaUrls';
 
 const emptyForm = {
   title: '',
@@ -12,11 +14,29 @@ const emptyForm = {
   status: 'draft',
   tags: '',
   image: '',
+  imageOriginal: '',
+  imageThumb: '',
+  imageCover: '',
+  imageMedium: '',
+  coverMediaId: '',
+  featuredMediaId: '',
+  mediaIds: [],
   eventDate: '',
   location: '',
   pricingType: 'free',
   price: '',
   publishedAt: '',
+};
+
+const buildMediaHtml = (media) => {
+  const url = resolveMediaUrl(media.original?.url || media.originalUrl || media.url);
+  if (media.type === 'image' || media.kind === 'image') {
+    return `<img src="${url}" alt="${media.alt || media.name || ''}" />`;
+  }
+  if (media.type === 'video' || media.kind === 'video') {
+    return `<video src="${url}" controls></video>`;
+  }
+  return `<a href="${url}" target="_blank" rel="noreferrer">${media.name || url}</a>`;
 };
 
 export const EventEditor = () => {
@@ -27,6 +47,8 @@ export const EventEditor = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const { rubrics: eventRubrics } = useRubrics('TrustEvent');
+  const [pickerState, setPickerState] = useState({ open: false, mode: 'cover' });
+  const contentRef = useRef(null);
 
   const isEditing = useMemo(() => Boolean(postId), [postId]);
   const eventRubricOptions = useMemo(() => {
@@ -55,6 +77,13 @@ export const EventEditor = () => {
           status: post.status || 'draft',
           tags: (post.tags || []).join(', '),
           image: post.image || '',
+          imageOriginal: post.imageOriginal || '',
+          imageThumb: post.imageThumb || '',
+          imageCover: post.imageCover || '',
+          imageMedium: post.imageMedium || '',
+          coverMediaId: post.coverMediaId || '',
+          featuredMediaId: post.featuredMediaId || '',
+          mediaIds: post.mediaIds || [],
           eventDate: post.eventDate ? post.eventDate.slice(0, 16) : '',
           location: post.location || '',
           pricingType: post.pricingType || 'free',
@@ -80,6 +109,29 @@ export const EventEditor = () => {
     }));
   };
 
+  const insertIntoContent = (snippet) => {
+    setFormData((prev) => {
+      const content = prev.content || '';
+      const textarea = contentRef.current;
+      if (textarea && typeof textarea.selectionStart === 'number') {
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const nextValue = `${content.slice(0, start)}${snippet}${content.slice(end)}`;
+        requestAnimationFrame(() => {
+          textarea.focus();
+          textarea.selectionStart = textarea.selectionEnd = start + snippet.length;
+        });
+        return { ...prev, content: nextValue };
+      }
+      return { ...prev, content: `${content}\n${snippet}` };
+    });
+  };
+
+  const insertMediaEmbed = (media) => {
+    if (!media) return;
+    insertIntoContent(buildMediaHtml(media));
+  };
+
   const handleUpload = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -89,11 +141,70 @@ export const EventEditor = () => {
         subCategory: formData.subCategory || undefined,
       });
       const url = data.originalUrl || data.media?.originalUrl || data.media?.url || data.url;
-      setFormData((prev) => ({ ...prev, image: url || prev.image }));
+      setFormData((prev) => ({
+        ...prev,
+        image: url || prev.image,
+        imageOriginal: data.originalUrl || data.media?.originalUrl || prev.imageOriginal,
+        imageThumb: data.thumbUrl || data.media?.thumbUrl || prev.imageThumb,
+        imageCover: data.coverUrl || data.media?.coverUrl || prev.imageCover,
+        imageMedium: data.mediumUrl || data.media?.mediumUrl || prev.imageMedium,
+        coverMediaId: data.media?._id || prev.coverMediaId,
+        featuredMediaId: data.media?._id || prev.featuredMediaId,
+      }));
       addToast('Fichier uploadé avec succès.', { type: 'success' });
     } catch (err) {
       addToast(`Upload impossible : ${err.message}`, { type: 'error' });
+    } finally {
+      event.target.value = '';
     }
+  };
+
+  const handleInlineUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const data = await uploadMedia(file, {
+        category: 'Media',
+        subCategory: formData.subCategory || undefined,
+      });
+      const media = data.media;
+      if (media) {
+        insertMediaEmbed(media);
+        setFormData((prev) => ({
+          ...prev,
+          mediaIds: Array.from(new Set([...(prev.mediaIds || []), media._id])),
+        }));
+      }
+      addToast('Média inséré dans le contenu.', { type: 'success' });
+    } catch (err) {
+      addToast(`Upload impossible : ${err.message}`, { type: 'error' });
+    } finally {
+      event.target.value = '';
+    }
+  };
+
+  const handlePickerSelect = (selected) => {
+    if (pickerState.mode === 'cover') {
+      const media = selected[0];
+      if (!media) return;
+      const originalUrl = media.original?.url || media.originalUrl || media.url;
+      setFormData((prev) => ({
+        ...prev,
+        image: originalUrl || prev.image,
+        imageOriginal: originalUrl || prev.imageOriginal,
+        imageThumb: media.variants?.thumb?.url || media.thumbUrl || prev.imageThumb,
+        imageCover: media.variants?.cover?.url || media.coverUrl || prev.imageCover,
+        imageMedium: media.variants?.card?.url || media.mediumUrl || prev.imageMedium,
+        coverMediaId: media._id,
+        featuredMediaId: media._id,
+      }));
+      return;
+    }
+    selected.forEach((media) => insertMediaEmbed(media));
+    setFormData((prev) => ({
+      ...prev,
+      mediaIds: Array.from(new Set([...(prev.mediaIds || []), ...selected.map((media) => media._id)])),
+    }));
   };
 
   const handleSubmit = async (event) => {
@@ -133,6 +244,9 @@ export const EventEditor = () => {
       publishedAt: formData.publishedAt || undefined,
       eventDate: formData.eventDate || undefined,
       price: formData.pricingType === 'paid' ? Number(formData.price) : undefined,
+      coverMediaId: formData.coverMediaId || undefined,
+      featuredMediaId: formData.featuredMediaId || undefined,
+      mediaIds: formData.mediaIds,
     };
 
     try {
@@ -167,7 +281,26 @@ export const EventEditor = () => {
         </label>
         <label>
           Description
-          <textarea name="content" value={formData.content} onChange={handleChange} required />
+          <textarea
+            ref={contentRef}
+            name="content"
+            value={formData.content}
+            onChange={handleChange}
+            required
+          />
+          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            <button
+              className="button secondary"
+              type="button"
+              onClick={() => setPickerState({ open: true, mode: 'inline' })}
+            >
+              Insérer un média
+            </button>
+            <label className="button secondary" style={{ cursor: 'pointer' }}>
+              Upload dans le contenu
+              <input type="file" onChange={handleInlineUpload} style={{ display: 'none' }} />
+            </label>
+          </div>
         </label>
         <label>
           Rubrique
@@ -221,12 +354,32 @@ export const EventEditor = () => {
           <input name="tags" value={formData.tags} onChange={handleChange} />
         </label>
         <label>
-          Image de couverture
+          Featured media
           <input name="image" value={formData.image} onChange={handleChange} placeholder="https://..." />
-        </label>
-        <label>
-          Upload média
-          <input type="file" onChange={handleUpload} />
+          <span className="helper">Sélectionnez un média ou collez une URL (legacy).</span>
+          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            <button
+              className="button secondary"
+              type="button"
+              onClick={() => setPickerState({ open: true, mode: 'cover' })}
+            >
+              Bibliothèque médias
+            </button>
+            <label className="button secondary" style={{ cursor: 'pointer' }}>
+              Upload cover
+              <input type="file" onChange={handleUpload} style={{ display: 'none' }} />
+            </label>
+          </div>
+          {formData.featuredMediaId ? (
+            <span className="helper">Featured media ID: {formData.featuredMediaId}</span>
+          ) : null}
+          {formData.image ? (
+            <img
+              src={resolveMediaUrl(formData.image)}
+              alt={formData.title || 'Featured media'}
+              style={{ marginTop: 12, maxWidth: 240, borderRadius: 8 }}
+            />
+          ) : null}
         </label>
         <label>
           Publication planifiée
@@ -241,6 +394,13 @@ export const EventEditor = () => {
           </button>
         </div>
       </form>
+      <MediaPicker
+        open={pickerState.open}
+        multiple={pickerState.mode === 'inline'}
+        title={pickerState.mode === 'inline' ? 'Sélectionner des médias' : 'Sélectionner un cover'}
+        onClose={() => setPickerState((prev) => ({ ...prev, open: false }))}
+        onSelect={handlePickerSelect}
+      />
     </div>
   );
 };
