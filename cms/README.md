@@ -27,6 +27,9 @@ Créer un fichier `.env` à la racine du projet (voir `.env.example`) :
 
 ## Pages & routes
 - `/` : Overview
+- `/pages` : liste des pages CMS
+- `/pages/new` : création
+- `/pages/:id/edit` : édition
 - `/posts` : liste des articles
 - `/posts/new` : création
 - `/posts/:id/edit` : édition
@@ -38,8 +41,25 @@ Créer un fichier `.env` à la racine du projet (voir `.env.example`) :
 - `/users` : admin utilisateurs
 - `/settings` : paramètres
 
+## Créer une page
+1. Aller sur **Pages > Nouvelle page**.
+2. Renseigner le titre, le slug (auto-généré) et le contenu.
+3. Ajouter un extrait si nécessaire.
+4. Sélectionner le statut (brouillon, publié, planifié) et enregistrer.
+
+## Workflow de statut
+- **Brouillon** : non visible, sauvegarde rapide.
+- **Publié** : visible immédiatement.
+- **Planifié** : définir une date/heure, puis cliquer sur **Programmer**.
+
+## Insertion média dans l'éditeur
+- **Insérer un média** : ouvre la Media Library et insère au curseur.
+- **Upload média** : upload local, puis insertion automatique dans le contenu.
+- Le média mis en avant se choisit via la Media Library ou upload direct.
+
 ## Endpoints utilisés
 - Posts : `GET /api/posts`, `GET /api/posts/:postId`, `POST /api/posts`, `PUT /api/posts/:postId`, `DELETE /api/posts/:postId`
+- Pages : `GET /api/pages`, `GET /api/pages/:pageId`, `POST /api/pages`, `PUT /api/pages/:pageId`, `PATCH /api/pages/:pageId/status`, `DELETE /api/pages/:pageId`
 - Media : `POST /api/media/upload` (FormData, champ `file`) + `GET /api/media` + `PUT /api/media/:id`
 - Comments : `GET /api/comment/getcomments`, `DELETE /api/comment/deleteComment/:commentId`
 - Users : `GET /api/user/getusers`, `POST /api/user/admin-create`, `PATCH /api/user/:id/role`, `PUT /api/user/:id`, `DELETE /api/user/delete/:id`
@@ -51,6 +71,9 @@ Créer un fichier `.env` à la racine du projet (voir `.env.example`) :
 ## QA checklist
 - Login/Logout OK
 - Créer/éditer/supprimer un post
+- Créer/éditer/supprimer une page
+- Insertion média + upload dans l’éditeur de pages
+- Mise en avant média via la Media Library
 - Upload média + visibilité immédiate dans la Media Library
 - Sélection d’un média en couverture (posts & événements)
 - Insertion d’un média dans le contenu (éditeur)

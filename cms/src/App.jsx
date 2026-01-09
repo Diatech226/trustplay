@@ -4,6 +4,8 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { Overview } from './pages/Overview';
 import { Posts } from './pages/Posts';
 import { PostEditor } from './pages/PostEditor';
+import { Pages } from './pages/Pages';
+import { PageEditor } from './pages/PageEditor';
 import { Events } from './pages/Events';
 import { EventEditor } from './pages/EventEditor';
 import { MediaLibrary } from './pages/MediaLibrary';
@@ -30,6 +32,9 @@ export const App = () => {
         <Route path="posts" element={<Posts />} />
         <Route path="posts/new" element={<PostEditor />} />
         <Route path="posts/:id/edit" element={<PostEditor />} />
+        <Route path="pages" element={<Pages />} />
+        <Route path="pages/new" element={<PageEditor />} />
+        <Route path="pages/:id/edit" element={<PageEditor />} />
         <Route path="events" element={<Events />} />
         <Route path="events/new" element={<EventEditor />} />
         <Route path="events/:id/edit" element={<EventEditor />} />
