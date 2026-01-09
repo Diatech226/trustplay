@@ -11,8 +11,8 @@ import { useRubrics } from '../hooks/useRubrics';
 import { resolveMediaUrl } from '../lib/mediaUrls';
 
 export default function Header() {
-  const path = useLocation().pathname;
   const location = useLocation();
+  const path = location.pathname;
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { currentUser } = useSelector((state) => state.user);
@@ -22,9 +22,11 @@ export default function Header() {
   const cmsUrl = import.meta.env?.VITE_CMS_URL || 'http://localhost:5174';
   const { rubrics: trustMediaRubrics } = useRubrics('TrustMedia');
   const profileImage = resolveMediaUrl(currentUser?.profilePicture);
+  const isAdmin = currentUser?.role === 'ADMIN';
   const navItems = useMemo(() => {
     const baseNav = [
       { path: '/', label: 'Accueil' },
+      { path: '/rubriques', label: 'Rubriques' },
       ...trustMediaRubrics.map((rubric) => ({
         path: rubric.path || `/${rubric.slug}`,
         label: rubric.label,
@@ -37,14 +39,8 @@ export default function Header() {
       { path: '/about', label: 'À propos' },
     ];
 
-    const canAccessDashboard = currentUser && currentUser.role === 'ADMIN';
-    if (canAccessDashboard) {
-      baseNav.push({ path: '/dashboard', label: 'Dashboard' });
-      baseNav.push({ path: cmsUrl, label: 'Go to CMS', external: true });
-    }
-
     return baseNav;
-  }, [cmsUrl, currentUser, trustMediaRubrics]);
+  }, [trustMediaRubrics]);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
@@ -75,101 +71,124 @@ export default function Header() {
   return (
     <Navbar
       fluid
-      className='sticky top-0 z-50 border-b bg-white/90 backdrop-blur dark:bg-slate-900/90'
+      className='sticky top-0 z-50 border-b border-slate-200/70 bg-white/95 shadow-sm backdrop-blur dark:border-slate-800/70 dark:bg-slate-900/90'
     >
-      <Link
-        to='/'
-        className='self-center whitespace-nowrap text-lg sm:text-xl font-semibold dark:text-white flex items-center gap-2'
-      >
-        <span className='px-3 py-1 bg-gradient-to-r from-ocean via-primary to-secondary rounded-xl text-white shadow-subtle'>
-          Trust
-        </span>
-        <span className='hidden sm:inline text-slate-600 dark:text-slate-200 tracking-tight'>Média</span>
-      </Link>
-      <form onSubmit={handleSubmit} className='hidden lg:flex items-center w-full max-w-lg mx-8'>
-        <TextInput
-          type='text'
-          placeholder='Rechercher un article, une rubrique…'
-          rightIcon={AiOutlineSearch}
-          className='w-full'
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </form>
-      <div className='flex gap-2 md:order-2 items-center'>
-        <Button
-          className='w-11 h-10 lg:hidden border border-slate-200 dark:border-slate-700'
-          color='gray'
-          pill
-          onClick={() => navigate('/search')}
+      <div className='flex w-full items-center justify-between gap-4'>
+        <Link
+          to='/'
+          className='flex items-center gap-3 whitespace-nowrap text-lg font-semibold text-slate-900 dark:text-white'
         >
-          <AiOutlineSearch />
-        </Button>
-        <Button
-          className='w-12 h-10 hidden sm:inline'
-          color='gray'
-          pill
-          onClick={() => dispatch(toggleTheme())}
-        >
-          {theme === 'light' ? <FaSun /> : <FaMoon />}
-        </Button>
-        {currentUser ? (
-          <Dropdown
-            arrowIcon={false}
-            inline
-            label={
-              <Avatar alt='user' img={profileImage} rounded />
-            }
+          <span className='rounded-xl bg-gradient-to-r from-ocean via-primary to-secondary px-3 py-1 text-sm font-semibold uppercase tracking-wide text-white shadow-subtle'>
+            Trustplay
+          </span>
+          <span className='hidden sm:inline text-sm font-medium text-slate-500 dark:text-slate-300'>
+            Média & insights
+          </span>
+        </Link>
+        <form onSubmit={handleSubmit} className='hidden lg:flex w-full max-w-xl'>
+          <TextInput
+            type='text'
+            placeholder='Rechercher un article, une rubrique…'
+            rightIcon={AiOutlineSearch}
+            className='w-full'
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </form>
+        <div className='flex items-center gap-2 md:order-2'>
+          <Button
+            className='h-10 w-10 lg:hidden border border-slate-200 dark:border-slate-700'
+            color='gray'
+            pill
+            onClick={() => navigate('/search')}
+            aria-label='Rechercher'
           >
-            <Dropdown.Header>
-              <span className='block text-sm'>@{currentUser.username}</span>
-              <span className='block text-sm font-medium truncate'>
-                {currentUser.email}
-              </span>
-            </Dropdown.Header>
-            {currentUser.role === 'ADMIN' && (
-              <Link to={'/dashboard'}>
-                <Dropdown.Item>Dashboard</Dropdown.Item>
+            <AiOutlineSearch />
+          </Button>
+          <Button
+            className='hidden h-10 w-10 sm:inline-flex border border-slate-200 dark:border-slate-700'
+            color='gray'
+            pill
+            onClick={() => dispatch(toggleTheme())}
+            aria-label='Basculer le thème'
+          >
+            {theme === 'light' ? <FaSun /> : <FaMoon />}
+          </Button>
+          {isAdmin && (
+            <div className='hidden items-center gap-2 md:flex'>
+              <Link to='/dashboard'>
+                <Button color='light' className='border border-slate-200 dark:border-slate-700'>
+                  Dashboard
+                </Button>
               </Link>
-            )}
-            {currentUser.role === 'ADMIN' && (
-              <Dropdown.Item as="a" href={cmsUrl} target="_blank" rel="noreferrer">
-                Accéder au CMS
-              </Dropdown.Item>
-            )}
-            <Link to={'/dashboard/profile'}>
-              <Dropdown.Item>Profile</Dropdown.Item>
-            </Link>
-            <Dropdown.Divider />
-            <Dropdown.Item onClick={handleSignout}>Se déconnecter</Dropdown.Item>
-          </Dropdown>
-        ) : (
-          <div className='flex items-center gap-2'>
-            <Link to='/sign-in'>
-              <Button gradientDuoTone='purpleToBlue' outline>
-                Se connecter
-              </Button>
-            </Link>
-            <Link to='/sign-up'>
               <Button
+                as='a'
+                href={cmsUrl}
+                target='_blank'
+                rel='noreferrer'
                 color='gray'
-                outline
-                className='border-slate-200 text-slate-700 dark:border-slate-700 dark:text-slate-100'
+                className='border border-slate-200 dark:border-slate-700'
               >
-                Créer un compte
+                Ouvrir le CMS
               </Button>
-            </Link>
-          </div>
-        )}
-        <Navbar.Toggle />
+            </div>
+          )}
+          {currentUser ? (
+            <Dropdown
+              arrowIcon={false}
+              inline
+              label={<Avatar alt='user' img={profileImage} rounded />}
+            >
+              <Dropdown.Header>
+                <span className='block text-sm'>@{currentUser.username}</span>
+                <span className='block text-sm font-medium truncate'>
+                  {currentUser.email}
+                </span>
+              </Dropdown.Header>
+              {isAdmin && (
+                <Link to={'/dashboard'}>
+                  <Dropdown.Item>Dashboard</Dropdown.Item>
+                </Link>
+              )}
+              {isAdmin && (
+                <Dropdown.Item as='a' href={cmsUrl} target='_blank' rel='noreferrer'>
+                  Accéder au CMS
+                </Dropdown.Item>
+              )}
+              <Link to={'/dashboard/profile'}>
+                <Dropdown.Item>Profile</Dropdown.Item>
+              </Link>
+              <Dropdown.Divider />
+              <Dropdown.Item onClick={handleSignout}>Se déconnecter</Dropdown.Item>
+            </Dropdown>
+          ) : (
+            <div className='flex items-center gap-2'>
+              <Link to='/sign-in'>
+                <Button gradientDuoTone='purpleToBlue' outline>
+                  Se connecter
+                </Button>
+              </Link>
+              <Link to='/sign-up'>
+                <Button
+                  color='gray'
+                  outline
+                  className='border-slate-200 text-slate-700 dark:border-slate-700 dark:text-slate-100'
+                >
+                  Créer un compte
+                </Button>
+              </Link>
+            </div>
+          )}
+          <Navbar.Toggle />
+        </div>
       </div>
       <Navbar.Collapse>
         {navItems.map((item) => {
           const isActive = path === item.path;
-          const linkClasses = `relative pb-1 transition-colors ${
+          const linkClasses = `relative inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium transition ${
             isActive
-              ? 'text-primary dark:text-white'
-              : 'text-slate-600 hover:text-primary dark:text-slate-200 dark:hover:text-white'
+              ? 'bg-primary/10 text-primary dark:bg-white/10 dark:text-white'
+              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-slate-800'
           }`;
           return (
             <Navbar.Link key={item.path} active={isActive} as={'div'}>
@@ -186,10 +205,7 @@ export default function Header() {
                 <Link to={item.path} className={linkClasses}>
                   {item.label}
                   {item.path === '/notifications-preferences' && unread > 0 && (
-                    <span className='absolute -right-3 -top-1 h-2.5 w-2.5 rounded-full bg-red-500'></span>
-                  )}
-                  {isActive && (
-                    <span className='absolute left-0 -bottom-1 h-0.5 w-full bg-accent'></span>
+                    <span className='absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-red-500'></span>
                   )}
                 </Link>
               )}
