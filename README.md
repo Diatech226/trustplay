@@ -1,51 +1,9 @@
-# Trust Media (monorepo)
+# Trustplay
 
-Monorepo pour trois applications isolées et déployables séparément :
+Repository containing three standalone applications:
 
-- `site/` : site public Vite/React
-- `cms/` : backoffice Vite/React
-- `backend/` : API Express/MongoDB
+- **Backend API**: `backend/` — Express/Mongo API. See [`backend/README.md`](backend/README.md).
+- **Public Site**: `site/` — Vite/React front-end. See [`site/README.md`](site/README.md).
+- **CMS**: `cms/` — Vite/React backoffice. See [`cms/README.md`](cms/README.md).
 
-Chaque app possède son propre `package.json` et peut être build/deploy indépendamment.
-
-## Pré-requis
-- Node.js 18+
-
-## Scripts racine (workspaces)
-```bash
-npm run dev:site
-npm run dev:cms
-npm run dev:api
-npm run dev
-
-npm run build:site
-npm run build:cms
-npm run build:api
-
-npm run start:api
-```
-
-## Démarrage local
-1. Démarrer l'API (par défaut sur `http://localhost:3000`) :
-   ```bash
-   npm run dev:api
-   ```
-2. Démarrer le site et/ou le CMS :
-   ```bash
-   npm run dev:site
-   npm run dev:cms
-   ```
-3. Si l'API tourne sur un autre port, définir `VITE_API_URL` dans `site/.env.local` et/ou `cms/.env.local`
-   (ex. `VITE_API_URL=http://localhost:3000`).
-
-## API Contract (local)
-- Health : `GET /api/health`
-- Auth : `/api/auth/*`
-- Me : `GET /api/user/me`
-- Analytics : `GET /api/analytics/summary`
-
-## Déploiement & isolation
-Consultez `DEPLOYMENT.md` pour les instructions détaillées (build/run séparés, variables d'env, push séparé sur GitHub).
-
-## Structure & audit
-Consultez `REPO_STRUCTURE_AUDIT.md` pour l'audit d'isolation, les corrections appliquées et la checklist build.
+Additional documentation lives in `docs/`.

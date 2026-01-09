@@ -29,17 +29,6 @@ npm run lint
 - La SPA est configurée via `vercel.json` (rewrite vers `/index.html`).
 - Pour un hébergement Apache, le rewrite SPA est fourni dans `public/.htaccess`.
 
-## Build séparé depuis la racine
-```bash
-npm run build:site
-```
-
-## Push séparé (subtree)
-Depuis la racine du monorepo :
-```bash
-git subtree push --prefix site git@github.com:ORG/trust-media-site.git main
-```
-
 ## Notes
 - L'UI actuelle est conservée : aucune modification visuelle n'est nécessaire pour démarrer.
 - Les appels API sont centralisés dans `src/lib/apiClient.js` (core client dans `src/lib/apiClientCore.js`).

@@ -1,10 +1,10 @@
-# Repo Structure Audit — Trust Media
+# Repo Structure Audit — Trustplay
 
-## État actuel (monorepo)
+## État actuel (apps indépendantes)
 - `site/` (Vite/React) : `package.json`, `vite.config.js`, `index.html` OK.
 - `cms/` (Vite/React) : `package.json`, `vite.config.js`, `index.html` OK.
 - `backend/` (Express/Mongo) : `package.json`, `api/index.js` OK.
-- Workspaces racine configurés via `package.json`.
+- Chaque application est isolée avec ses propres scripts et fichiers de config.
 
 ## Problèmes détectés
 1. **Proxy Vite site incorrect** : proxy défini avec une clé littérale `${API_URL}` qui ne correspond à aucun chemin `/api`.
@@ -17,19 +17,19 @@
 - `.htaccess` déplacé vers `site/public/.htaccess` (utile uniquement si hébergé sous Apache).
 - Fichiers d'uploads retirés de git (`backend/uploads/*`, `backend/public/uploads/*`).
 - `.gitignore` complété avec `.vite/` et dossiers d'uploads.
-- Ajout de `DEPLOYMENT.md` et README racine pour documenter build/run séparés.
+- Documentation séparée dans `docs/` pour clarifier build/run isolés.
 
 ## Checklist build séparé
 ### Site
-- [ ] `npm --workspace site run build`
+- [ ] `cd site && npm install && npm run build`
 - [ ] Vérifier que `VITE_API_URL` est bien défini sur Vercel
 
 ### CMS
-- [ ] `npm --workspace cms run build`
+- [ ] `cd cms && npm install && npm run build`
 - [ ] Vérifier que `VITE_API_URL` est bien défini sur Vercel
 
 ### Backend
-- [ ] `npm --workspace backend run start`
+- [ ] `cd backend && npm install && npm run start`
 - [ ] Vérifier que `.env` est présent et `DATABASE_URL`/`JWT_SECRET` sont définis
 
 ## Stratégie “shared”
