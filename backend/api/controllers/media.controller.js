@@ -200,10 +200,20 @@ export const uploadMedia = async (req, res, next) => {
     const absoluteUrl =
       serialized?.url || serialized?.original?.url || serialized?.originalUrl || serialized?.thumbUrl || null;
     const filename = absoluteUrl ? absoluteUrl.split('/').pop() : null;
+    const summary = {
+      id: serialized?._id,
+      url: absoluteUrl,
+      name: serialized?.name || serialized?.title || uploadedFile.originalname,
+      type: serialized?.type || serialized?.kind,
+      mimeType: serialized?.mimeType,
+      variants: serialized?.variants,
+      createdAt: serialized?.createdAt,
+    };
 
     return res.status(201).json({
       success: true,
       data: {
+        media: summary,
         id: serialized?._id,
         url: absoluteUrl,
         filename,
@@ -309,14 +319,28 @@ export const listMedia = async (req, res, next) => {
     const totalMedia = await Media.countDocuments(query);
     const totalPages = Math.ceil(totalMedia / safeLimit) || 1;
     const serializedMedia = media.map((item) => serializeMedia(item, req));
+    const startOffset = skip;
 
     res.status(200).json({
       success: true,
+      items: serializedMedia,
+      total: totalMedia,
+      startIndex: startOffset,
+      limit: safeLimit,
       media: serializedMedia,
       totalMedia,
       page: currentPage,
       totalPages,
-      data: { media: serializedMedia, totalMedia, page: currentPage, totalPages },
+      data: {
+        items: serializedMedia,
+        total: totalMedia,
+        startIndex: startOffset,
+        limit: safeLimit,
+        media: serializedMedia,
+        totalMedia,
+        page: currentPage,
+        totalPages,
+      },
     });
   } catch (error) {
     next(error);

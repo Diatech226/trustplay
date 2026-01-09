@@ -40,7 +40,7 @@ Créer un fichier `.env` à la racine du projet (voir `.env.example`) :
 
 ## Endpoints utilisés
 - Posts : `GET /api/posts`, `GET /api/posts/:postId`, `POST /api/posts`, `PUT /api/posts/:postId`, `DELETE /api/posts/:postId`
-- Media : `POST /api/media/upload` (FormData, champ `file`) + `GET /api/media`
+- Media : `POST /api/media/upload` (FormData, champ `file`) + `GET /api/media` + `PUT /api/media/:id`
 - Comments : `GET /api/comment/getcomments`, `DELETE /api/comment/deleteComment/:commentId`
 - Users : `GET /api/user/getusers`, `POST /api/user/admin-create`, `PATCH /api/user/:id/role`, `PUT /api/user/:id`, `DELETE /api/user/delete/:id`
 
@@ -52,5 +52,7 @@ Créer un fichier `.env` à la racine du projet (voir `.env.example`) :
 - Login/Logout OK
 - Créer/éditer/supprimer un post
 - Upload média + visibilité immédiate dans la Media Library
+- Sélection d’un média en couverture (posts & événements)
+- Insertion d’un média dans le contenu (éditeur)
 - Modération commentaires
 - Sidebar : chaque item mène à une route existante

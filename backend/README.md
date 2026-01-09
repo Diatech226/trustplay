@@ -158,8 +158,8 @@ Alias admin (compat CMS) :
   - Si fichier image : génération automatique des variantes `thumb` (400px), `medium` (900px), `cover` (1400px) en WebP + AVIF.
   - Retour : `{ originalUrl, thumbUrl, mediumUrl, coverUrl, thumbAvifUrl, mediumAvifUrl, coverAvifUrl, width, height }`.
   - Les URLs renvoyées sont absolues si `API_PUBLIC_URL` est défini (sinon basées sur l'host de la requête).
-- `POST /api/media/upload` (admin) — upload MediaAsset (variants `thumb`, `card`, `cover`, `og`)
-- `GET /api/media` (admin) — liste paginée + filtres `search`, `category`, `type`, `status`
+- `POST /api/media/upload` (auth) — upload MediaAsset (variants `thumb`, `card`, `cover`, `og`) et retourne `data.media`
+- `GET /api/media` (auth) — liste paginée + filtres `search`, `category`, `type`, `status`
 - `PUT /api/media/:id` (owner/admin) — update metadata
 - `DELETE /api/media/:id` (owner/admin) — suppression DB + fichiers
 - `GET /uploads/<filename>` — fichiers statiques servis depuis `UPLOAD_DIR` (défaut `./uploads`)

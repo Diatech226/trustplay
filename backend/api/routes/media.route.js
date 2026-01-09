@@ -13,9 +13,9 @@ import { requireAdmin, verifyToken } from '../utils/verifyUser.js';
 
 const router = express.Router();
 
-router.post('/upload', verifyToken, requireAdmin, uploadMediaMiddleware, uploadMedia);
-router.get('/', verifyToken, requireAdmin, listMedia);
-router.get('/:id', verifyToken, requireAdmin, getMedia);
+router.post('/upload', verifyToken, uploadMediaMiddleware, uploadMedia);
+router.get('/', verifyToken, listMedia);
+router.get('/:id', verifyToken, getMedia);
 router.post('/', verifyToken, requireAdmin, createMedia);
 router.delete('/:id', verifyToken, requireMediaOwnerOrAdmin, deleteMedia);
 router.put('/:id', verifyToken, requireMediaOwnerOrAdmin, updateMedia);

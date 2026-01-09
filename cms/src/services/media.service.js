@@ -1,8 +1,9 @@
 import { apiClient } from '../lib/apiClient';
 
 const normalizeMediaResponse = (response) => {
-  const media = response?.media || response?.data?.media || [];
-  const totalMedia = response?.totalMedia ?? response?.data?.totalMedia ?? 0;
+  const media = response?.media || response?.data?.media || response?.items || response?.data?.items || [];
+  const totalMedia =
+    response?.totalMedia ?? response?.data?.totalMedia ?? response?.total ?? response?.data?.total ?? 0;
   return { media, totalMedia };
 };
 
