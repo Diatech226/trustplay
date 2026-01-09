@@ -85,7 +85,7 @@ export const requireAdmin = (req, res, next) => {
     logAuth(req, { tokenSource: req.tokenSource, user: req.user });
     return res
       .status(403)
-      .json({ success: false, message: "Forbidden: Admin access required" });
+      .json({ success: false, message: "Admin access required" });
   }
   return next();
 };

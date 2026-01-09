@@ -20,10 +20,12 @@ Créer un fichier `.env` à la racine du projet (voir `.env.example`) :
 - Output directory : `dist`
 - La SPA est configurée via `vercel.json` (rewrite vers `/index.html`).
 
-## Auth flow
+## Auth flow (admin-only)
+- Le CMS est réservé aux comptes `ADMIN`.
 - Token stocké en local (`cms_token`) + profil (`cms_current_user`).
 - Au boot, si token présent : `GET /api/user/me`.
 - En cas de 401, redirection `/login?returnTo=...`.
+- En cas de 403 ou de rôle `USER`, l'interface affiche une page **Accès refusé** (sans logout).
 
 ## Pages & routes
 - `/` : Overview
@@ -70,6 +72,8 @@ Créer un fichier `.env` à la racine du projet (voir `.env.example`) :
 
 ## QA checklist
 - Login/Logout OK
+- Compte USER bloqué (redirection/login si non authentifié, accès refusé si token valide)
+- Accès direct aux routes CMS interdit pour USER (URL directe)
 - Créer/éditer/supprimer un post
 - Créer/éditer/supprimer une page
 - Insertion média + upload dans l’éditeur de pages

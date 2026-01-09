@@ -5,7 +5,7 @@ import { requireAdmin, verifyToken } from '../utils/verifyUser.js';
 
 const router = express.Router();
 
-router.post('/', verifyToken, (req, res, next) => {
+router.post('/', verifyToken, requireAdmin, (req, res, next) => {
   uploadMiddleware(req, res, (err) => {
     if (err) {
       if (err instanceof multer.MulterError) {
