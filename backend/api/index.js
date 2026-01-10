@@ -86,11 +86,18 @@ const app = express();
 app.set('trust proxy', true);
 
 const defaultDevOrigins = ['http://localhost:5173', 'http://localhost:5174'];
+const defaultProdOrigins = ['https://trust-group.agency', 'https://cms.trust-group.agency'];
 const vercelPreviewRegex = /^https:\/\/trust-.*\.vercel\.app$/;
-const allowedOrigins = (process.env.CORS_ORIGIN || '')
+const configuredOrigins = (process.env.CORS_ORIGIN || '')
   .split(',')
   .map((value) => value.trim())
   .filter(Boolean);
+const allowedOrigins =
+  configuredOrigins.length > 0
+    ? [...configuredOrigins]
+    : process.env.NODE_ENV === 'production'
+      ? [...defaultProdOrigins]
+      : [];
 
 if (process.env.NODE_ENV !== 'production') {
   defaultDevOrigins.forEach((origin) => {
@@ -103,7 +110,7 @@ if (process.env.NODE_ENV !== 'production') {
 const isOriginAllowed = (origin) => {
   if (!origin) return true;
   if (allowedOrigins.includes(origin)) return true;
-  if (vercelPreviewRegex.test(origin)) return true;
+  if (process.env.NODE_ENV !== 'production' && vercelPreviewRegex.test(origin)) return true;
   return false;
 };
 

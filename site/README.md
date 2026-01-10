@@ -30,14 +30,23 @@ npm run lint
 ```
 
 ## Déploiement Vercel
+- Root directory : `site/`
 - Build command : `npm run build`
 - Output directory : `dist`
-- La SPA est configurée via `vercel.json` (rewrite vers `/index.html`).
+- Variables d'environnement :
+  - `VITE_API_URL` (ex. `https://api.trust-group.agency`)
+  - `VITE_CMS_URL` (ex. `https://cms.trust-group.agency`)
+- La SPA est configurée via `vercel.json` (rewrite vers `/index.html`, présent à la racine de l'app).
 - Pour un hébergement Apache, le rewrite SPA est fourni dans `public/.htaccess`.
 
 ## Notes
 - L'UI actuelle est conservée : aucune modification visuelle n'est nécessaire pour démarrer.
 - Les appels API sont centralisés dans `src/lib/apiClient.js` (core client dans `src/lib/apiClientCore.js`).
+
+## Troubleshooting (CORS / 404 / médias)
+- **CORS** : vérifier que `VITE_API_URL` pointe vers l'API configurée avec `CORS_ORIGIN=https://trust-group.agency,https://cms.trust-group.agency`.
+- **404 en refresh** : confirmer que le `vercel.json` de l'app applique le rewrite vers `/index.html`.
+- **Médias cassés** : l'API doit retourner des URLs absolues (env `API_PUBLIC_URL`), et `VITE_API_URL` doit être l'origine de l'API (pas `/api`).
 
 ## Routes publiques principales
 - `/` : Home
