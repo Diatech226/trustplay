@@ -5,6 +5,7 @@ Backend Express/MongoDB qui alimente Trust Media (articles, événements TrustEv
 ## Sommaire
 - [Prérequis](#prérequis)
 - [Installation](#installation)
+- [Déploiement LWS (cPanel Node.js Passenger)](#déploiement-lws-cpanel-nodejs-passenger)
 - [Configuration (.env)](#configuration-env)
 - [Architecture](#architecture)
 - [Auth & CORS](#auth--cors)
@@ -34,6 +35,16 @@ npm install
 npm run dev
 ```
 
+## Déploiement LWS (cPanel Node.js Passenger)
+1. Créer une application **Node.js** dans cPanel (Passenger).
+2. Définir :
+   - **Application root** : `backend/`
+   - **Application startup file** : `api/index.js`
+   - **Node.js version** : 18+
+3. Ajouter les variables d'environnement (voir ci-dessous).
+4. Exécuter `npm install` depuis cPanel, puis **Restart** l'application.
+5. Vérifier la santé : `https://api.trust-group.agency/api/health`.
+
 ## Configuration (.env)
 Un exemple complet est fourni dans `.env.example`.
 
@@ -42,9 +53,9 @@ Variables utilisées par le code :
 - `DATABASE_URL` : URI MongoDB (ex. `mongodb+srv://user:pass@cluster/db`)
 - `JWT_SECRET` : clé de signature JWT
 - `CORS_ORIGIN` : origines autorisées (CSV). Exemples :
-  - **Prod** : `CORS_ORIGIN=https://trust-group.agency,https://trust-git-main-christodules-projects.vercel.app`
+  - **Prod** : `CORS_ORIGIN=https://trust-group.agency,https://cms.trust-group.agency`
   - **Dev** : `CORS_ORIGIN=http://localhost:5173,http://localhost:5174`
-  - Les previews Vercel `https://trust-*.vercel.app` sont autorisées automatiquement (regex).
+  - En prod sans `CORS_ORIGIN`, l'API limite automatiquement aux domaines Trust Group.
 - `FRONTEND_URL` : URL publique du frontend (utilisée pour construire les liens de reset password)
 - `UPLOAD_DIR` : répertoire pour stocker les fichiers uploadés (servi via `/uploads`)
 - `API_PUBLIC_URL` : base publique de l'API pour retourner des URLs absolues vers `/uploads` (ex. `http://localhost:3000`)
@@ -70,11 +81,11 @@ Variables utilisées par le code :
 - Auth JWT : le serveur signe un JWT avec `{ id, email, role }` et le renvoie dans `data.token`. **Le header `Authorization: Bearer <token>` est la source de vérité pour toutes les routes protégées.**
 - Middleware `verifyToken` : lit d'abord le bearer (cookie `access_token` accepté en fallback) ; en cas d'absence, renvoie `401 { success: false, message: "Unauthorized: No token provided" }`, et en cas de signature invalide renvoie `401 { success: false, message: "Unauthorized: Invalid token" }`. Le payload décodé est exposé sur `req.user` (`{ id, email, role }`).
 - Middleware `requireAdmin` : bloque tout rôle non `ADMIN` avec `403 { success: false, message: "Admin access required" }`.
-- CORS : origines multiples via `CORS_ORIGIN` (plus previews Vercel), `credentials: true`, méthodes `GET,POST,PUT,PATCH,DELETE,OPTIONS`, headers `Content-Type, Authorization`.
+- CORS : origines multiples via `CORS_ORIGIN` (ou `https://trust-group.agency` + `https://cms.trust-group.agency` par défaut en prod), `credentials: true`, méthodes `GET,POST,PUT,PATCH,DELETE,OPTIONS`, headers `Content-Type, Authorization`.
 - Vérification rapide (préflight) :
   ```bash
   curl -I -X OPTIONS "$NEXT_PUBLIC_API_URL/api/posts" \
-    -H "Origin: https://trust-git-main-christodules-projects.vercel.app" \
+    -H "Origin: https://trust-group.agency" \
     -H "Access-Control-Request-Method: GET"
   ```
 - Uploads : `API_PUBLIC_URL` permet de renvoyer des URLs absolues pour la médiathèque (sinon l'API déduit l'host depuis la requête).
@@ -282,6 +293,9 @@ git subtree push --prefix backend git@github.com:ORG/trust-media-backend.git mai
 ```
 
 ## Troubleshooting
+- **CORS** : vérifier `CORS_ORIGIN=https://trust-group.agency,https://cms.trust-group.agency` et que les requêtes front passent `credentials: 'include'`.
+- **404 sur `/uploads/...`** : vérifier `UPLOAD_DIR` et que `API_PUBLIC_URL` pointe vers l'URL publique de l'API.
+- **Médias relatifs** : définir `API_PUBLIC_URL` pour forcer des URLs absolues côté CMS/site.
 - Si l'API est derrière un proxy (Nginx/Apache), assurez-vous que les préflights `OPTIONS` passent bien et que les headers CORS sont renvoyés.
 
 ### Exemple Nginx (proxy CORS + OPTIONS)

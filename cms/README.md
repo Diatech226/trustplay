@@ -16,9 +16,17 @@ Créer un fichier `.env` à la racine du projet (voir `.env.example`) :
 - `VITE_API_URL` : URL de base de l'API (ex. `http://localhost:3000`).
 
 ## Déploiement Vercel
+- Root directory : `cms/`
 - Build command : `npm run build`
 - Output directory : `dist`
-- La SPA est configurée via `vercel.json` (rewrite vers `/index.html`).
+- Variables d'environnement :
+  - `VITE_API_URL` (ex. `https://api.trust-group.agency`)
+- La SPA est configurée via `vercel.json` (rewrite vers `/index.html`, présent à la racine de l'app).
+
+## Troubleshooting (CORS / 404 / médias)
+- **CORS** : vérifier que l'API autorise `https://cms.trust-group.agency` dans `CORS_ORIGIN`.
+- **404 en refresh** : confirmer que le `vercel.json` de l'app applique le rewrite vers `/index.html`.
+- **Médias cassés** : `VITE_API_URL` doit être l'origine de l'API et `API_PUBLIC_URL` doit être défini côté backend.
 
 ## Auth flow (admin-only)
 - Le CMS est réservé aux comptes `ADMIN`.
