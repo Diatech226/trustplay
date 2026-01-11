@@ -3,6 +3,7 @@ import path from 'path';
 import multer from 'multer';
 import sharp from 'sharp';
 import Media from '../models/media.model.js';
+import { resolveAbsoluteUrl } from '../utils/publicUrl.js';
 
 const uploadsDir = process.env.UPLOAD_DIR || './uploads';
 export const absoluteUploadPath = path.isAbsolute(uploadsDir)
@@ -89,27 +90,6 @@ const resolveKind = (mime) => {
 const logUpload = (context) => {
   if (process.env.NODE_ENV === 'production') return;
   console.info('[UPLOAD]', context);
-};
-
-const resolveApiBaseUrl = (req) => {
-  const configured = process.env.API_PUBLIC_URL?.replace(/\/$/, '');
-  if (configured) return configured;
-  const forwardedProto = req.headers['x-forwarded-proto'];
-  const protocol = forwardedProto ? forwardedProto.split(',')[0] : req.protocol;
-  return `${protocol}://${req.get('host')}`;
-};
-
-const isAbsoluteUrl = (value) => {
-  if (!value || typeof value !== 'string') return false;
-  return value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:') || value.startsWith('blob:');
-};
-
-const resolveAbsoluteUrl = (req, value) => {
-  if (!value || typeof value !== 'string') return value;
-  if (isAbsoluteUrl(value)) return value;
-  const baseUrl = resolveApiBaseUrl(req);
-  const normalized = value.startsWith('/') ? value : `/${value}`;
-  return `${baseUrl}${normalized}`;
 };
 
 const buildResponsePayload = (req, file, media, extra = {}) => {

@@ -18,7 +18,7 @@ Backend Express/MongoDB qui alimente Trust Media (articles, événements TrustEv
 - [Contract API détaillé](#contract-api-détaillé)
 
 ## Prérequis
-- Node.js 18+
+- Node.js 20+ (VPS prod) — compatible local Windows
 - MongoDB accessible via `DATABASE_URL` (Atlas ou local)
 
 ## Installation
@@ -34,6 +34,9 @@ Copy-Item .env.example .env
 npm install
 npm run dev
 ```
+
+## Déploiement VPS (PM2 + Nginx)
+Voir le guide détaillé dans [`docs/DEPLOY_VPS.md`](docs/DEPLOY_VPS.md).
 
 ## Déploiement LWS (cPanel Node.js Passenger)
 1. Créer une application **Node.js** dans cPanel (Passenger).
@@ -53,12 +56,13 @@ Variables utilisées par le code :
 - `DATABASE_URL` : URI MongoDB (ex. `mongodb+srv://user:pass@cluster/db`)
 - `JWT_SECRET` : clé de signature JWT
 - `CORS_ORIGIN` : origines autorisées (CSV). Exemples :
-  - **Prod** : `CORS_ORIGIN=https://trust-group.agency,https://cms.trust-group.agency`
+  - **Prod** : `CORS_ORIGIN=https://www.trust-group.agency,https://trust-cms-git-main-christodules-projects.vercel.app`
   - **Dev** : `CORS_ORIGIN=http://localhost:5173,http://localhost:5174`
   - En prod sans `CORS_ORIGIN`, l'API limite automatiquement aux domaines Trust Group.
 - `FRONTEND_URL` : URL publique du frontend (utilisée pour construire les liens de reset password)
 - `UPLOAD_DIR` : répertoire pour stocker les fichiers uploadés (servi via `/uploads`)
 - `API_PUBLIC_URL` : base publique de l'API pour retourner des URLs absolues vers `/uploads` (ex. `http://localhost:3000`)
+- `ADMIN_EMAILS` : CSV d'emails à promouvoir automatiquement en `ADMIN` (ex. `admin@trust-group.agency`)
 - SMTP Gmail (email reset) : `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` (mot de passe d'application Gmail) et `MAIL_FROM` (ex. `"Trust Media <your_email@gmail.com>"`). Si SMTP est absent, le lien de réinitialisation est simplement loggé en console (mode dev), sans erreur.
 
 ### Santé & disponibilité
@@ -81,11 +85,11 @@ Variables utilisées par le code :
 - Auth JWT : le serveur signe un JWT avec `{ id, email, role }` et le renvoie dans `data.token`. **Le header `Authorization: Bearer <token>` est la source de vérité pour toutes les routes protégées.**
 - Middleware `verifyToken` : lit d'abord le bearer (cookie `access_token` accepté en fallback) ; en cas d'absence, renvoie `401 { success: false, message: "Unauthorized: No token provided" }`, et en cas de signature invalide renvoie `401 { success: false, message: "Unauthorized: Invalid token" }`. Le payload décodé est exposé sur `req.user` (`{ id, email, role }`).
 - Middleware `requireAdmin` : bloque tout rôle non `ADMIN` avec `403 { success: false, message: "Admin access required" }`.
-- CORS : origines multiples via `CORS_ORIGIN` (ou `https://trust-group.agency` + `https://cms.trust-group.agency` par défaut en prod), `credentials: true`, méthodes `GET,POST,PUT,PATCH,DELETE,OPTIONS`, headers `Content-Type, Authorization`.
+- CORS : origines multiples via `CORS_ORIGIN` (ou `https://www.trust-group.agency` + `https://trust-cms-git-main-christodules-projects.vercel.app` par défaut en prod), `credentials: true`, méthodes `GET,POST,PUT,PATCH,DELETE,OPTIONS`, headers `Content-Type, Authorization`.
 - Vérification rapide (préflight) :
   ```bash
   curl -I -X OPTIONS "$NEXT_PUBLIC_API_URL/api/posts" \
-    -H "Origin: https://trust-group.agency" \
+    -H "Origin: https://www.trust-group.agency" \
     -H "Access-Control-Request-Method: GET"
   ```
 - Uploads : `API_PUBLIC_URL` permet de renvoyer des URLs absolues pour la médiathèque (sinon l'API déduit l'host depuis la requête).

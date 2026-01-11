@@ -27,6 +27,8 @@ import rubricsRoutes from './routes/rubrics.route.js';
 import debugRoutes from './routes/debug.route.js';
 
 const databaseUrl = process.env.DATABASE_URL;
+const appVersion = process.env.APP_VERSION || process.env.npm_package_version || 'unknown';
+const nodeEnv = process.env.NODE_ENV || 'development';
 const dbState = {
   ready: false,
   error: null,
@@ -56,11 +58,11 @@ if (!databaseUrl) {
 } else {
   mongoose
     .connect(databaseUrl)
-    .then(() => console.log('MongoDB is connected'))
+    .then(() => console.log(`[DB] Connection OK host=${databaseHost || 'unknown'}`))
     .catch((err) => {
       dbState.error = err;
       console.error(
-        'Impossible de se connecter à MongoDB. Vérifiez DATABASE_URL et les droits réseau.',
+        '[DB] Connection failed. Vérifiez DATABASE_URL et les droits réseau.',
         err.message
       );
     });
@@ -86,7 +88,10 @@ const app = express();
 app.set('trust proxy', true);
 
 const defaultDevOrigins = ['http://localhost:5173', 'http://localhost:5174'];
-const defaultProdOrigins = ['https://trust-group.agency', 'https://cms.trust-group.agency'];
+const defaultProdOrigins = [
+  'https://www.trust-group.agency',
+  'https://trust-cms-git-main-christodules-projects.vercel.app',
+];
 const vercelPreviewRegex = /^https:\/\/trust-.*\.vercel\.app$/;
 const configuredOrigins = (process.env.CORS_ORIGIN || '')
   .split(',')
@@ -118,7 +123,11 @@ const corsOptions = {
   origin: (origin, callback) => {
     const allowed = isOriginAllowed(origin);
     if (process.env.NODE_ENV !== 'production') {
-      console.log(`[CORS] origin=${origin || 'none'} allowed=${allowed}`);
+      if (!allowed && origin) {
+        console.warn(`[CORS] Blocked origin=${origin}`);
+      } else {
+        console.log(`[CORS] origin=${origin || 'none'} allowed=${allowed}`);
+      }
     }
     return callback(null, allowed);
   },
@@ -132,6 +141,30 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
 // Middlewares
+app.use((req, res, next) => {
+  const originalJson = res.json.bind(res);
+  res.json = (payload) => {
+    if (payload && typeof payload === 'object' && Object.prototype.hasOwnProperty.call(payload, 'success')) {
+      if (payload.success) {
+        if (!Object.prototype.hasOwnProperty.call(payload, 'data')) {
+          payload.data = null;
+        }
+        if (!Object.prototype.hasOwnProperty.call(payload, 'message')) {
+          payload.message = 'OK';
+        }
+      } else {
+        if (!Object.prototype.hasOwnProperty.call(payload, 'message')) {
+          payload.message = 'Request failed';
+        }
+        if (!Object.prototype.hasOwnProperty.call(payload, 'errorCode')) {
+          payload.errorCode = payload.statusCode || res.statusCode || 500;
+        }
+      }
+    }
+    return originalJson(payload);
+  };
+  next();
+});
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
@@ -208,8 +241,18 @@ app.use((req, res, next) => {
 });
 
 app.get('/api/health', (_req, res) => {
+  const timestamp = new Date().toISOString();
+  const uptime = process.uptime();
   res.json({
     success: true,
+    uptime,
+    timestamp,
+    version: appVersion,
+    data: {
+      uptime,
+      timestamp,
+      version: appVersion,
+    },
     status: dbState.ready ? 'ok' : 'degraded',
     db: {
       ready: dbState.ready,
@@ -279,9 +322,12 @@ app.use((err, req, res, next) => {
   if (res.headersSent) {
     return next(err);
   }
-  res.status(err.statusCode || 500).json({
+  const statusCode = err.statusCode || 500;
+  const errorCode = err.errorCode || err.code || statusCode;
+  res.status(statusCode).json({
     success: false,
-    statusCode: err.statusCode || 500,
+    statusCode,
+    errorCode,
     message: err.message || 'Internal Server Error',
   });
 });
@@ -309,6 +355,25 @@ if (missingRequired.length > 0) {
 }
 
 console.log(
-  `[BOOT] PORT=${PORT} DB_HOST=${maskedDbHost} CORS_ORIGIN=${corsSummary} UPLOAD_DIR=${uploadDir} API_PUBLIC_URL=${apiPublicUrl}`
+  `[BOOT] NODE_ENV=${nodeEnv} PORT=${PORT} DB_HOST=${maskedDbHost} CORS_ORIGIN=${corsSummary} UPLOAD_DIR=${uploadDir} API_PUBLIC_URL=${apiPublicUrl}`
 );
-app.listen(PORT, () => console.log(`Server is running on port ${PORT}!`));
+const server = app.listen(PORT, () => console.log(`Server is running on port ${PORT}!`));
+
+const shutdown = (signal) => {
+  console.log(`[SHUTDOWN] Received ${signal}. Closing server...`);
+  server.close(() => {
+    mongoose.connection
+      .close(false)
+      .then(() => {
+        console.log('[SHUTDOWN] MongoDB connection closed.');
+        process.exit(0);
+      })
+      .catch((error) => {
+        console.error('[SHUTDOWN] Error closing MongoDB connection:', error.message);
+        process.exit(1);
+      });
+  });
+};
+
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));

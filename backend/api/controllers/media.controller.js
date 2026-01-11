@@ -4,6 +4,7 @@ import path from 'path';
 import Media from '../models/media.model.js';
 import { errorHandler } from '../utils/error.js';
 import { normalizeMediaUrl } from '../utils/media.js';
+import { resolveAbsoluteUrl } from '../utils/publicUrl.js';
 import { createMediaFromUpload, removeMediaFiles, absoluteUploadPath } from '../services/media.service.js';
 
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
@@ -41,27 +42,6 @@ const resolveExtension = (file) => {
   const extension = path.extname(file.originalname || '');
   if (extension) return extension;
   return EXTENSION_MIME_MAP.get(file.mimetype) || '.bin';
-};
-
-const resolveApiBaseUrl = (req) => {
-  const configured = process.env.API_PUBLIC_URL?.replace(/\/$/, '');
-  if (configured) return configured;
-  const forwardedProto = req.headers['x-forwarded-proto'];
-  const protocol = forwardedProto ? forwardedProto.split(',')[0] : req.protocol;
-  return `${protocol}://${req.get('host')}`;
-};
-
-const isAbsoluteUrl = (value) => {
-  if (!value || typeof value !== 'string') return false;
-  return value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:') || value.startsWith('blob:');
-};
-
-const resolveAbsoluteUrl = (req, value) => {
-  if (!value) return value;
-  if (isAbsoluteUrl(value)) return value;
-  const baseUrl = resolveApiBaseUrl(req);
-  const normalized = value.startsWith('/') ? value : `/${value}`;
-  return `${baseUrl}${normalized}`;
 };
 
 const resolvePreviewType = (media) => {
