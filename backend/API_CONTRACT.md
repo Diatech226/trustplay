@@ -4,10 +4,16 @@
 - **Base URL** : configurable via `NEXT_PUBLIC_API_URL` (front) / `VITE_API_URL` fallback. Exemple local : `http://localhost:3000`.
 - **Prefix** : toutes les routes sont préfixées par `/api` sauf la statique `/uploads/*`.
 - **Auth** : JWT signé avec `JWT_SECRET`, transmis via header `Authorization: Bearer <token>` (cookie `access_token` accepté en fallback HttpOnly).
-- **CORS** : origines autorisées via `CORS_ORIGIN` (CSV), `credentials: true`, méthodes `GET,POST,PUT,DELETE,OPTIONS`, headers `Content-Type, Authorization`.
+- **CORS** : origines autorisées via `CORS_ORIGIN` (CSV), `credentials: true`, méthodes `GET,POST,PUT,PATCH,DELETE,OPTIONS`, headers `Content-Type, Authorization`.
+- **Uploads publics** : `API_PUBLIC_URL` sert de base pour générer des URLs absolues vers `/uploads/*` (sinon l’API déduit l’host depuis la requête).
 - **Réponses** :
   - Succès : `{ "success": true, "data": { ... }, "message"? }` + champs dupliqués pour compatibilité (`user`, `post`, `comments`, `token`...).
-  - Erreur : `{ "success": false, "message": "...", "statusCode"? }` avec le code HTTP correspondant.
+  - Erreur : `{ "success": false, "message": "...", "errorCode"? }` avec le code HTTP correspondant.
+
+### Santé
+| Méthode | Route | Auth | Réponse |
+| --- | --- | --- | --- |
+| GET | `/api/health` | Non | `{ success: true, uptime, timestamp, version }` |
 
 ## Endpoints détaillés
 

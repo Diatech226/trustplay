@@ -10,7 +10,7 @@
     "build": "echo \"backend: no build step\"",
     "test": "echo \"No tests specified\" && exit 0",
     "migrate:roles": "node scripts/migrateRoles.js",
-    "make-admin": "node scripts/makeAdmin.js"
+    "make-admin": "node scripts/make-admin.js"
   },
   "keywords": [],
   "author": "",
