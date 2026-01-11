@@ -41,7 +41,7 @@ npm run lint
 
 ## Notes
 - L'UI actuelle est conservée : aucune modification visuelle n'est nécessaire pour démarrer.
-- Les appels API sont centralisés dans `src/lib/apiClient.js` (core client dans `src/lib/apiClientCore.js`).
+- Les appels API sont centralisés dans `src/lib/apiClient.js` (core client dans `src/shared/apiClientCore.js`).
 
 ## Troubleshooting (CORS / 404 / médias)
 - **CORS** : vérifier que `VITE_API_URL` pointe vers l'API configurée avec `CORS_ORIGIN=https://trust-group.agency,https://cms.trust-group.agency`.

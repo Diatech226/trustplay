@@ -7,3 +7,5 @@ Repository containing three standalone applications:
 - **CMS**: `cms/` — Vite/React backoffice. See [`cms/README.md`](cms/README.md).
 
 Additional documentation lives in `docs/`.
+
+Vercel build: no cross-folder imports allowed.
