@@ -1,6 +1,6 @@
 import asyncStorage from './asyncStorage';
 import { store, logoutAndClearPersistedData } from '../redux/store';
-import { createApiClient } from './apiClientCore';
+import { createApiClient } from '../shared/apiClientCore';
 
 export const API_BASE_URL =
   import.meta.env?.VITE_API_URL ||
